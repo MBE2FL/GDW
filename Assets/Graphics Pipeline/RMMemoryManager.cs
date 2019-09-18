@@ -500,7 +500,7 @@ public class RMMemoryManager : MonoBehaviour
         Selection.activeObject = obj;
 
         // Update and reload the shader.
-        Camera.main.GetComponent<ShaderBuilder>().build();
+        //Camera.main.GetComponent<ShaderBuilder>().build();
     }
 
     [MenuItem("GameObject/Ray Marched/rmBox", false, 10)]
@@ -523,7 +523,7 @@ public class RMMemoryManager : MonoBehaviour
         Selection.activeObject = obj;
 
         // Update and reload the shader.
-        Camera.main.GetComponent<ShaderBuilder>().build();
+        //Camera.main.GetComponent<ShaderBuilder>().build();
     }
 
     [MenuItem("GameObject/Ray Marched/CSG", false, 10)]
@@ -545,7 +545,7 @@ public class RMMemoryManager : MonoBehaviour
         Selection.activeObject = obj;
 
         // Update and reload the shader.
-        Camera.main.GetComponent<ShaderBuilder>().build();
+        //Camera.main.GetComponent<ShaderBuilder>().build();
     }
 
 

@@ -268,6 +268,7 @@ public class RMPrimitive : RMObj
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(RMPrimitive))]
+[CanEditMultipleObjects]
 public class RMComponentEditor : RMObjEditor
 {
     SerializedProperty _primitiveType;

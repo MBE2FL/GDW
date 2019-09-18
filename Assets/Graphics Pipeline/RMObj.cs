@@ -35,6 +35,7 @@ public abstract class RMObj : MonoBehaviour
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(RMObj))]
+[CanEditMultipleObjects]
 public class RMObjEditor : Editor
 {
     private SerializedProperty _drawOrder;

@@ -459,6 +459,7 @@ public class RayMarcher : SceneViewFilter
     static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNum)
     {
         RenderTexture.active = dest;
+        
 
         fxMaterial.SetTexture("_MainTex", source);
 
@@ -483,7 +484,6 @@ public class RayMarcher : SceneViewFilter
 
         GL.End();
         GL.PopMatrix();
-
     }
 
 
