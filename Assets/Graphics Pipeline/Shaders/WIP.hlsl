@@ -117,8 +117,8 @@ struct rmPixel
     int texID;
 };
 
-float3 matInfo[MAX_RM_OBJS];
-uint _totalObjsBefore = 0;
+float4 matInfo[MAX_RM_OBJS];
+uint _totalObjs = 0;
 
 struct reflectInfo
 {
@@ -281,9 +281,10 @@ float sdTetra(float3 p)
 
 // Union
 // .x: distance
-rmPixel opU(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0, float csgNode = 0.0)
+rmPixel opU(rmPixel d1, rmPixel d2, float d2ID = 99.0, float storeNode = 0.0, float csgNodeNum = 0.0)
 {
-    float3 test = float3(store, 1.0, csgNode);
+    ++_totalObjs;
+    float4 test = float4(storeNode, 1.0, csgNodeNum, _totalObjs);
 
     if (d1.dist > d2.dist)
     {
@@ -298,7 +299,6 @@ rmPixel opU(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0, float 
     //d1.dist = min(d1.dist, d2.dist);
         
     matInfo[d2ID] = test;
-    ++_totalObjsBefore;
 
     return d1;
 }
@@ -344,10 +344,10 @@ rmPixel opS(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0)
     //float d1Weight = when_gt_float(-d1.dist, d2.dist);
     //float d2Weight = 1.0 - d1Weight;
     
-
     d1.dist = max(-d1.dist, d2.dist);
 
-    float3 test = float3(store, 1.0, 0.0);
+    ++_totalObjs;
+    float4 test = float4(store, 1.0, 0.0, _totalObjs);
 
     if (-d1.dist < d2.dist)
     {
@@ -355,13 +355,12 @@ rmPixel opS(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0)
     }
 
     matInfo[d2ID] = test;
-    ++_totalObjsBefore;
 
     return d1;
 }
 
 // Intersection
-rmPixel opI(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0, float csgNode = 0.0)
+rmPixel opI(rmPixel d1, rmPixel d2, float d2ID = 99.0, float storeNode = 0.0, float csgNodeNum = 0.0)
 {
     //return max(d1, d2);
 
@@ -372,7 +371,8 @@ rmPixel opI(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0, float 
     d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
 
 
-    float3 test = float3(store, 1.0, csgNode);
+    ++_totalObjs;
+    float4 test = float4(storeNode, 1.0, csgNodeNum, _totalObjs);
 
     if (d1.dist <= d2.dist)
     {
@@ -380,7 +380,6 @@ rmPixel opI(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0, float 
     }
 
     matInfo[d2ID] = test;
-    ++_totalObjsBefore;
 
     return d1;
 }
@@ -402,14 +401,14 @@ rmPixel opSmoothUnion(rmPixel d1, rmPixel d2, float k, float d2ID = 99)
     //float reflWeight = step(h, 0.5);
     //d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
 
-    matInfo[d2ID] = float3(0.0, h, 0.0);
-    ++_totalObjsBefore;
+    ++_totalObjs;
+    matInfo[d2ID] = float4(0.0, h, 0.0, _totalObjs);
 
     return d1;
 }
 
 // Smooth Subtraction
-rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k, float d2ID = 99)
+rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k, float d2ID = 99, float storeNode = 0.0, float csgNodeNum = 0.0)
 {
     float h = clamp(0.5 - (0.5 * (d2.dist + d1.dist) / k), 0.0, 1.0);
 
@@ -426,8 +425,8 @@ rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k, float d2ID = 99)
     //d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
 
 
-    matInfo[d2ID] = float3(0.0, 1 - h, 0.0);
-    ++_totalObjsBefore;
+    ++_totalObjs;
+    matInfo[d2ID] = float4(storeNode, h, csgNodeNum, _totalObjs);
 
     return d1;
 }
@@ -500,12 +499,15 @@ rmPixel map(float3 p)
     pos = mul(_invModelMats[0], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[0];
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    //scene = opU(scene, obj, 0.0);
 
     pos = mul(_invModelMats[1], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[1];
     obj2.dist = sdSphere(pos.xyz, geoInfo.x);
+    //scene = opU(scene, obj2, 1.0);
 
-    storedCSGs[0] = opSmoothSub(obj2, obj, _combineOpsCSGs[0].y, 0);
+    storedCSGs[0] = opSmoothSub(obj2, obj, _combineOpsCSGs[0].y, 0, 0.0, 0.0);
+    //storedCSGs[0] = opU(obj2, obj, 0, 0.0, 0.0);
 
     scene = opU(scene, storedCSGs[0], 1.0, 1.0);
 	// ######### CSG_TEST #########
@@ -554,28 +556,29 @@ rmPixel map(float3 p)
     geoInfo = _primitiveGeoInfo[8];
     obj2.dist = sdSphere(pos.xyz, geoInfo.x);
 
-    storedCSGs[1] = opI(obj, obj2, 7, 0.0, 1.0);
-    scene = opU(scene, storedCSGs[1], 8, 1.0);
+    //storedCSGs[1] = opI(obj, obj2, 7, 0.0, 0.0);
+    //scene = opU(scene, storedCSGs[1], 8, 1.0, 0.0);
 
-    pos = mul(_invModelMats[9], float4(p, 1.0));
-    geoInfo = _primitiveGeoInfo[9];
-    obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    pos = mul(_invModelMats[10], float4(p, 1.0));
-    geoInfo = _primitiveGeoInfo[10];
-    obj2.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+    // pos = mul(_invModelMats[9], float4(p, 1.0));
+    // geoInfo = _primitiveGeoInfo[9];
+    // obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    storedCSGs[2] = opU(obj, obj2, 9, 0.0, 1.0);
-    scene = opU(scene, storedCSGs[2], 10, 1.0);
+    // pos = mul(_invModelMats[10], float4(p, 1.0));
+    // geoInfo = _primitiveGeoInfo[10];
+    // obj2.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    pos = mul(_invModelMats[11], float4(p, 1.0));
-    geoInfo = _primitiveGeoInfo[11];
-    obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+    // storedCSGs[2] = opU(obj, obj2, 9, 0.0, 1.0);
+    // scene = opU(scene, storedCSGs[2], 10, 1.0);
 
-    obj2 = storedCSGs[2];
+    // pos = mul(_invModelMats[11], float4(p, 1.0));
+    // geoInfo = _primitiveGeoInfo[11];
+    // obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    //storedCSGs[3] = opU(obj, obj2, 10, 0.0, 1.0);
-    //scene = opU(scene, storedCSGs[3], 11, 1.0);
+    // obj2 = storedCSGs[2];
+
+    // storedCSGs[3] = opU(obj, obj2, 10, 0.0, 1.0);
+    // scene = opU(scene, storedCSGs[3], 11, 1.0);
 
     //obj = storedCSGs[1];
 
@@ -905,7 +908,7 @@ int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float m
 
     for (int i = 0; i < maxSteps; ++i)
     {
-        _totalObjsBefore = 0;
+        _totalObjs = 0;
 
         p = rayOrigin + (rayDir * t); // World space position of sample.
         distField = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
@@ -1336,12 +1339,12 @@ void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos,
 
 void determineMaterial(inout rmPixel distField)
 {
-    float3 currInfo;
+    float4 currInfo;
     float useStored = 0;
     float t = 1;
 
     float4 currColour = 0.0;
-    float4 storedColour = 0.0;
+    //float4 storedColour = 0.0;
     float storeT = 0.0;
     float4 reflInfo = 0.0;
     float2 refractInfo = 0.0;
@@ -1356,38 +1359,48 @@ void determineMaterial(inout rmPixel distField)
     distField.refractInfo = refractInfo;
     distField.texID = 0;
 
-    for (uint i = 0; i < _totalObjsBefore; ++i)
+    float4 csgBuffer[MAX_CSG_CHILDREN];
+
+
+    for (uint obj = 0; obj < MAX_RM_OBJS; ++obj)
     {
-        // Retrieve current material info.
-        // .x object id
-        // .y object influence
-        currInfo = matInfo[i];
-        t = currInfo.y;
-
-        // Check if the current material has any influence on the current pixel.
-        useStored = when_gt_float(currInfo.x, 0.0);
-
-        if (i > 0)
-            storedColour = lerp(_rm_colours[i - 1], _rm_colours[i], storeT);
-
-        // Get two materials
-        if (currInfo.z < 1.0)
+        _totalObjs = matInfo[obj].w;
+        for (uint i = 0; i < _totalObjs; ++i)
         {
-            currColour = (_rm_colours[i] * (1.0 - useStored)) + (storedColour * useStored);
+            // Retrieve current material info.
+            // .x object id
+            // .y object influence
+            currInfo = matInfo[i];
+            t = currInfo.y;
+            //_totalObjs = currInfo.w;
 
+            // Check if the current material has any influence on the current pixel.
+            //useStored = when_gt_float(currInfo.x, 0);
+            useStored = currInfo.x;
+
+            // Store a colour to be used later.
+            //storedColour = lerp(_rm_colours[i - 1], _rm_colours[i], storeT);
+            //csgBuffer[currInfo.z] = lerp(_rm_colours[i], _rm_colours[i + 1], storeT);
+
+
+            // Set the current colour.
+            currColour = (_rm_colours[i] * (1.0 - useStored)) + (csgBuffer[currInfo.z] * useStored);
+
+            //distField.colour = (distField.colour * (1.0 - useStored)) + (csgBuffer[currInfo.z] * useStored);
 
             distField.colour.rgb = lerp(currColour.rgb, distField.colour.rgb, t);
-        
-            //distField.colour = lerp(distField.colour, _rm_colours[i], t);
-            //distField.colour.rgb = t.rrr;
-            //distField.colour.rgb = currInfo.x.rrr;
-            //distField.colour.rgb = useStored.rrr;
-            //distField.colour.rgb = float3(1.0, 1.0, 1.0);
-            //distField.colour.rgb = storedColour.rgb;
+            
+                //distField.colour = lerp(distField.colour, _rm_colours[i], t);
+                //distField.colour.rgb = t.rrr;
+                //distField.colour.rgb = currInfo.x.rrr;
+                //distField.colour.rgb = useStored.rrr;
+                //distField.colour.rgb = float3(1.0, 1.0, 1.0);
+                //distField.colour.rgb = storedColour.rgb;
+
+
+            storeT = t;
+            csgBuffer[currInfo.z] = lerp(_rm_colours[i], _rm_colours[i + 1], storeT);
         }
-
-
-        storeT = t;
     }
 
 }
