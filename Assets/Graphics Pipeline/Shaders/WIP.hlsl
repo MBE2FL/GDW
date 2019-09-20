@@ -131,8 +131,9 @@ struct matInfo
 };
 
 //matInfo matInfos[MAX_RM_OBJS];
-float matInfos[MAX_RM_OBJS * 8];
-uint _totalObjs = 0;
+//float matInfos[MAX_RM_OBJS * 8];
+float4 matInfos[MAX_RM_OBJS * 2];
+int _totalObjs = 0;
 
 struct reflectInfo
 {
@@ -315,15 +316,13 @@ rmPixel opU(rmPixel d1, rmPixel d2, matInfo info)
     //}
 
     d1.dist = min(d1.dist, d2.dist);
-        
-    matInfos[info.matID] = info.useNode;
-    matInfos[info.matID + 1] = info.h;
-    matInfos[info.matID + 2] = info.nodeIndex;
-    matInfos[info.matID + 3] = info.updateScene;
-    matInfos[info.matID + 4] = info.useBufCol_0;
-    matInfos[info.matID + 5] = info.col_0Index;
-    matInfos[info.matID + 6] = info.useBufCol_1;
-    matInfos[info.matID + 7] = info.col_1Index;
+    
+    // Store material information
+    float4 data = float4(info.useNode, info.h, info.nodeIndex, info.updateScene);
+    matInfos[info.matID] = data;
+
+    data = float4(info.useBufCol_0, info.col_0Index, info.useBufCol_1, info.col_1Index);
+    matInfos[info.matID + 1] = data;
 
     return d1;
 }
@@ -376,14 +375,12 @@ rmPixel opS(rmPixel d1, rmPixel d2, matInfo info)
     //    info.h = 0.0;
     //}
 
-    matInfos[info.matID] = info.useNode;
-    matInfos[info.matID + 1] = info.h;
-    matInfos[info.matID + 2] = info.nodeIndex;
-    matInfos[info.matID + 3] = info.updateScene;
-    matInfos[info.matID + 4] = info.useBufCol_0;
-    matInfos[info.matID + 5] = info.col_0Index;
-    matInfos[info.matID + 6] = info.useBufCol_1;
-    matInfos[info.matID + 7] = info.col_1Index;
+    // Store material information
+    float4 data = float4(info.useNode, info.h, info.nodeIndex, info.updateScene);
+    matInfos[info.matID] = data;
+
+    data = float4(info.useBufCol_0, info.col_0Index, info.useBufCol_1, info.col_1Index);
+    matInfos[info.matID + 1] = data;
 
     return d1;
 }
@@ -413,14 +410,12 @@ rmPixel opI(rmPixel d1, rmPixel d2, matInfo info)
     //    info.h = 0.0;
     //}
 
-    matInfos[info.matID] = info.useNode;
-    matInfos[info.matID + 1] = info.h;
-    matInfos[info.matID + 2] = info.nodeIndex;
-    matInfos[info.matID + 3] = info.updateScene;
-    matInfos[info.matID + 4] = info.useBufCol_0;
-    matInfos[info.matID + 5] = info.col_0Index;
-    matInfos[info.matID + 6] = info.useBufCol_1;
-    matInfos[info.matID + 7] = info.col_1Index;
+    // Store material information
+    float4 data = float4(info.useNode, info.h, info.nodeIndex, info.updateScene);
+    matInfos[info.matID] = data;
+
+    data = float4(info.useBufCol_0, info.col_0Index, info.useBufCol_1, info.col_1Index);
+    matInfos[info.matID + 1] = data;
 
     return d1;
 }
@@ -444,14 +439,12 @@ rmPixel opSmoothUnion(rmPixel d1, rmPixel d2, float k, matInfo info)
 
     ++_totalObjs;
 
-    matInfos[info.matID] = info.useNode;
-    matInfos[info.matID + 1] = h;
-    matInfos[info.matID + 2] = info.nodeIndex;
-    matInfos[info.matID + 3] = info.updateScene;
-    matInfos[info.matID + 4] = info.useBufCol_0;
-    matInfos[info.matID + 5] = info.col_0Index;
-    matInfos[info.matID + 6] = info.useBufCol_1;
-    matInfos[info.matID + 7] = info.col_1Index;
+    // Store material information
+    float4 data = float4(info.useNode, h, info.nodeIndex, info.updateScene);
+    matInfos[info.matID] = data;
+
+    data = float4(info.useBufCol_0, info.col_0Index, info.useBufCol_1, info.col_1Index);
+    matInfos[info.matID + 1] = data;
 
     return d1;
 }
@@ -476,14 +469,11 @@ rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k, matInfo info)
 
     ++_totalObjs;
     
-    matInfos[info.matID] = info.useNode;
-    matInfos[info.matID + 1] = h;
-    matInfos[info.matID + 2] = info.nodeIndex;
-    matInfos[info.matID + 3] = info.updateScene;
-    matInfos[info.matID + 4] = info.useBufCol_0;
-    matInfos[info.matID + 5] = info.col_0Index;
-    matInfos[info.matID + 6] = info.useBufCol_1;
-    matInfos[info.matID + 7] = info.col_1Index;
+    float4 data = float4(info.useNode, h, info.nodeIndex, info.updateScene);
+    matInfos[info.matID] = data;
+
+    data = float4(info.useBufCol_0, info.col_0Index, info.useBufCol_1, info.col_1Index);
+    matInfos[info.matID + 1] = data;
 
     return d1;
 }
@@ -573,7 +563,7 @@ rmPixel map(float3 p)
     info.col_1Index = 0.0;
     storedCSGs[0] = opSmoothSub(obj2, obj, _combineOpsCSGs[0].y, info);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     info.useNode = 1.0;
     //info.nodeIndex = 0.0;
     info.updateScene = 1.0;
@@ -589,7 +579,7 @@ rmPixel map(float3 p)
     geoInfo = float4(12, 5.5, 0.2, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     info.useNode = 0.0;
     //info.nodeIndex = 0.0;
     //info.updateScene = 1.0;
@@ -605,7 +595,7 @@ rmPixel map(float3 p)
     geoInfo = float4(0.2, 5.5, 16, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     //info.nodeIndex = 0.0;
     //info.updateScene = 1.0;
@@ -621,7 +611,7 @@ rmPixel map(float3 p)
     geoInfo = float4(0.2, 5.5, 16, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     //info.nodeIndex = 0.0;
     //info.updateScene = 1.0;
@@ -637,7 +627,7 @@ rmPixel map(float3 p)
     geoInfo = _primitiveGeoInfo[5];
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     //info.nodeIndex = 0.0;
     //info.updateScene = 1.0;
@@ -653,7 +643,7 @@ rmPixel map(float3 p)
     geoInfo = _primitiveGeoInfo[6];
     obj.dist = sdSphere(pos.xyz, geoInfo.x);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     //info.nodeIndex = 0.0;
     //info.updateScene = 1.0;
@@ -673,7 +663,7 @@ rmPixel map(float3 p)
     geoInfo = _primitiveGeoInfo[8];
     obj2.dist = sdSphere(pos.xyz, geoInfo.x);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     //info.nodeIndex = 0.0;
     info.updateScene = 0.0;
@@ -692,7 +682,7 @@ rmPixel map(float3 p)
     geoInfo = _primitiveGeoInfo[10];
     obj2.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     info.nodeIndex = 1.0;
     //info.updateScene = 0.0;
@@ -709,7 +699,7 @@ rmPixel map(float3 p)
 
     obj2 = storedCSGs[2];
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     info.nodeIndex = 2.0;
     //info.updateScene = 0.0;
@@ -724,7 +714,7 @@ rmPixel map(float3 p)
 
     obj2 = storedCSGs[3];
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     //info.useNode = 0.0;
     info.nodeIndex = 3.0;
     //info.updateScene = 0.0;
@@ -734,7 +724,7 @@ rmPixel map(float3 p)
     //info.col_1Index = 0.0;
     storedCSGs[4] = opS(obj2, obj, info);
 
-    info.matID += 8.0;
+    info.matID += 2.0;
     info.useNode = 1.0;
     //info.nodeIndex = 3.0;
     info.updateScene = 1.0;
@@ -746,21 +736,21 @@ rmPixel map(float3 p)
 	// ######### CSG (1) #########
 
 
-	// ######### rmBox #########
-    pos = mul(_invModelMats[17], float4(p, 1.0));
-    geoInfo = _primitiveGeoInfo[17];
-    obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+	//// ######### rmBox #########
+ //   pos = mul(_invModelMats[17], float4(p, 1.0));
+ //   geoInfo = _primitiveGeoInfo[17];
+ //   obj.dist = sdBox(pos.xyz, geoInfo.xyz);
 
-    info.matID += 8.0;
-    info.useNode = 0.0;
-    info.nodeIndex = 0.0;
-    info.updateScene = 1.0;
-    info.useBufCol_0 = 0.0;
-    info.col_0Index = 0.0;
-    info.useBufCol_1 = 0.0;
-    info.col_1Index = 0.0;
-    scene = opSmoothUnion(scene, obj, _combineOps[17].y, info);
-	// ######### rmBox #########
+ //   info.matID += 8.0;
+ //   info.useNode = 0.0;
+ //   info.nodeIndex = 0.0;
+ //   info.updateScene = 1.0;
+ //   info.useBufCol_0 = 0.0;
+ //   info.col_0Index = 0.0;
+ //   info.useBufCol_1 = 0.0;
+ //   info.col_1Index = 0.0;
+ //   scene = opSmoothUnion(scene, obj, _combineOps[17].y, info);
+	//// ######### rmBox #########
 
 	//// ######### Pen #########
  //   pos = mul(float4x4(0.7455924, -0.6664023, 0, -3.835978, 0.6664023, 0.7455924, 0, -6.748063, 0, 0, 1, -5.37, 0, 0, 0, 1), float4(p, 1.0));
@@ -1445,7 +1435,8 @@ void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos,
 
 void determineMaterial(inout rmPixel distField)
 {
-    matInfo currInfo;
+    float4 data;
+    float4 data2;
     float useNode = 0.0;
     float updateScene = 1.0;
     float t = 1;
@@ -1466,35 +1457,26 @@ void determineMaterial(inout rmPixel distField)
     float4 col_0;
     float4 col_1;
     int index = 0;
-    int totalOps = _totalObjs * 8;
+    int totalOps = _totalObjs * 2;
 
     // Loop through all possible operations in the scene.
-    for (int op = 0; op < totalOps; op += 8)
+    for (int op = 0; op < totalOps; op += 2)
     {
-        // For object array look ups.
-        //uint index = op * 0.125; // / 8
-
         // Retrieve current material info.
-        currInfo.useNode = matInfos[op];
-        currInfo.h = matInfos[op + 1];
-        currInfo.nodeIndex = matInfos[op + 2];
-        currInfo.updateScene = matInfos[op + 3];
-        currInfo.useBufCol_0 = matInfos[op + 4];
-        currInfo.col_0Index = matInfos[op + 5];
-        currInfo.useBufCol_1 = matInfos[op + 6];
-        currInfo.col_1Index = matInfos[op + 7];
+        data = matInfos[op];
+        data2 = matInfos[op + 1];
 
         // Check if the current material has any influence on the current pixel.
-        t = currInfo.h;
+        t = data.y;
 
         // Check if the current material use a value from the csg buffer.
-        useNode = currInfo.useNode;
+        useNode = data.x;
 
-        updateScene = currInfo.updateScene;
+        updateScene = data.w;
 
 
         // Use an object's colour, or a colour stored in the csg buffer.
-        currColour = (_rm_colours[index] * (1.0 - useNode)) + (csgBuffer[currInfo.nodeIndex] * useNode);
+        currColour = (_rm_colours[index] * (1.0 - useNode)) + (csgBuffer[data.z] * useNode);
 
         // TO-DO optimize
         // Update distField colour.
@@ -1507,10 +1489,10 @@ void determineMaterial(inout rmPixel distField)
         //distField.colour.rgb = prevT.rrr;
         //prevT = t;
         // TO-DO optimize
-        col_0 = (_rm_colours[index] * (1.0 - currInfo.useBufCol_0)) + (csgBuffer[currInfo.col_0Index] * currInfo.useBufCol_0);
-        col_1 = (_rm_colours[index + 1] * (1.0 - currInfo.useBufCol_1)) + (csgBuffer[currInfo.col_1Index] * currInfo.useBufCol_1);
+        col_0 = (_rm_colours[index] * (1.0 - data2.x)) + (csgBuffer[data2.y] * data2.x);
+        col_1 = (_rm_colours[index + 1] * (1.0 - data2.z)) + (csgBuffer[data2.w] * data2.z);
         //csgBuffer[currInfo.nodeIndex] = lerp(_rm_colours[op], _rm_colours[op + 1], t);
-        csgBuffer[currInfo.nodeIndex] = lerp(col_0, col_1, t);
+        csgBuffer[data.z] = lerp(col_0, col_1, t);
 
 
         ++index;
