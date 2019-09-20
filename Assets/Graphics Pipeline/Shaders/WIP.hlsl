@@ -117,7 +117,21 @@ struct rmPixel
     int texID;
 };
 
-float4 matInfo[MAX_RM_OBJS];
+struct matInfo
+{
+    float matID;
+    float useNode;
+    float h;
+    float nodeIndex;
+    float updateScene;
+    float useBufCol_0;
+    float col_0Index;
+    float useBufCol_1;
+    float col_1Index;
+};
+
+//matInfo matInfos[MAX_RM_OBJS];
+float matInfos[MAX_RM_OBJS * 8];
 uint _totalObjs = 0;
 
 struct reflectInfo
@@ -194,6 +208,11 @@ float4 when_ge_float(float4 x, float4 y)
 int4 when_ge_int(int4 x, int4 y)
 {
     return 1 - when_lt_float(x, y);
+}
+
+float when_le_float(float x, float y)
+{
+    return 1.0 - when_gt_float(x, y);
 }
 /// ######### Conditional Functions #########
 
@@ -281,24 +300,30 @@ float sdTetra(float3 p)
 
 // Union
 // .x: distance
-rmPixel opU(rmPixel d1, rmPixel d2, float d2ID = 99.0, float storeNode = 0.0, float csgNodeNum = 0.0)
+rmPixel opU(rmPixel d1, rmPixel d2, matInfo info)
 {
-    ++_totalObjs;
-    float4 test = float4(storeNode, 1.0, csgNodeNum, _totalObjs);
-
-    if (d1.dist > d2.dist)
-    {
-        d1 = d2;
-        test.y = 0.0;
-    }
-
-    //float swap = when_gt_float(d1.dist, d2.dist);
-    //test.y -= swap;
-    //d1.dist = (d1.dist * (1.0 - swap)) + (d2.dist * swap);
-
     //d1.dist = min(d1.dist, d2.dist);
+
+    ++_totalObjs;
+    float swap = when_gt_float(d1.dist, d2.dist);
+    info.h = 1.0 - swap;
+
+    //if (d1.dist > d2.dist)
+    //{
+    //    d1 = d2;
+    //    info.h = 0.0;
+    //}
+
+    d1.dist = min(d1.dist, d2.dist);
         
-    matInfo[d2ID] = test;
+    matInfos[info.matID] = info.useNode;
+    matInfos[info.matID + 1] = info.h;
+    matInfos[info.matID + 2] = info.nodeIndex;
+    matInfos[info.matID + 3] = info.updateScene;
+    matInfos[info.matID + 4] = info.useBufCol_0;
+    matInfos[info.matID + 5] = info.col_0Index;
+    matInfos[info.matID + 6] = info.useBufCol_1;
+    matInfos[info.matID + 7] = info.col_1Index;
 
     return d1;
 }
@@ -336,56 +361,72 @@ rmPixel opUAbs(rmPixel d1, rmPixel d2)
 }
 
 // Subtraction
-rmPixel opS(rmPixel d1, rmPixel d2, float d2ID = 99.0, float store = 0.0)
+rmPixel opS(rmPixel d1, rmPixel d2, matInfo info)
 {
     //return max(-d1, d2);
-
-
-    //float d1Weight = when_gt_float(-d1.dist, d2.dist);
-    //float d2Weight = 1.0 - d1Weight;
     
     d1.dist = max(-d1.dist, d2.dist);
 
     ++_totalObjs;
-    float4 test = float4(store, 1.0, 0.0, _totalObjs);
+    float swap = when_lt_float(-d1.dist, d2.dist);
+    info.h = 1.0 - swap;
 
-    if (-d1.dist < d2.dist)
-    {
-        test.y = 0.0;
-    }
+    //if (-d1.dist < d2.dist)
+    //{
+    //    info.h = 0.0;
+    //}
 
-    matInfo[d2ID] = test;
+    matInfos[info.matID] = info.useNode;
+    matInfos[info.matID + 1] = info.h;
+    matInfos[info.matID + 2] = info.nodeIndex;
+    matInfos[info.matID + 3] = info.updateScene;
+    matInfos[info.matID + 4] = info.useBufCol_0;
+    matInfos[info.matID + 5] = info.col_0Index;
+    matInfos[info.matID + 6] = info.useBufCol_1;
+    matInfos[info.matID + 7] = info.col_1Index;
 
     return d1;
 }
 
 // Intersection
-rmPixel opI(rmPixel d1, rmPixel d2, float d2ID = 99.0, float storeNode = 0.0, float csgNodeNum = 0.0)
+rmPixel opI(rmPixel d1, rmPixel d2, matInfo info)
 {
     //return max(d1, d2);
 
 
-    float d1Weight = when_gt_float(d1.dist, d2.dist);
-    float d2Weight = 1.0 - d1Weight;
+    //float d1Weight = when_gt_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
 
-    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    //d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    d1.dist = max(d1.dist, d2.dist);
 
 
     ++_totalObjs;
-    float4 test = float4(storeNode, 1.0, csgNodeNum, _totalObjs);
+    float swap = when_le_float(d1.dist, d2.dist);
+    //info.h = 1.0 - swap;
+    info.h = swap;
 
-    if (d1.dist <= d2.dist)
-    {
-        test.y = 0.0;
-    }
+    //info.h = 
 
-    matInfo[d2ID] = test;
+    //if (d1.dist <= d2.dist)
+    //{
+    //    info.h = 0.0;
+    //}
+
+    matInfos[info.matID] = info.useNode;
+    matInfos[info.matID + 1] = info.h;
+    matInfos[info.matID + 2] = info.nodeIndex;
+    matInfos[info.matID + 3] = info.updateScene;
+    matInfos[info.matID + 4] = info.useBufCol_0;
+    matInfos[info.matID + 5] = info.col_0Index;
+    matInfos[info.matID + 6] = info.useBufCol_1;
+    matInfos[info.matID + 7] = info.col_1Index;
 
     return d1;
 }
 
 // Smooth Union
-rmPixel opSmoothUnion(rmPixel d1, rmPixel d2, float k, float d2ID = 99)
+rmPixel opSmoothUnion(rmPixel d1, rmPixel d2, float k, matInfo info)
 {
     float h = clamp(0.5 + (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
 
@@ -402,13 +443,21 @@ rmPixel opSmoothUnion(rmPixel d1, rmPixel d2, float k, float d2ID = 99)
     //d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
 
     ++_totalObjs;
-    matInfo[d2ID] = float4(0.0, h, 0.0, _totalObjs);
+
+    matInfos[info.matID] = info.useNode;
+    matInfos[info.matID + 1] = h;
+    matInfos[info.matID + 2] = info.nodeIndex;
+    matInfos[info.matID + 3] = info.updateScene;
+    matInfos[info.matID + 4] = info.useBufCol_0;
+    matInfos[info.matID + 5] = info.col_0Index;
+    matInfos[info.matID + 6] = info.useBufCol_1;
+    matInfos[info.matID + 7] = info.col_1Index;
 
     return d1;
 }
 
 // Smooth Subtraction
-rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k, float d2ID = 99, float storeNode = 0.0, float csgNodeNum = 0.0)
+rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k, matInfo info)
 {
     float h = clamp(0.5 - (0.5 * (d2.dist + d1.dist) / k), 0.0, 1.0);
 
@@ -426,7 +475,15 @@ rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k, float d2ID = 99, float stor
 
 
     ++_totalObjs;
-    matInfo[d2ID] = float4(storeNode, h, csgNodeNum, _totalObjs);
+    
+    matInfos[info.matID] = info.useNode;
+    matInfos[info.matID + 1] = h;
+    matInfos[info.matID + 2] = info.nodeIndex;
+    matInfos[info.matID + 3] = info.updateScene;
+    matInfos[info.matID + 4] = info.useBufCol_0;
+    matInfos[info.matID + 5] = info.col_0Index;
+    matInfos[info.matID + 6] = info.useBufCol_1;
+    matInfos[info.matID + 7] = info.col_1Index;
 
     return d1;
 }
@@ -495,56 +552,116 @@ rmPixel map(float3 p)
 	rmPixel storedCSGs[MAX_CSG_CHILDREN];
 	float reflWeight;
 
+    matInfo info;
+
 	// ######### CSG_TEST #########
     pos = mul(_invModelMats[0], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[0];
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
-    //scene = opU(scene, obj, 0.0);
 
     pos = mul(_invModelMats[1], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[1];
     obj2.dist = sdSphere(pos.xyz, geoInfo.x);
-    //scene = opU(scene, obj2, 1.0);
 
-    storedCSGs[0] = opSmoothSub(obj2, obj, _combineOpsCSGs[0].y, 0, 0.0, 0.0);
-    //storedCSGs[0] = opU(obj2, obj, 0, 0.0, 0.0);
+    info.matID = 0.0;
+    info.useNode = 0.0;
+    info.nodeIndex = 0.0;
+    info.updateScene = 0.0;
+    info.useBufCol_0 = 0.0;
+    info.col_0Index = 0.0;
+    info.useBufCol_1 = 0.0;
+    info.col_1Index = 0.0;
+    storedCSGs[0] = opSmoothSub(obj2, obj, _combineOpsCSGs[0].y, info);
 
-    scene = opU(scene, storedCSGs[0], 1.0, 1.0);
+    info.matID += 8.0;
+    info.useNode = 1.0;
+    //info.nodeIndex = 0.0;
+    info.updateScene = 1.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    scene = opU(scene, storedCSGs[0], info);
 	// ######### CSG_TEST #########
 
 	// ######### Wall Two #########
     pos = mul(float4x4(1, 0, 0, 0, 0, 1, 0, -5, 0, 0, 1, -10, 0, 0, 0, 1), float4(p, 1.0));
     geoInfo = float4(12, 5.5, 0.2, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
-    scene = opU(scene, obj, 2);
+
+    info.matID += 8.0;
+    info.useNode = 0.0;
+    //info.nodeIndex = 0.0;
+    //info.updateScene = 1.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    scene = opU(scene, obj, info);
 	// ######### Wall Two #########
 
 	// ######### Wall #########
     pos = mul(float4x4(1, 0, 0, 12.11, 0, 1, 0, -5, 0, 0, 1, 6, 0, 0, 0, 1), float4(p, 1.0));
     geoInfo = float4(0.2, 5.5, 16, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
-    scene = opU(scene, obj, 3);
+
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    //info.nodeIndex = 0.0;
+    //info.updateScene = 1.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    scene = opU(scene, obj, info);
 	// ######### Wall #########
 
 	// ######### Wall Three #########
     pos = mul(float4x4(1, 0, 0, -11.91, 0, 1, 0, -5, 0, 0, 1, 6, 0, 0, 0, 1), float4(p, 1.0));
     geoInfo = float4(0.2, 5.5, 16, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
-    scene = opU(scene, obj, 4);
+
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    //info.nodeIndex = 0.0;
+    //info.updateScene = 1.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    scene = opU(scene, obj, info);
 	// ######### Wall Three #########
 
 	// ######### rmBoxTwo #########
     pos = mul(_invModelMats[5], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[5];
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
-    scene = opU(scene, obj, 5);
+
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    //info.nodeIndex = 0.0;
+    //info.updateScene = 1.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    scene = opU(scene, obj, info);
 	// ######### rmBoxTwo #########
 
 	// ######### rmSphere #########
     pos = mul(_invModelMats[6], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[6];
     obj.dist = sdSphere(pos.xyz, geoInfo.x);
-    scene = opSmoothUnion(scene, obj, _combineOps[6].y, 6);
+
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    //info.nodeIndex = 0.0;
+    //info.updateScene = 1.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    scene = opSmoothUnion(scene, obj, _combineOps[6].y, info);
 	// ######### rmSphere #########
 
 	// ######### CSG (1) #########
@@ -556,105 +673,94 @@ rmPixel map(float3 p)
     geoInfo = _primitiveGeoInfo[8];
     obj2.dist = sdSphere(pos.xyz, geoInfo.x);
 
-    //storedCSGs[1] = opI(obj, obj2, 7, 0.0, 0.0);
-    //scene = opU(scene, storedCSGs[1], 8, 1.0, 0.0);
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    //info.nodeIndex = 0.0;
+    info.updateScene = 0.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    storedCSGs[1] = opI(obj, obj2, info);
 
 
-    // pos = mul(_invModelMats[9], float4(p, 1.0));
-    // geoInfo = _primitiveGeoInfo[9];
-    // obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+    pos = mul(_invModelMats[9], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[9];
+    obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    // pos = mul(_invModelMats[10], float4(p, 1.0));
-    // geoInfo = _primitiveGeoInfo[10];
-    // obj2.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+    pos = mul(_invModelMats[10], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[10];
+    obj2.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    // storedCSGs[2] = opU(obj, obj2, 9, 0.0, 1.0);
-    // scene = opU(scene, storedCSGs[2], 10, 1.0);
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    info.nodeIndex = 1.0;
+    //info.updateScene = 0.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    storedCSGs[2] = opU(obj, obj2, info);
 
-    // pos = mul(_invModelMats[11], float4(p, 1.0));
-    // geoInfo = _primitiveGeoInfo[11];
-    // obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    // obj2 = storedCSGs[2];
+    pos = mul(_invModelMats[11], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[11];
+    obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
 
-    // storedCSGs[3] = opU(obj, obj2, 10, 0.0, 1.0);
-    // scene = opU(scene, storedCSGs[3], 11, 1.0);
+    obj2 = storedCSGs[2];
 
-    //obj = storedCSGs[1];
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    info.nodeIndex = 2.0;
+    //info.updateScene = 0.0;
+    //info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    storedCSGs[3] = opU(obj, obj2, info);
 
-    //obj2 = storedCSGs[3];
 
-    //storedCSGs[4] = opS(obj2, obj);
+    obj = storedCSGs[1];
 
-    //scene = opU(scene, storedCSGs[4]);
+    obj2 = storedCSGs[3];
+
+    info.matID += 8.0;
+    //info.useNode = 0.0;
+    info.nodeIndex = 3.0;
+    //info.updateScene = 0.0;
+    info.useBufCol_0 = 1.0;
+    //info.col_0Index = 0.0;
+    //info.useBufCol_1 = 0.0;
+    //info.col_1Index = 0.0;
+    storedCSGs[4] = opS(obj2, obj, info);
+
+    info.matID += 8.0;
+    info.useNode = 1.0;
+    //info.nodeIndex = 3.0;
+    info.updateScene = 1.0;
+    info.useBufCol_0 = 0.0;
+    //info.col_0Index = 0.0;
+    info.useBufCol_1 = 1.0;
+    info.col_1Index = 1.0;
+    scene = opU(scene, storedCSGs[4], info);
 	// ######### CSG (1) #########
 
-	//// ######### Mug Helper #########
-	////pos = mul(_invModelMats[12], float4(p, 1.0));
-	////geoInfo = _primitiveGeoInfo[12];
-	////obj.dist = sdTorus(pos.xyz, geoInfo.xy);
-	////obj.colour = _rm_colours[12];
-	////obj.reflInfo = _reflInfo[12];
-	////obj.refractInfo = _refractInfo[12];
 
-	////pos = mul(_invModelMats[13], float4(p, 1.0));
-	////geoInfo = _primitiveGeoInfo[13];
-	////obj2.dist = sdBox(pos.xyz, geoInfo.xyz);
-	////obj2.colour = _rm_colours[13];
-	////obj2.reflInfo = _reflInfo[13];
-	////obj2.refractInfo = _refractInfo[13];
+	// ######### rmBox #########
+    pos = mul(_invModelMats[17], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[17];
+    obj.dist = sdBox(pos.xyz, geoInfo.xyz);
 
-	////storedCSGs[5] = opS(obj2, obj);
-
-	////pos = mul(_invModelMats[14], float4(p, 1.0));
-	////geoInfo = _primitiveGeoInfo[14];
-	////obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
-	////obj.colour = _rm_colours[14];
-	////obj.reflInfo = _reflInfo[14];
-	////obj.refractInfo = _refractInfo[14];
-
-	////pos = mul(_invModelMats[15], float4(p, 1.0));
-	////geoInfo = _primitiveGeoInfo[15];
-	////obj2.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
-	////obj2.colour = _rm_colours[15];
-	////obj2.reflInfo = _reflInfo[15];
-	////obj2.refractInfo = _refractInfo[15];
-
-	////storedCSGs[6] = opSmoothSub(obj2, obj, _combineOpsCSGs[6].y);
-
-	////obj = storedCSGs[5];
-
-	////obj2 = storedCSGs[6];
-
-	////storedCSGs[7] = opSmoothUnion(obj, obj2, _combineOpsCSGs[7].y);
-
-	////pos = mul(_invModelMats[16], float4(p, 1.0));
-	////geoInfo = _primitiveGeoInfo[16];
-	////obj.dist = sdBox(pos.xyz, geoInfo.xyz);
-	////obj.colour = _rm_colours[16];
-	////obj.reflInfo = _reflInfo[16];
-	////obj.refractInfo = _refractInfo[16];
-
-	////obj2 = storedCSGs[7];
-
-	////csg.dist = lerp(obj.dist, obj2.dist, _combineOpsCSGs[8].y);
-	////csg.colour = lerp(obj.colour, obj2.colour, _combineOpsCSGs[8].y);
-	////reflWeight = step(0.5, _combineOpsCSGs[7].y);
-	////csg.reflInfo = (1.0 - reflWeight) * obj.reflInfo + reflWeight * obj2.reflInfo;
-	////storedCSGs[8] = csg;
-
-	////scene = opU(scene, storedCSGs[8]);
-	//// ######### Mug Helper #########
-
-	//// ######### rmBox #########
- //   pos = mul(_invModelMats[17], float4(p, 1.0));
- //   geoInfo = _primitiveGeoInfo[17];
- //   obj.dist = sdBox(pos.xyz, geoInfo.xyz);
- //   obj.colour = _rm_colours[17];
- //   obj.reflInfo = _reflInfo[17];
- //   obj.refractInfo = _refractInfo[17];
- //   scene = opSmoothUnion(scene, obj, _combineOps[17].y);
-	//// ######### rmBox #########
+    info.matID += 8.0;
+    info.useNode = 0.0;
+    info.nodeIndex = 0.0;
+    info.updateScene = 1.0;
+    info.useBufCol_0 = 0.0;
+    info.col_0Index = 0.0;
+    info.useBufCol_1 = 0.0;
+    info.col_1Index = 0.0;
+    scene = opSmoothUnion(scene, obj, _combineOps[17].y, info);
+	// ######### rmBox #########
 
 	//// ######### Pen #########
  //   pos = mul(float4x4(0.7455924, -0.6664023, 0, -3.835978, 0.6664023, 0.7455924, 0, -6.748063, 0, 0, 1, -5.37, 0, 0, 0, 1), float4(p, 1.0));
@@ -1339,70 +1445,80 @@ void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos,
 
 void determineMaterial(inout rmPixel distField)
 {
-    float4 currInfo;
-    float useStored = 0;
+    matInfo currInfo;
+    float useNode = 0.0;
+    float updateScene = 1.0;
     float t = 1;
+    float prevT = 0.0;
 
     float4 currColour = 0.0;
-    //float4 storedColour = 0.0;
-    float storeT = 0.0;
     float4 reflInfo = 0.0;
     float2 refractInfo = 0.0;
     int texID = 0;
 
-    //float4 colour_2;
-    //float4 reflInfo_2;
-    //float2 refractInfo_2;
-    //int texID_2;
+
     distField.colour.a = 1.0;
     distField.reflInfo = reflInfo;
     distField.refractInfo = refractInfo;
     distField.texID = 0;
 
     float4 csgBuffer[MAX_CSG_CHILDREN];
+    float4 col_0;
+    float4 col_1;
+    int index = 0;
+    int totalOps = _totalObjs * 8;
 
-
-    for (uint obj = 0; obj < MAX_RM_OBJS; ++obj)
+    // Loop through all possible operations in the scene.
+    for (int op = 0; op < totalOps; op += 8)
     {
-        _totalObjs = matInfo[obj].w;
-        for (uint i = 0; i < _totalObjs; ++i)
-        {
-            // Retrieve current material info.
-            // .x object id
-            // .y object influence
-            currInfo = matInfo[i];
-            t = currInfo.y;
-            //_totalObjs = currInfo.w;
+        // For object array look ups.
+        //uint index = op * 0.125; // / 8
 
-            // Check if the current material has any influence on the current pixel.
-            //useStored = when_gt_float(currInfo.x, 0);
-            useStored = currInfo.x;
+        // Retrieve current material info.
+        currInfo.useNode = matInfos[op];
+        currInfo.h = matInfos[op + 1];
+        currInfo.nodeIndex = matInfos[op + 2];
+        currInfo.updateScene = matInfos[op + 3];
+        currInfo.useBufCol_0 = matInfos[op + 4];
+        currInfo.col_0Index = matInfos[op + 5];
+        currInfo.useBufCol_1 = matInfos[op + 6];
+        currInfo.col_1Index = matInfos[op + 7];
 
-            // Store a colour to be used later.
-            //storedColour = lerp(_rm_colours[i - 1], _rm_colours[i], storeT);
-            //csgBuffer[currInfo.z] = lerp(_rm_colours[i], _rm_colours[i + 1], storeT);
+        // Check if the current material has any influence on the current pixel.
+        t = currInfo.h;
 
+        // Check if the current material use a value from the csg buffer.
+        useNode = currInfo.useNode;
 
-            // Set the current colour.
-            currColour = (_rm_colours[i] * (1.0 - useStored)) + (csgBuffer[currInfo.z] * useStored);
-
-            //distField.colour = (distField.colour * (1.0 - useStored)) + (csgBuffer[currInfo.z] * useStored);
-
-            distField.colour.rgb = lerp(currColour.rgb, distField.colour.rgb, t);
-            
-                //distField.colour = lerp(distField.colour, _rm_colours[i], t);
-                //distField.colour.rgb = t.rrr;
-                //distField.colour.rgb = currInfo.x.rrr;
-                //distField.colour.rgb = useStored.rrr;
-                //distField.colour.rgb = float3(1.0, 1.0, 1.0);
-                //distField.colour.rgb = storedColour.rgb;
+        updateScene = currInfo.updateScene;
 
 
-            storeT = t;
-            csgBuffer[currInfo.z] = lerp(_rm_colours[i], _rm_colours[i + 1], storeT);
-        }
+        // Use an object's colour, or a colour stored in the csg buffer.
+        currColour = (_rm_colours[index] * (1.0 - useNode)) + (csgBuffer[currInfo.nodeIndex] * useNode);
+
+        // TO-DO optimize
+        // Update distField colour.
+        //if (updateScene >= 1.0)
+        //    distField.colour.rgb = lerp(currColour.rgb, distField.colour.rgb, t);
+        distField.colour.rgb = (distField.colour.rgb * (1.0 - updateScene)) + (lerp(currColour.rgb, distField.colour.rgb, t) * updateScene);
+        
+
+        // Store colour into the csg buffer, to be used later.
+        //distField.colour.rgb = prevT.rrr;
+        //prevT = t;
+        // TO-DO optimize
+        col_0 = (_rm_colours[index] * (1.0 - currInfo.useBufCol_0)) + (csgBuffer[currInfo.col_0Index] * currInfo.useBufCol_0);
+        col_1 = (_rm_colours[index + 1] * (1.0 - currInfo.useBufCol_1)) + (csgBuffer[currInfo.col_1Index] * currInfo.useBufCol_1);
+        //csgBuffer[currInfo.nodeIndex] = lerp(_rm_colours[op], _rm_colours[op + 1], t);
+        csgBuffer[currInfo.nodeIndex] = lerp(col_0, col_1, t);
+
+
+        ++index;
+        //distField.colour = lerp(distField.colour, _rm_colours[op], t);
+        //distField.colour.rgb = t.rrr;
+        //distField.colour.rgb = useNode.rrr;
+        //distField.colour.rgb = csgBuffer[0].rgb;
     }
-
 }
 
 
