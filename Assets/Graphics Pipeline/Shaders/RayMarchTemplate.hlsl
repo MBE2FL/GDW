@@ -3,12 +3,10 @@
 //float4x4 UNITY_MATRIX_MVP;
 
 // Floats
-float _smoothUnionFactor = 0.0;
 float _totalTime;
 
 // Matrices
 float4x4 _FrustumCornersES;
-float4x4 _TorusMat_InvModel;
 float4x4 _CameraInvMatrix;
 
 // Vectors
@@ -117,6 +115,8 @@ struct rmPixel
     int texID;
 };
 
+float distBuffer[MAX_RM_OBJS];
+
 struct reflectInfo
 {
     float3 pos;
@@ -128,6 +128,11 @@ struct reflectInfo
 
 /// ######### Conditional Functions #########
 float4 when_eq_float4(float4 x, float4 y)
+{
+    return 1.0 - abs(sign(x - y));
+}
+
+float when_eq_float(float x, float y)
 {
     return 1.0 - abs(sign(x - y));
 }
@@ -147,14 +152,49 @@ float when_gt_float(float x, float y)
     return max(sign(x - y), 0.0);
 }
 
+float4 when_gt_float4(float4 x, float4 y)
+{
+    return max(sign(x - y), 0.0);
+}
+
+int4 when_gt_int(int4 x, int4 y)
+{
+    return max(sign(x - y), 0);
+}
+
 float when_lt_float(float x, float y)
 {
+    return max(sign(y - x), 0);
+}
+
+float4 when_lt_float(float4 x, float4 y)
+{
     return max(sign(y - x), 0.0);
+}
+
+int4 when_lt_int(int4 x, int4 y)
+{
+    return max(sign(y - x), 0);
 }
 
 float when_ge_float(float x, float y)
 {
     return 1.0 - when_lt_float(x, y);
+}
+
+float4 when_ge_float(float4 x, float4 y)
+{
+    return 1.0 - when_lt_float(x, y);
+}
+
+int4 when_ge_int(int4 x, int4 y)
+{
+    return 1 - when_lt_float(x, y);
+}
+
+float when_le_float(float x, float y)
+{
+    return 1.0 - when_gt_float(x, y);
 }
 /// ######### Conditional Functions #########
 
@@ -240,179 +280,107 @@ float sdTetra(float3 p)
     return length(p) * pow(scale, float(-n));
 }
 
-// Union
-// .x: distance
-rmPixel opU(rmPixel d1, rmPixel d2)
+float sdMandelbulb(float3 p, float2 geoInfo)
 {
-    //return min(d1, d2);
-    //return (d1.dist < d2.dist) ? d1 : d2;
+    float3 z = p;
+    float dr = 1.0;
+    float r = 0.0;
 
-    //if (when_lt_float(d1.dist, d2.dist))
-    //    return d1;
+    float power = geoInfo.y;
+    int iter = geoInfo.x;
 
-    //return d2;
+    for (int i = 0; i < iter; ++i)
+    {
+        r = length(z);
 
+        if (r > 1.5)
+            break;
 
-    //float d1Weight = when_lt_float(d1.dist, d2.dist);
-    //float d2Weight = 1.0 - d1Weight;
+        // Convert to polar coordinates
+        float theta = acos(z.z / r);
+        float phi = atan2(z.y, z.x);
+        dr = pow(r, power - 1.0) * power * dr + 1.0;
 
-    //d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
-    //d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
-    //d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
-    //d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
+        // Scale and rotate the point
+        float zr = pow(r, power);
+        theta *= power;
+        phi *= power;
 
-    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+        // Convert back to cartesian coordinates
+        z = zr * float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+        z += p;
+    }
 
-    //return d1;
-
-
-
-
-    if (d1.dist > d2.dist)
-        d1 = d2;
-
-    return d1;
+    return 0.5 * log(r) * r / dr;
 }
 
-rmPixel opUAbs(rmPixel d1, rmPixel d2)
+// Union
+// .x: distance
+float opU(float d1, float d2)
 {
-    //return min(d1, d2);
-    //return (d1.dist < d2.dist) ? d1 : d2;
+    return min(d1, d2);
+}
 
-    //if (when_lt_float(d1.dist, d2.dist))
-    //    return d1;
-
-    //return d2;
-
-
-    //float d1Weight = when_lt_float(abs(d1.dist), abs(d2.dist));
-    //float d2Weight = 1.0 - d1Weight;
-
-    //d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
-    //d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
-    //d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
-    //d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
-
-    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+float opUAbs(float d1, float d2)
+{
+    //if (abs(d1) > abs(d2))
+    //    d1 = d2;
 
     //return d1;
 
+    return abs(d1) > abs(d2) ? d2 : d1;
 
-
-
-    if (abs(d1.dist) > abs(d2.dist))
-        d1 = d2;
-
-    return d1;
+    //return min(abs(d1), abs(d2));
 }
 
 // Subtraction
-rmPixel opS(rmPixel d1, rmPixel d2)
+float opS(float d1, float d2)
 {
     //return max(-d1, d2);
-
-
-    //float d1Weight = when_gt_float(-d1.dist, d2.dist);
-    //float d2Weight = 1.0 - d1Weight;
     
+    //d1.dist = max(-d1.dist, d2.dist);
 
-    d1.dist = max(-d1.dist, d2.dist);
-    //d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
-    //d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
-
-    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
-
-    if (-d1.dist < d2.dist)
-    {
-        d1.colour = d2.colour;
-        d1.reflInfo = d2.reflInfo;
-        d1.texID = d2.texID;
-    }
-
-    return d1;
+    return max(-d1, d2);
 }
 
 // Intersection
-rmPixel opI(rmPixel d1, rmPixel d2)
+float opI(float d1, float d2)
 {
     //return max(d1, d2);
 
+    //d1.dist = max(d1.dist, d2.dist);
 
-    float d1Weight = when_gt_float(d1.dist, d2.dist);
-    float d2Weight = 1.0 - d1Weight;
-
-    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
-    //d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
-    //d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
-
-    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
-
-    if (d1.dist <= d2.dist)
-    {
-        d1.colour = d2.colour;
-        d1.reflInfo = d2.reflInfo;
-        d1.texID = d2.texID;
-    }
-
-    return d1;
+    return max(d1, d2);
 }
 
 // Smooth Union
-rmPixel opSmoothUnion(rmPixel d1, rmPixel d2, float k)
+float opSmoothUnion(float d1, float d2, float k)
 {
-    float h = clamp(0.5 + (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
+    float h = clamp(0.5 + (0.5 * (d2 - d1) / k), 0.0, 1.0);
 
-    d1.dist = lerp(d2.dist, d1.dist, h) - (k * h * (1.0 - h));
-    d1.colour = lerp(d2.colour, d1.colour, h);
+    //d1.dist = lerp(d2.dist, d1.dist, h) - (k * h * (1.0 - h));
 
-    //float d1Weight = when_lt_float(d1.dist, d2.dist);
-    //float d2Weight = 1.0 - d1Weight;
-    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
-    if (d1.dist > d2.dist) // TO-DO Check with textured obj
-        d1.texID = d2.texID;
-
-    float reflWeight = step(h, 0.5);
-    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
-
-    return d1;
+    return lerp(d2, d1, h) - (k * h * (1.0 - h));;
 }
 
 // Smooth Subtraction
-rmPixel opSmoothSub(rmPixel d1, rmPixel d2, float k)
+float opSmoothSub(float d1, float d2, float k)
 {
-    float h = clamp(0.5 - (0.5 * (d2.dist + d1.dist) / k), 0.0, 1.0);
+    float h = clamp(0.5 - (0.5 * (d2 + d1) / k), 0.0, 1.0);
 
-    d1.dist = lerp(d2.dist, -d1.dist, h) + (k * h * (1.0 - h));
-    d1.colour = lerp(d2.colour, d1.colour, h);
+    //d1 = lerp(d2, -d1, h) + (k * h * (1.0 - h));
 
-    //float d1Weight = when_gt_float(d1.dist, d2.dist);
-    //float d2Weight = 1.0 - d1Weight;
-    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
-    if (d1.dist < d2.dist) // TO-DO Check with textured obj
-        d1.texID = d2.texID;
-
-    float reflWeight = step(h, 0.5);
-    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
-
-    return d1;
+    return lerp(d2, -d1, h) + (k * h * (1.0 - h));;
 }
 
 // Smooth Intersection
-rmPixel opSmoothInt(rmPixel d1, rmPixel d2, float k)
+float opSmoothInt(float d1, float d2, float k)
 {
-    float h = clamp(0.5 - (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
+    float h = clamp(0.5 - (0.5 * (d2 - d1) / k), 0.0, 1.0);
 
-    d1.dist = lerp(d2.dist, d1.dist, h) + (k * h * (1.0 - h));
-    d1.colour = lerp(d2.colour, d1.colour, h);
+    //d1.dist = lerp(d2.dist, d1.dist, h) + (k * h * (1.0 - h));
 
-    float d1Weight = when_gt_float(d1.dist, d2.dist);
-    float d2Weight = 1.0 - d1Weight;
-    d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
-
-    float reflWeight = step(h, 0.5);
-    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
-
-    return d1;
+    return lerp(d2, d1, h) + (k * h * (1.0 - h));;
 }
 
 float opRep(float3 p, float3 c)
@@ -426,14 +394,147 @@ float opRep(float3 p, float3 c)
 }
 
 
+// Union for materials
+// .x: distance
+rmPixel opUMat(rmPixel d1, rmPixel d2)
+{
+    //d1.dist = min(d1.dist, d2.dist);
+
+    //float d1Weight = when_le_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+
+    //d1.dist = (d1.dist * d1Weight) + (d2.dist * (1.0 - d2Weight));
+    //d1.colour = (d1.colour * d1Weight) + (d2.colour * (1.0 - d2Weight));
+    
+    d1.colour = d1.dist < d2.dist ? d1.colour : d2.colour;
+    d1.reflInfo = d1.dist < d2.dist ? d1.reflInfo : d2.reflInfo;
+    d1.refractInfo = d1.dist < d2.dist ? d1.refractInfo : d2.refractInfo;
+    d1.dist = d1.dist < d2.dist ? d1.dist : d2.dist;
+
+    //if (d1.dist > d2.dist)
+    //    d1 = d2;
+
+    return d1;
+}
+
+rmPixel opUAbsMat(rmPixel d1, rmPixel d2)
+{
+    //if (abs(d1) > abs(d2))
+    //    d1 = d2;
+
+    d1.colour = abs(d1.dist) > abs(d2.dist) ? d2.colour : d1.colour;
+    d1.reflInfo = abs(d1.dist) > abs(d2.dist) ? d2.reflInfo : d1.reflInfo;
+    d1.refractInfo = abs(d1.dist) > abs(d2.dist) ? d2.refractInfo : d1.refractInfo;
+    d1.dist = abs(d1.dist) > abs(d2.dist) ? d2.dist : d1.dist;
+
+    return d1;
+}
+
+// Subtraction for materials
+rmPixel opSMat(rmPixel d1, rmPixel d2)
+{
+    //return max(-d1, d2);
+    
+    //d1.dist = max(-d1.dist, d2.dist);;
+
+    float d1Weight = when_gt_float(-d1.dist, d2.dist);
+    float d2Weight = 1.0 - d1Weight;
+
+    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
+    d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
+    d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
+
+    //if (-d1.dist < d2.dist)
+    //{
+    //    d1 = d2;
+    //}
+
+    return d1;
+}
+
+// Intersection for materials
+rmPixel opIMat(rmPixel d1, rmPixel d2)
+{
+    //return max(d1, d2);
+
+
+    float d1Weight = when_gt_float(d1.dist, d2.dist);
+    float d2Weight = 1.0 - d1Weight;
+
+    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
+    d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
+    d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
+
+    //d1.dist = max(d1.dist, d2.dist);
+
+
+    //if (d1.dist <= d2.dist)
+    //{
+    //    d1 = d2;
+    //}
+
+    return d1;
+}
+
+// Smooth Union for materials
+rmPixel opSmoothUnionMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 + (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
+
+    d1.dist = lerp(d2.dist, d1.dist, h) - (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    //float d1Weight = when_lt_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+    //if (d1.dist > d2.dist) // TO-DO Check with textured obj
+    //    d1.texID = d2.texID;
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
+// Smooth Subtraction for materials
+rmPixel opSmoothSubMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 - (0.5 * (d2.dist + d1.dist) / k), 0.0, 1.0);
+
+    d1.dist = lerp(d2.dist, -d1.dist, h) + (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    //float d1Weight = when_gt_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+
+    //if (d1.dist < d2.dist) // TO-DO Check with textured obj
+    //    d1.texID = d2.texID;
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
+
 /// Distance field function.
 /// The distance field represents the closest distance to the surface of any object
 /// we put in the scene. If the given point (point p) is inside of any object, we return an negative answer.
 /// Return.x: Distance field value.
 /// Return.y: Colour of closest object (0 - 1).
-rmPixel map(float3 p)
+float map(float3 p)
 {
     //<Insert Map Here>
+}
+
+rmPixel mapMat()
+{
+    //<Insert MapMat Here>
 }
 /// ######### Signed Distance Functions #########
 
@@ -446,7 +547,7 @@ float ambientOcclusion(float3 p, float3 normal)
     for (int i = 1; i <= _aoMaxSteps; ++i)
     {
         dist = step * i;
-        ao += max((dist - map(p + (normal * dist)).dist) / dist, 0.0);
+        ao += max((dist - map(p + (normal * dist))) / dist, 0.0);
     }
 
     return (1.0 - (ao * _aoIntensity));
@@ -458,7 +559,7 @@ float shadow(float3 rayOrigin, float3 rayDir, float mint, float maxt, float _pen
 
     for (float t = mint; t < maxt;)
     {
-        float h = map(rayOrigin + (rayDir * t)).dist;
+        float h = map(rayOrigin + (rayDir * t));
 
         if (h < 0.001)
             return 0.0;
@@ -481,9 +582,9 @@ float3 calcNormal(in float3 pos)
     // the number is negative, so this calculation still works.
     // Essentially you are approximating the derivative of the distance field at this point.
     float3 normal = float3(
-                            map(pos + EPS.xyy).dist - map(pos - EPS.xyy).dist,
-                            map(pos + EPS.yxy).dist - map(pos - EPS.yxy).dist,
-                            map(pos + EPS.yyx).dist - map(pos - EPS.yyx).dist);
+                            map(pos + EPS.xyy) - map(pos - EPS.xyy),
+                            map(pos + EPS.yxy) - map(pos - EPS.yxy),
+                            map(pos + EPS.yyx) - map(pos - EPS.yyx));
 
     return normalize(normal);
 }
@@ -504,14 +605,15 @@ float4 calcLighting(float3 p, float3 normal, rmPixel distField, float useShadow 
 {
     float4 colour = 0.0;
 
-    if (when_gt_int(distField.texID, 0))
-    {
+    int hasTex = when_gt_int(distField.texID, 0);
+    //if (when_gt_int(distField.texID, 0))
+    //{
         //tex = _textures[0];
         //tex = distField.tex;
-        float4 firstTex = float4(triplanarMap(p, normal, _wood), 1.0) * when_eq_int(distField.texID, 1);
-        firstTex += float4(triplanarMap(p, normal, _brick), 1.0) * when_eq_int(distField.texID, 2);
-        colour += firstTex;
-    }
+    float4 firstTex = float4(triplanarMap(p, normal, _wood), 1.0) * (when_eq_int(distField.texID, 1) * hasTex);
+    firstTex += float4(triplanarMap(p, normal, _brick), 1.0) * (when_eq_int(distField.texID, 2) * hasTex);
+    colour += firstTex;
+    //}
 
     // Ambient contribution
     colour.rgb += _lightConstants.x * _ambientColour;
@@ -521,33 +623,32 @@ float4 calcLighting(float3 p, float3 normal, rmPixel distField, float useShadow 
 
     float shadowFactor = 1.0;
 
+
     // Light contributes diffuse and specular lighting.
-    if (NdotL > 0.0)
-    {
-        float dist = length(_lightPos - p);
+    float NdotL_gt_0 = when_gt_float(NdotL, 0.0);
+    //if (NdotL > 0.0)
+    //{
+    float dist = length(_lightPos - p);
 
-        // Calculate light's attenuation
-        float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
+    // Calculate light's attenuation
+    float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
 
-        // Apply shadow
-        //float3 lightToPoint = p - _lightPos;
-        //float lightToPointDist = length(lightToPoint);
-        shadowFactor = shadow(p, -_LightDir, _shadowMinDist, 64.0 * useShadow, _penumbraFactor) * 0.5 + 0.5; // * 3;
-        shadowFactor = max(0.0, pow(shadowFactor, _shadowIntensity)); // Note: In shaders 0^0 is undefined i.e. 0.
-        //colour = float4(shadowFactor.rrr, 1.0);
+    // Apply shadow
+    shadowFactor = shadow(p, -_LightDir, _shadowMinDist, 64.0 * useShadow * NdotL_gt_0, _penumbraFactor) * 0.5 + 0.5; // * 3;
+    shadowFactor = max(0.0, pow(shadowFactor, _shadowIntensity)); // Note: In shaders 0^0 is undefined i.e. 0.
 
-        // Diffuse Contribution
-        //colour.rgb += _lightConstants.y * _diffuseColour * NdotL * attenuation;
-        colour.rgb += _diffuseColour * (_lightConstants.y * NdotL * attenuation);
+    // Diffuse Contribution
+    colour.rgb += _diffuseColour * (_lightConstants.y * NdotL * attenuation * NdotL_gt_0);
 
-        // Calculate the Half-Angle vector
-        float3 H = normalize(-_LightDir + normalize(-p));
-        float NdotH = saturate(dot(normal, H));
+    // Calculate the Half-Angle vector
+    float3 H = normalize(-_LightDir + normalize(-p));
+    float NdotH = saturate(dot(normal, H));
             
-        // Specular Contribution
-        //colour.rgb += _lightConstants.z * _specularColour * pow(NdotH, _specularExp) * attenuation;
-        colour.rgb += _specularColour * (_lightConstants.z * pow(NdotH, _specularExp) * attenuation);
-    }
+    // Specular Contribution
+    colour.rgb += _specularColour * (_lightConstants.z * pow(NdotH, _specularExp) * attenuation * NdotL_gt_0);
+    //}
+
+
 
     // Use y value given by map() to choose a colour from our Colour Ramp.
     colour.rgb += distField.colour.rgb * max(NdotL, 0.2);
@@ -576,14 +677,15 @@ float4 cheapLighting(float3 p, float3 normal, rmPixel distField)
 {
     float4 colour = 0.0;
 
-    if (when_gt_int(distField.texID, 0))
-    {
+    int hasTex = when_gt_int(distField.texID, 0);
+    //if (when_gt_int(distField.texID, 0))
+    //{
         //tex = _textures[0];
         //tex = distField.tex;
-        float4 firstTex = float4(triplanarMap(p, normal, _wood), 1.0) * when_eq_int(distField.texID, 1);
-        firstTex += float4(triplanarMap(p, normal, _brick), 1.0) * when_eq_int(distField.texID, 2);
-        colour += firstTex;
-    }
+    float4 firstTex = float4(triplanarMap(p, normal, _wood), 1.0) * (when_eq_int(distField.texID, 1) * hasTex);
+    firstTex += float4(triplanarMap(p, normal, _brick), 1.0) * (when_eq_int(distField.texID, 2) * hasTex);
+    colour += firstTex;
+    //}
 
     // Ambient contribution
     colour.rgb += _lightConstants.x * _ambientColour;
@@ -592,23 +694,24 @@ float4 cheapLighting(float3 p, float3 normal, rmPixel distField)
     float NdotL = saturate(dot(-_LightDir, normal));
 
     // Light contributes diffuse and specular lighting.
-    if (NdotL > 0.0)
-    {
-        float dist = length(_lightPos - p);
+    float NdotL_gt_0 = when_gt_float(NdotL, 0.0);
+    //if (NdotL > 0.0)
+    //{
+    float dist = length(_lightPos - p);
 
         // Calculate light's attenuation
-        float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
+    float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
 
         // Diffuse Contribution
-        colour.rgb += _diffuseColour * (_lightConstants.y * NdotL * attenuation);
+    colour.rgb += _diffuseColour * (_lightConstants.y * NdotL * attenuation * NdotL_gt_0);
 
         // Calculate the Half-Angle vector
-        float3 H = normalize(-_LightDir + normalize(-p));
-        float NdotH = saturate(dot(normal, H));
+    float3 H = normalize(-_LightDir + normalize(-p));
+    float NdotH = saturate(dot(normal, H));
             
         // Specular Contribution
-        colour.rgb += _specularColour * (_lightConstants.z * pow(NdotH, _specularExp) * attenuation);
-    }
+    colour.rgb += _specularColour * (_lightConstants.z * pow(NdotH, _specularExp) * attenuation * NdotL_gt_0);
+    //}
 
     // Use y value given by map() to choose a colour from our Colour Ramp.
     colour.rgb += distField.colour.rgb * max(NdotL, 0.2);
@@ -619,9 +722,9 @@ float4 cheapLighting(float3 p, float3 normal, rmPixel distField)
 }
 
 // Raymarch along the ray
-bool raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
 {
-    bool rayHit = false;
+    int rayHit = 0;
 
     //const int MAX_STEP = 100;
     //const float DRAW_DIST = 64.0;
@@ -631,40 +734,53 @@ bool raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float 
     //float performance = 0.95;
     /// ### Performance Test ###
 
+    int2 bothCond;
+    int2 breakLoop;
+
     for (int i = 0; i < maxSteps; ++i)
     {
         p = rayOrigin + (rayDir * t); // World space position of sample.
-        distField = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
+        distField.dist = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
 
         // If we run past the depth buffer, stop and return nothing (transparent pixel).
         // This way raymarched objects and traditional meshes can co-exist.
-        if ((t >= depth) || (t > maxDrawDist))
-        {
-            rayHit = false;
+        bothCond = when_ge_float(float4(t, t, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+        //if ((t >= depth) || (t > maxDrawDist))
+        //{
+        //    rayHit = false;
 
-            /// ### Performance Test ###
-            //performance = (float) i / MAX_STEP;
-            /// ### Performance Test ###
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
 
-            break;
-        }
+        //    break;
+        //}
         // If the sample <= 0, we have hit an object.
-        else if (distField.dist < 0.001)
-        {
-            // Perform colour/lighting
-            rayHit = true;
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+        //else if (distField.dist < 0.001)
+        //{
+        //    // Perform colour/lighting
+        //    rayHit = true;
 
-            /// ### Performance Test ###
-            //performance = (float) i / MAX_STEP;
-            /// ### Performance Test ###
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
 
-            break;
-        }
+        //    break;
+        //}
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
 
         // If the sample > 0, we haven't hit anything yet so we should march forward.
         // We step forward by distance d, because d is the minimum distance possible to intersect an object.
         t += distField.dist;
     }
+
+    //determineMaterial(distField);
+    distField = mapMat();
 
     return rayHit;
 
@@ -682,37 +798,65 @@ bool raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float 
 }
 
 // Raymarch along the ray
-bool unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+int unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
 {
-    bool rayHit = false;
+    int rayHit = 0;
 
+    //const int MAX_STEP = 100;
+    //const float DRAW_DIST = 64.0;
     float t = 0; // Current distance travaled along the ray.
+
+    /// ### Performance Test ###
+    //float performance = 0.95;
+    /// ### Performance Test ###
+
+    int2 bothCond;
+    int2 breakLoop;
 
     for (int i = 0; i < maxSteps; ++i)
     {
         p = rayOrigin + (rayDir * t); // World space position of sample.
-        distField = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
+        distField.dist = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
         distField.dist = abs(distField.dist);
 
         // If we run past the depth buffer, stop and return nothing (transparent pixel).
         // This way raymarched objects and traditional meshes can co-exist.
-        if ((t >= depth) || (t > maxDrawDist))
-        {
-            rayHit = false;
-            break;
-        }
+        bothCond = when_ge_float(float4(t, t, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+        //if ((t >= depth) || (t > maxDrawDist))
+        //{
+        //    rayHit = false;
+
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
+
+        //    break;
+        //}
         // If the sample <= 0, we have hit an object.
-        else if (distField.dist < 0.001)
-        {
-            // Perform colour/lighting
-            rayHit = true;
-            break;
-        }
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+        //else if (distField.dist < 0.001)
+        //{
+        //    // Perform colour/lighting
+        //    rayHit = true;
+
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
+
+        //    break;
+        //}
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
 
         // If the sample > 0, we haven't hit anything yet so we should march forward.
         // We step forward by distance d, because d is the minimum distance possible to intersect an object.
         t += distField.dist;
     }
+
+    distField = mapMat();
 
     return rayHit;
 }
@@ -993,9 +1137,9 @@ void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos,
     reflectInfo info;
 
     // Calculate refraction.
-    bool rayHit = false;
-    float3 refractRayDir = normalize(calcRefractRay(rayDir, normal, distField.refractInfo.y));
-    refractRayDir = normalize(refract(rayDir, normal, 1.0 / distField.refractInfo.y));
+    int rayHit = 0;
+    //float3 refractRayDir = normalize(calcRefractRay(rayDir, normal, distField.refractInfo.y));
+    float3 refractRayDir = normalize(refract(rayDir, normal, 1.0 / distField.refractInfo.y));
     float3 refractRayOrigin = pos + (refractRayDir * 0.02);
 
     // March along refraction ray THROUGH the current object (medium).
@@ -1013,7 +1157,7 @@ void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos,
 
         // Calculate frensel ratio.
         ratio = fresnel(distField.refractInfo.y, refractRayDir, normal);
-        //ratio.y = 1.0;
+        //ratio.y = 1.0; // Ignoring total internal reflection. Just making it refract instead.
         // Calculate reflection.
         //performReflection(add, refractRayOrigin, refractRayDir, pos, -normal, distField, ratio, info);
 
@@ -1035,8 +1179,8 @@ void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos,
 
         // Calculate refraction.
         // March along refraction ray EXITING the current object (medium).
-        //refractRayDir = normalize(calcRefractRay(refractRayDir, normal, distField.refractInfo.y));
-        refractRayDir = normalize(refract(refractRayDir, -normal, distField.refractInfo.y)); //distField.refractInfo.y / 1.0
+        refractRayDir = normalize(calcRefractRay(refractRayDir, normal, distField.refractInfo.y));
+        //refractRayDir = normalize(refract(refractRayDir, -normal, distField.refractInfo.y)); //distField.refractInfo.y / 1.0
         refractRayOrigin = pos + (refractRayDir * 0.02);
 
         rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
@@ -1047,6 +1191,7 @@ void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos,
             // Add the colour of what is behind the current object.
             normal = calcNormal(pos);
             add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * (ratio.y * 0.6);
+            //add = float4(ratio.yyy, 1.0);
         }
     }
 }
@@ -1116,7 +1261,7 @@ float4 frag(VertexOutput input) : SV_Target
     rmPixel distField;
     float4 add = float4(0.0, 0.0, 0.0, 0.0);
     float3 normal = 0.0;
-    bool rayHit = raymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
+    int rayHit = raymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
 
     // Perform shading/lighting.
     if (rayHit)
@@ -1148,15 +1293,10 @@ float4 frag(VertexOutput input) : SV_Target
     // Contrast
     //add.rgb = smoothstep(0.0, 1.0, add.rgb);
 
-    float2 test = abs(input.uv - float2(0.5, 0.5));
-    //if (test.x >= 0.4 || test.y >= 0.4)
-    //    add.rgb *= 0.2;
-
+    // Vignette
+    //float2 test = abs(input.uv - float2(0.5, 0.5));
     //col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
     //col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
-
-    col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
-    col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
 
 
     return col;

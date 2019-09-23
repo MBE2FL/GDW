@@ -22,7 +22,8 @@ public enum PrimitiveTypes
     Box,
     Torus,
     Cylinder,
-    Tetrahedron
+    Tetrahedron,
+    Mandelbulb
 }
 
 [AddComponentMenu("Ray Marching/RMPrimitive")]
@@ -352,7 +353,13 @@ public class RMComponentEditor : RMObjEditor
             geoInfo.y = EditorGUILayout.FloatField("Thickness", _geoInfo.vector4Value.y);
             _geoInfo.vector4Value = geoInfo;
         }
-
+        // Mandelbulb
+        else if (rmComp.PrimitiveType == PrimitiveTypes.Mandelbulb)
+        {
+            geoInfo.x = EditorGUILayout.FloatField("Iterations", _geoInfo.vector4Value.x);
+            geoInfo.y = EditorGUILayout.FloatField("Power", _geoInfo.vector4Value.y);
+            _geoInfo.vector4Value = geoInfo;
+        }
 
 
 

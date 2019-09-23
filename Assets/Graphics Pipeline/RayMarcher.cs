@@ -21,8 +21,6 @@ public class RayMarcher : SceneViewFilter
     [SerializeField]
     private Texture2D _performanceRamp = null;
     [SerializeField]
-    private float _smoothUnionFactor = 0.0f;
-    [SerializeField]
     private Texture2D _wood = null;
     [SerializeField]
     private Texture2D _brick = null;
@@ -208,22 +206,21 @@ public class RayMarcher : SceneViewFilter
             return;
         }
 
-        Matrix4x4 torusMat = Matrix4x4.TRS(
-                                            Vector3.right * Mathf.Sin(Time.time) * 5.0f,
-                                            Quaternion.identity,
-                                            Vector3.one);
-        torusMat *= Matrix4x4.TRS(
-                                   Vector3.zero,
-                                   Quaternion.Euler(new Vector3(0.0f, 0.0f, (Time.time * 200.0f) % 360.0f)),
-                                   Vector3.one);
+        //Matrix4x4 torusMat = Matrix4x4.TRS(
+        //                                    Vector3.right * Mathf.Sin(Time.time) * 5.0f,
+        //                                    Quaternion.identity,
+        //                                    Vector3.one);
+        //torusMat *= Matrix4x4.TRS(
+        //                           Vector3.zero,
+        //                           Quaternion.Euler(new Vector3(0.0f, 0.0f, (Time.time * 200.0f) % 360.0f)),
+        //                           Vector3.one);
 
         EffectMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
         EffectMaterial.SetMatrix("_CameraInvMatrix", CurrentCamera.cameraToWorldMatrix);
         EffectMaterial.SetVector("_CameraPos", CurrentCamera.transform.position);
-        EffectMaterial.SetMatrix("_TorusMat_InvModel", torusMat.inverse);
+        //EffectMaterial.SetMatrix("_TorusMat_InvModel", torusMat.inverse);
         EffectMaterial.SetTexture("_colourRamp", _colourRamp);
         EffectMaterial.SetTexture("_performanceRamp", _performanceRamp);
-        EffectMaterial.SetFloat("_smoothUnionFactor", _smoothUnionFactor);
         EffectMaterial.SetTexture("_wood", _wood);
         EffectMaterial.SetTexture("_brick", _brick);
 

@@ -135,6 +135,8 @@ struct matInfo
 float4 matInfos[MAX_RM_OBJS * 2];
 int _totalObjs = 0;
 
+float distBuffer[MAX_RM_OBJS]; // ****** NEW PERFOMANCE TEST
+
 struct reflectInfo
 {
     float3 pos;
@@ -507,6 +509,121 @@ float opRep(float3 p, float3 c)
 }
 
 
+// Union for materials
+// .x: distance
+rmPixel opUMat(rmPixel d1, rmPixel d2)
+{
+    //d1.dist = min(d1.dist, d2.dist);
+
+    //float d1Weight = when_le_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+
+    //d1.dist = (d1.dist * d1Weight) + (d2.dist * (1.0 - d2Weight));
+    //d1.colour = (d1.colour * d1Weight) + (d2.colour * (1.0 - d2Weight));
+    
+    d1.colour = d1.dist < d2.dist ? d1.colour : d2.colour;
+    d1.dist = d1.dist < d2.dist ? d1.dist : d2.dist;
+    d1.reflInfo = d1.dist < d2.dist ? d1.reflInfo : d2.reflInfo;
+    d1.refractInfo = d1.dist < d2.dist ? d1.refractInfo : d2.refractInfo;
+
+    //if (d1.dist > d2.dist)
+    //    d1 = d2;
+
+    return d1;
+}
+
+// Subtraction for materials
+rmPixel opSMat(rmPixel d1, rmPixel d2)
+{
+    //return max(-d1, d2);
+    
+    //d1.dist = max(-d1.dist, d2.dist);;
+
+    float d1Weight = when_gt_float(-d1.dist, d2.dist);
+    float d2Weight = 1.0 - d1Weight;
+
+    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
+    d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
+    d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
+
+    //if (-d1.dist < d2.dist)
+    //{
+    //    d1 = d2;
+    //}
+
+    return d1;
+}
+
+// Intersection for materials
+rmPixel opIMat(rmPixel d1, rmPixel d2)
+{
+    //return max(d1, d2);
+
+
+    float d1Weight = when_gt_float(d1.dist, d2.dist);
+    float d2Weight = 1.0 - d1Weight;
+
+    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
+    d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
+    d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
+
+    //d1.dist = max(d1.dist, d2.dist);
+
+
+    //if (d1.dist <= d2.dist)
+    //{
+    //    d1 = d2;
+    //}
+
+    return d1;
+}
+
+// Smooth Union for materials
+rmPixel opSmoothUnionMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 + (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
+
+    d1.dist = lerp(d2.dist, d1.dist, h) - (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    //float d1Weight = when_lt_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+    //if (d1.dist > d2.dist) // TO-DO Check with textured obj
+    //    d1.texID = d2.texID;
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
+// Smooth Subtraction for materials
+rmPixel opSmoothSubMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 - (0.5 * (d2.dist + d1.dist) / k), 0.0, 1.0);
+
+    d1.dist = lerp(d2.dist, -d1.dist, h) + (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    //float d1Weight = when_gt_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+
+    //if (d1.dist < d2.dist) // TO-DO Check with textured obj
+    //    d1.texID = d2.texID;
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
+
 /// Distance field function.
 /// The distance field represents the closest distance to the surface of any object
 /// we put in the scene. If the given point (point p) is inside of any object, we return an negative answer.
@@ -548,10 +665,12 @@ rmPixel map(float3 p)
     pos = mul(_invModelMats[0], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[0];
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[0] = obj.dist;
 
     pos = mul(_invModelMats[1], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[1];
     obj2.dist = sdSphere(pos.xyz, geoInfo.x);
+    distBuffer[1] = obj2.dist;
 
     info.matID = 0.0;
     info.useNode = 0.0;
@@ -578,6 +697,7 @@ rmPixel map(float3 p)
     pos = mul(float4x4(1, 0, 0, 0, 0, 1, 0, -5, 0, 0, 1, -10, 0, 0, 0, 1), float4(p, 1.0));
     geoInfo = float4(12, 5.5, 0.2, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[2] = obj.dist;
 
     info.matID += 2.0;
     info.useNode = 0.0;
@@ -594,6 +714,7 @@ rmPixel map(float3 p)
     pos = mul(float4x4(1, 0, 0, 12.11, 0, 1, 0, -5, 0, 0, 1, 6, 0, 0, 0, 1), float4(p, 1.0));
     geoInfo = float4(0.2, 5.5, 16, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[3] = obj.dist;
 
     info.matID += 2.0;
     //info.useNode = 0.0;
@@ -610,6 +731,7 @@ rmPixel map(float3 p)
     pos = mul(float4x4(1, 0, 0, -11.91, 0, 1, 0, -5, 0, 0, 1, 6, 0, 0, 0, 1), float4(p, 1.0));
     geoInfo = float4(0.2, 5.5, 16, 1);
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[4] = obj.dist;
 
     info.matID += 2.0;
     //info.useNode = 0.0;
@@ -626,6 +748,7 @@ rmPixel map(float3 p)
     pos = mul(_invModelMats[5], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[5];
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[5] = obj.dist;
 
     info.matID += 2.0;
     //info.useNode = 0.0;
@@ -642,6 +765,7 @@ rmPixel map(float3 p)
     pos = mul(_invModelMats[6], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[6];
     obj.dist = sdSphere(pos.xyz, geoInfo.x);
+    distBuffer[6] = obj.dist;
 
     info.matID += 2.0;
     //info.useNode = 0.0;
@@ -658,10 +782,12 @@ rmPixel map(float3 p)
     pos = mul(_invModelMats[7], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[7];
     obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[7] = obj.dist;
 
     pos = mul(_invModelMats[8], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[8];
     obj2.dist = sdSphere(pos.xyz, geoInfo.x);
+    distBuffer[8] = obj2.dist;
 
     info.matID += 2.0;
     //info.useNode = 0.0;
@@ -677,10 +803,12 @@ rmPixel map(float3 p)
     pos = mul(_invModelMats[9], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[9];
     obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+    distBuffer[9] = obj.dist;
 
     pos = mul(_invModelMats[10], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[10];
     obj2.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+    distBuffer[10] = obj2.dist;
 
     info.matID += 2.0;
     //info.useNode = 0.0;
@@ -696,6 +824,7 @@ rmPixel map(float3 p)
     pos = mul(_invModelMats[11], float4(p, 1.0));
     geoInfo = _primitiveGeoInfo[11];
     obj.dist = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+    distBuffer[11] = obj.dist;
 
     obj2 = storedCSGs[2];
 
@@ -736,21 +865,22 @@ rmPixel map(float3 p)
 	// ######### CSG (1) #########
 
 
-	//// ######### rmBox #########
- //   pos = mul(_invModelMats[17], float4(p, 1.0));
- //   geoInfo = _primitiveGeoInfo[17];
- //   obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+	// ######### rmBox #########
+    pos = mul(_invModelMats[12], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[12];
+    obj.dist = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[12] = obj.dist;
 
- //   info.matID += 8.0;
- //   info.useNode = 0.0;
- //   info.nodeIndex = 0.0;
- //   info.updateScene = 1.0;
- //   info.useBufCol_0 = 0.0;
- //   info.col_0Index = 0.0;
- //   info.useBufCol_1 = 0.0;
- //   info.col_1Index = 0.0;
- //   scene = opSmoothUnion(scene, obj, _combineOps[17].y, info);
-	//// ######### rmBox #########
+    info.matID += 8.0;
+    info.useNode = 0.0;
+    info.nodeIndex = 0.0;
+    info.updateScene = 1.0;
+    info.useBufCol_0 = 0.0;
+    info.col_0Index = 0.0;
+    info.useBufCol_1 = 0.0;
+    info.col_1Index = 0.0;
+    scene = opSmoothUnion(scene, obj, _combineOps[12].y, info);
+	// ######### rmBox #########
 
 	//// ######### Pen #########
  //   pos = mul(float4x4(0.7455924, -0.6664023, 0, -3.835978, 0.6664023, 0.7455924, 0, -6.748063, 0, 0, 1, -5.37, 0, 0, 0, 1), float4(p, 1.0));
@@ -800,6 +930,156 @@ rmPixel map(float3 p)
 	//// ######### Ground #########
 
 	return scene;
+}
+
+rmPixel mapMat()
+{
+    rmPixel scene;
+    scene.dist = _maxDrawDist;
+    scene.colour = float4(0.0, 0.0, 0.0, 0.0);
+    scene.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    scene.refractInfo = float2(0.0, 1.0);
+    scene.texID = 0;
+
+    rmPixel obj;
+    obj.colour = float4(0.0, 0.0, 0.0, 0.0);
+    obj.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    obj.refractInfo = float2(0.0, 1.0);
+    obj.texID = 0;
+
+    rmPixel obj2;
+    obj2.colour = float4(0.0, 0.0, 0.0, 0.0);
+    obj2.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    obj2.refractInfo = float2(0.0, 1.0);
+    obj2.texID = 0;
+
+    rmPixel csg;
+    csg.colour = float4(0.0, 0.0, 0.0, 0.0);
+    csg.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    csg.refractInfo = float2(0.0, 1.0);
+    csg.texID = 0;
+    rmPixel storedCSGs[MAX_CSG_CHILDREN];
+
+    float reflWeight;
+
+
+	// ######### CSG_TEST #########
+    obj.dist = distBuffer[0];
+    obj.colour = _rm_colours[0];
+    obj.reflInfo = _reflInfo[0];
+    obj.refractInfo = _refractInfo[0];
+
+    obj2.dist = distBuffer[1];
+    obj2.colour = _rm_colours[1];
+    obj2.reflInfo = _reflInfo[1];
+    obj2.refractInfo = _refractInfo[1];
+
+    storedCSGs[0] = opSmoothSubMat(obj2, obj, _combineOpsCSGs[0].y);
+
+    scene = opUMat(scene, storedCSGs[0]);
+	// ######### CSG_TEST #########
+
+	// ######### Wall Two #########
+    obj.dist = distBuffer[2];
+    obj.colour = _rm_colours[2];
+    obj.reflInfo = _reflInfo[2];
+    obj.refractInfo = _refractInfo[2];
+
+    scene = opUMat(scene, obj);
+	// ######### Wall Two #########
+
+	// ######### Wall #########
+    obj.dist = distBuffer[3];
+    obj.colour = _rm_colours[3];
+    obj.reflInfo = _reflInfo[3];
+    obj.refractInfo = _refractInfo[3];
+
+    scene = opUMat(scene, obj);
+	// ######### Wall #########
+
+	// ######### Wall Three #########
+    obj.dist = distBuffer[4];
+    obj.colour = _rm_colours[4];
+    obj.reflInfo = _reflInfo[4];
+    obj.refractInfo = _refractInfo[4];
+
+    scene = opUMat(scene, obj);
+	// ######### Wall Three #########
+
+	// ######### rmBoxTwo #########
+    obj.dist = distBuffer[5];
+    obj.colour = _rm_colours[5];
+    obj.reflInfo = _reflInfo[5];
+    obj.refractInfo = _refractInfo[5];
+
+    scene = opUMat(scene, obj);
+	// ######### rmBoxTwo #########
+
+	// ######### rmSphere #########
+    obj.dist = distBuffer[6];
+    obj.colour = _rm_colours[6];
+    obj.reflInfo = _reflInfo[6];
+    obj.refractInfo = _refractInfo[6];
+
+    scene = opSmoothUnionMat(scene, obj, _combineOps[6].y);
+	// ######### rmSphere #########
+
+	// ######### CSG (1) #########
+    obj.dist = distBuffer[7];
+    obj.colour = _rm_colours[7];
+    obj.reflInfo = _reflInfo[7];
+    obj.refractInfo = _refractInfo[7];
+
+    obj2.dist = distBuffer[8];
+    obj2.colour = _rm_colours[8];
+    obj2.reflInfo = _reflInfo[8];
+    obj2.refractInfo = _refractInfo[8];
+
+    storedCSGs[1] = opIMat(obj, obj2);
+    
+
+    obj.dist = distBuffer[9];
+    obj.colour = _rm_colours[9];
+    obj.reflInfo = _reflInfo[9];
+    obj.refractInfo = _refractInfo[9];
+
+    obj2.dist = distBuffer[10];
+    obj2.colour = _rm_colours[10];
+    obj2.reflInfo = _reflInfo[10];
+    obj2.refractInfo = _refractInfo[10];
+
+    storedCSGs[2] = opUMat(obj, obj2);
+    
+
+    obj.dist = distBuffer[11];
+    obj.colour = _rm_colours[11];
+    obj.reflInfo = _reflInfo[11];
+    obj.refractInfo = _refractInfo[11];
+
+    obj2 = storedCSGs[2];
+
+    storedCSGs[3] = opUMat(obj, obj2);
+    
+
+    obj = storedCSGs[1];
+
+    obj2 = storedCSGs[3];
+
+    storedCSGs[4] = opSMat(obj2, obj);
+
+    scene = opUMat(scene, storedCSGs[4]);
+	// ######### CSG (1) #########
+
+    // ######### rmBox #########
+    obj.dist = distBuffer[12];
+    obj.colour = _rm_colours[12];
+    obj.reflInfo = _reflInfo[12];
+    obj.refractInfo = _refractInfo[12];
+
+    scene = opSmoothUnionMat(scene, obj, _combineOps[12].y);
+	// ######### rmBox #########
+
+    return scene;
 }
 /// ######### Signed Distance Functions #########
 
@@ -1046,7 +1326,8 @@ int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float m
         t += distField.dist;
     }
 
-    determineMaterial(distField);
+    //determineMaterial(distField);
+    distField = mapMat();
 
     return rayHit;
 
@@ -1095,6 +1376,8 @@ bool unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps
         // We step forward by distance d, because d is the minimum distance possible to intersect an object.
         t += distField.dist;
     }
+
+    distField = mapMat();
 
     return rayHit;
 }
@@ -1577,28 +1860,28 @@ float4 frag(VertexOutput input) : SV_Target
         add = calcLighting(p, normal, distField) * rayHit;
         //add = distField.colour;
 
-  //      float2 ratio = fresnel(distField.refractInfo.y, rayDir, normal);
-  //      ratio.x = (distField.refractInfo.x > 0.0) ? ratio.x : 1.0;
+        float2 ratio = fresnel(distField.refractInfo.y, rayDir, normal);
+        ratio.x = (distField.refractInfo.x > 0.0) ? ratio.x : 1.0;
 
-  //      //performRefraction(add, rayOrigin, rayDir, p, normal, distField, ratio);
-  //      //ReflectAndRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
-  //      cheapRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        //performRefraction(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        //ReflectAndRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        cheapRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
 
-		//// Distance field reflection.
-  //      float quality;
-  //      float4 refl = distField.reflInfo;
-  //      float prevRefl = 0;
+		// Distance field reflection.
+        float quality;
+        float4 refl = distField.reflInfo;
+        float prevRefl = 0;
 
-  //      quality = 0.5;
-  //      rayDir = normalize(reflect(rayDir, normal));
-  //      rayOrigin = p + (rayDir * 0.01);
-  //      rayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl.x) * quality * rayHit, _maxDrawDist * quality, p, distField);
+        quality = 0.5;
+        rayDir = normalize(reflect(rayDir, normal));
+        rayOrigin = p + (rayDir * 0.01);
+        rayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl.x) * quality * rayHit, _maxDrawDist * quality, p, distField);
 
-	 //   if (rayHit)
-		//{
-  //          normal = calcNormal(p);
-		//	add += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x * rayHit;//_reflectionIntensity;
-		//}
+        if (rayHit)
+        {
+            normal = calcNormal(p);
+            add += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x * rayHit; //_reflectionIntensity;
+        }
 		// Skybox reflection.
 		//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;
     }
@@ -1617,15 +1900,10 @@ float4 frag(VertexOutput input) : SV_Target
     // Contrast
     //add.rgb = smoothstep(0.0, 1.0, add.rgb);
 
-    float2 test = abs(input.uv - float2(0.5, 0.5));
-    //if (test.x >= 0.4 || test.y >= 0.4)
-    //    add.rgb *= 0.2;
-
+    // Vignette
+    //float2 test = abs(input.uv - float2(0.5, 0.5));
     //col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
     //col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
-
-    col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
-    col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
 
 
     return col;
