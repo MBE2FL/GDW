@@ -52,7 +52,6 @@ public class ShaderBuilder : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
     }
 
     public void build()
@@ -368,7 +367,7 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, true);
 
             // Parse this CSG.
-            determineCSGCombineOp(ref map, csg, csgIndex);
+            determineCSGNodeCombineOp(ref map, csg, csgIndex);
             //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
@@ -386,7 +385,7 @@ public class ShaderBuilder : MonoBehaviour
             // Parse this CSG.
             map.AppendLine("\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
-            determineCSGCombineOp(ref map, csg, csgIndex);
+            determineCSGNodeCombineOp(ref map, csg, csgIndex);
             //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
@@ -405,7 +404,7 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, true);
 
             // Parse this CSG.
-            determineCSGCombineOp(ref map, csg, csgIndex);
+            determineCSGNodeCombineOp(ref map, csg, csgIndex);
             //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
@@ -428,7 +427,7 @@ public class ShaderBuilder : MonoBehaviour
             map.AppendLine();
 
             // Parse this CSG.
-            determineCSGCombineOp(ref map, csg, csgIndex);
+            determineCSGNodeCombineOp(ref map, csg, csgIndex);
             //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
@@ -436,7 +435,7 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
-    private void determineCSGCombineOp(ref StringBuilder map, CSG csg, uint csgIndex)
+    private void determineCSGNodeCombineOp(ref StringBuilder map, CSG csg, uint csgIndex)
     {
         string result = "\tstoredCSGs[" + csgIndex + "]";
 
@@ -473,6 +472,7 @@ public class ShaderBuilder : MonoBehaviour
     {
         CombineOpsTypes combineOpType;
         string obj = "obj";
+        string combineOps = "_combineOps" + "[" + index + "].y);";
 
         if (prim)
             combineOpType = prim.CombineOpType;
@@ -480,6 +480,7 @@ public class ShaderBuilder : MonoBehaviour
         {
             combineOpType = csg.CombineOpType;
             obj = "storedCSGs[" + index + "]";
+            combineOps = "_combineOpsCSGs" + "[" + index + "].w);";
         }
 
         switch (combineOpType)
@@ -494,13 +495,13 @@ public class ShaderBuilder : MonoBehaviour
                 map.AppendLine("\tscene = opI(scene, " + obj + ");");
                 break;
             case CombineOpsTypes.SmoothUnion:
-                map.AppendLine("\tscene = opSmoothUnion(scene, " + obj + ", _combineOps[" + index + "].y);");
+                map.AppendLine("\tscene = opSmoothUnion(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.SmoothSubtraction:
-                map.AppendLine("\tscene = opSmoothSub(" + obj + ", scene, _combineOps[" + index + "].y);");
+                map.AppendLine("\tscene = opSmoothSub(" + obj + ", scene, " + combineOps);
                 break;
             case CombineOpsTypes.SmoothIntersection:
-                map.AppendLine("\tscene = opSmoothInt(scene, " + obj + ", _combineOps[" + index + "].y);");
+                map.AppendLine("\tscene = opSmoothInt(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.AbsUnion:
                 map.AppendLine("\tscene = opUAbs(scene, " + obj + ");");
@@ -709,6 +710,7 @@ public class ShaderBuilder : MonoBehaviour
     {
         CombineOpsTypes combineOpType;
         string obj = "obj";
+        string combineOps = "_combineOps" + "[" + index + "].y);";
 
         if (prim)
             combineOpType = prim.CombineOpType;
@@ -716,6 +718,7 @@ public class ShaderBuilder : MonoBehaviour
         {
             combineOpType = csg.CombineOpType;
             obj = "storedCSGs[" + index + "]";
+            combineOps = "_combineOpsCSGs" + "[" + index + "].w);";
         }
 
         switch (combineOpType)
@@ -730,13 +733,13 @@ public class ShaderBuilder : MonoBehaviour
                 map.AppendLine("\tscene = opIMat(scene, " + obj + ");");
                 break;
             case CombineOpsTypes.SmoothUnion:
-                map.AppendLine("\tscene = opSmoothUnionMat(scene, " + obj + ", _combineOps[" + index + "].y);");
+                map.AppendLine("\tscene = opSmoothUnionMat(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.SmoothSubtraction:
-                map.AppendLine("\tscene = opSmoothSubMat(" + obj + ", scene, _combineOps[" + index + "].y);");
+                map.AppendLine("\tscene = opSmoothSubMat(" + obj + ", scene, " + combineOps);
                 break;
             case CombineOpsTypes.SmoothIntersection:
-                map.AppendLine("\tscene = opSmoothIntMat(scene, " + obj + ", _combineOps[" + index + "].y);");
+                map.AppendLine("\tscene = opSmoothIntMat(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.AbsUnion:
                 map.AppendLine("\tscene = opUAbsMat(scene, " + obj + ");");
@@ -859,6 +862,12 @@ public class ShaderBuilder : MonoBehaviour
                 break;
         }
     }
+
+    [MenuItem("My Commands/Special Command _F6")]
+    static void SpecialCommand()
+    {
+        Camera.main.GetComponent<ShaderBuilder>().build();
+    }
 }
 
 #if UNITY_EDITOR
@@ -899,5 +908,19 @@ public class ShaderBuilderEditor : Editor
             shaderBuilder.build();
         }
     }
+
+    //private void OnSceneGUI()
+    //{
+    //    var shaderBuilder = target as ShaderBuilder;
+
+    //    Event e = Event.current;
+    //    switch (e.type)
+    //    {
+    //        case EventType.KeyDown:
+    //            if (e.keyCode == KeyCode.F6)
+    //                shaderBuilder.build();
+    //            break;
+    //    }
+    //}
 }
 #endif

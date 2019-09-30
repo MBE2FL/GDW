@@ -521,6 +521,23 @@ rmPixel opSmoothSubMat(rmPixel d1, rmPixel d2, float k)
     return d1;
 }
 
+// Smooth Intersection for materials
+rmPixel opSmoothIntMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 - (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
+
+    //d1.dist = lerp(d2.dist, d1.dist, h) + (k * h * (1.0 - h));
+
+    d1.dist = lerp(d2.dist, d1.dist, h) + (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
 
 /// Distance field function.
 /// The distance field represents the closest distance to the surface of any object
