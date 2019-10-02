@@ -203,116 +203,116 @@ float when_le_float(float x, float y)
 // Torus
 // t.x: diameter
 // t.y: thickness
-float sdTorus(float3 p, float2 t)
-{
-    float2 q = float2(length(p.xz) - t.x, p.y);
-    return length(q) - t.y;
-}
+//float sdTorus(float3 p, float2 t)
+//{
+//    float2 q = float2(length(p.xz) - t.x, p.y);
+//    return length(q) - t.y;
+//}
 
-// Box
-// b: size of box in x/y/z
-float sdBox(float3 p, float3 b)
-{
-    float3 d = abs(p) - b;
+//// Box
+//// b: size of box in x/y/z
+//float sdBox(float3 p, float3 b)
+//{
+//    float3 d = abs(p) - b;
     
-    return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
-}
+//    return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
+//}
 
-// Sphere
-// s: size/diameter
-float sdSphere(float3 p, float s)
-{
-    return length(p) - s;
-}
+//// Sphere
+//// s: size/diameter
+//float sdSphere(float3 p, float s)
+//{
+//    return length(p) - s;
+//}
 
-// Cylinder
-// h:
-// r:
-float sdCylinder(float3 p, float h, float r)
-{
-    float2 d = abs(float2(length(p.xz), p.y)) - float2(h, r);
-    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
-}
+//// Cylinder
+//// h:
+//// r:
+//float sdCylinder(float3 p, float h, float r)
+//{
+//    float2 d = abs(float2(length(p.xz), p.y)) - float2(h, r);
+//    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+//}
 
-// Tetrahedron
-float sdTetra(float3 p)
-{
-    float3 a1 = float3(1, 1, 1) * 2;
-    float3 a2 = float3(-1, -1, 1) * 2;
-    float3 a3 = float3(1, -1, -1) * 2;
-    float3 a4 = float3(-1, 1, -1) * 2;
+//// Tetrahedron
+//float sdTetra(float3 p)
+//{
+//    float3 a1 = float3(1, 1, 1) * 2;
+//    float3 a2 = float3(-1, -1, 1) * 2;
+//    float3 a3 = float3(1, -1, -1) * 2;
+//    float3 a4 = float3(-1, 1, -1) * 2;
 
-    float3 c;
-    int n = 0;
-    float dist, d;
-    float scale = 2.0;
+//    float3 c;
+//    int n = 0;
+//    float dist, d;
+//    float scale = 2.0;
 
-    while (n < 15)
-    {
-        c = a1;
-        dist = length(p - a1);
+//    while (n < 15)
+//    {
+//        c = a1;
+//        dist = length(p - a1);
 
-        d = length(p - a2);
-        if (d < dist)
-        {
-            c = a2;
-            dist = d;
-        }
+//        d = length(p - a2);
+//        if (d < dist)
+//        {
+//            c = a2;
+//            dist = d;
+//        }
 
-        d = length(p - a3);
-        if (d < dist)
-        {
-            c = a3;
-            dist = d;
-        }
+//        d = length(p - a3);
+//        if (d < dist)
+//        {
+//            c = a3;
+//            dist = d;
+//        }
 
-        d = length(p - a4);
-        if (d < dist)
-        {
-            c = a4;
-            dist = d;
-        }
+//        d = length(p - a4);
+//        if (d < dist)
+//        {
+//            c = a4;
+//            dist = d;
+//        }
 
-        p = (scale * p) - (c * (scale - 1.0));
-        n++;
-    }
+//        p = (scale * p) - (c * (scale - 1.0));
+//        n++;
+//    }
 
-    return length(p) * pow(scale, float(-n));
-}
+//    return length(p) * pow(scale, float(-n));
+//}
 
-float sdMandelbulb(float3 p, float2 geoInfo)
-{
-    float3 z = p;
-    float dr = 1.0;
-    float r = 0.0;
+//float sdMandelbulb(float3 p, float2 geoInfo)
+//{
+//    float3 z = p;
+//    float dr = 1.0;
+//    float r = 0.0;
 
-    float power = geoInfo.y;
-    int iter = geoInfo.x;
+//    float power = geoInfo.y;
+//    int iter = geoInfo.x;
 
-    for (int i = 0; i < iter; ++i)
-    {
-        r = length(z);
+//    for (int i = 0; i < iter; ++i)
+//    {
+//        r = length(z);
 
-        if (r > 1.5)
-            break;
+//        if (r > 1.5)
+//            break;
 
-        // Convert to polar coordinates
-        float theta = acos(z.z / r);
-        float phi = atan2(z.y, z.x);
-        dr = pow(r, power - 1.0) * power * dr + 1.0;
+//        // Convert to polar coordinates
+//        float theta = acos(z.z / r);
+//        float phi = atan2(z.y, z.x);
+//        dr = pow(r, power - 1.0) * power * dr + 1.0;
 
-        // Scale and rotate the point
-        float zr = pow(r, power);
-        theta *= power;
-        phi *= power;
+//        // Scale and rotate the point
+//        float zr = pow(r, power);
+//        theta *= power;
+//        phi *= power;
 
-        // Convert back to cartesian coordinates
-        z = zr * float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
-        z += p;
-    }
+//        // Convert back to cartesian coordinates
+//        z = zr * float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+//        z += p;
+//    }
 
-    return 0.5 * log(r) * r / dr;
-}
+//    return 0.5 * log(r) * r / dr;
+//}
 
 // Union
 // .x: distance

@@ -203,116 +203,116 @@ float when_le_float(float x, float y)
 // Torus
 // t.x: diameter
 // t.y: thickness
-float sdTorus(float3 p, float2 t)
-{
-    float2 q = float2(length(p.xz) - t.x, p.y);
-    return length(q) - t.y;
-}
+//float sdTorus(float3 p, float2 t)
+//{
+//    float2 q = float2(length(p.xz) - t.x, p.y);
+//    return length(q) - t.y;
+//}
 
-// Box
-// b: size of box in x/y/z
-float sdBox(float3 p, float3 b)
-{
-    float3 d = abs(p) - b;
+//// Box
+//// b: size of box in x/y/z
+//float sdBox(float3 p, float3 b)
+//{
+//    float3 d = abs(p) - b;
     
-    return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
-}
+//    return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
+//}
 
-// Sphere
-// s: size/diameter
-float sdSphere(float3 p, float s)
-{
-    return length(p) - s;
-}
+//// Sphere
+//// s: size/diameter
+//float sdSphere(float3 p, float s)
+//{
+//    return length(p) - s;
+//}
 
-// Cylinder
-// h:
-// r:
-float sdCylinder(float3 p, float h, float r)
-{
-    float2 d = abs(float2(length(p.xz), p.y)) - float2(h, r);
-    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
-}
+//// Cylinder
+//// h:
+//// r:
+//float sdCylinder(float3 p, float h, float r)
+//{
+//    float2 d = abs(float2(length(p.xz), p.y)) - float2(h, r);
+//    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+//}
 
-// Tetrahedron
-float sdTetra(float3 p)
-{
-    float3 a1 = float3(1, 1, 1) * 2;
-    float3 a2 = float3(-1, -1, 1) * 2;
-    float3 a3 = float3(1, -1, -1) * 2;
-    float3 a4 = float3(-1, 1, -1) * 2;
+//// Tetrahedron
+//float sdTetra(float3 p)
+//{
+//    float3 a1 = float3(1, 1, 1) * 2;
+//    float3 a2 = float3(-1, -1, 1) * 2;
+//    float3 a3 = float3(1, -1, -1) * 2;
+//    float3 a4 = float3(-1, 1, -1) * 2;
 
-    float3 c;
-    int n = 0;
-    float dist, d;
-    float scale = 2.0;
+//    float3 c;
+//    int n = 0;
+//    float dist, d;
+//    float scale = 2.0;
 
-    while (n < 15)
-    {
-        c = a1;
-        dist = length(p - a1);
+//    while (n < 15)
+//    {
+//        c = a1;
+//        dist = length(p - a1);
 
-        d = length(p - a2);
-        if (d < dist)
-        {
-            c = a2;
-            dist = d;
-        }
+//        d = length(p - a2);
+//        if (d < dist)
+//        {
+//            c = a2;
+//            dist = d;
+//        }
 
-        d = length(p - a3);
-        if (d < dist)
-        {
-            c = a3;
-            dist = d;
-        }
+//        d = length(p - a3);
+//        if (d < dist)
+//        {
+//            c = a3;
+//            dist = d;
+//        }
 
-        d = length(p - a4);
-        if (d < dist)
-        {
-            c = a4;
-            dist = d;
-        }
+//        d = length(p - a4);
+//        if (d < dist)
+//        {
+//            c = a4;
+//            dist = d;
+//        }
 
-        p = (scale * p) - (c * (scale - 1.0));
-        n++;
-    }
+//        p = (scale * p) - (c * (scale - 1.0));
+//        n++;
+//    }
 
-    return length(p) * pow(scale, float(-n));
-}
+//    return length(p) * pow(scale, float(-n));
+//}
 
-float sdMandelbulb(float3 p, float2 geoInfo)
-{
-    float3 z = p;
-    float dr = 1.0;
-    float r = 0.0;
+//float sdMandelbulb(float3 p, float2 geoInfo)
+//{
+//    float3 z = p;
+//    float dr = 1.0;
+//    float r = 0.0;
 
-    float power = geoInfo.y;
-    int iter = geoInfo.x;
+//    float power = geoInfo.y;
+//    int iter = geoInfo.x;
 
-    for (int i = 0; i < iter; ++i)
-    {
-        r = length(z);
+//    for (int i = 0; i < iter; ++i)
+//    {
+//        r = length(z);
 
-        if (r > 1.5)
-            break;
+//        if (r > 1.5)
+//            break;
 
-        // Convert to polar coordinates
-        float theta = acos(z.z / r);
-        float phi = atan2(z.y, z.x);
-        dr = pow(r, power - 1.0) * power * dr + 1.0;
+//        // Convert to polar coordinates
+//        float theta = acos(z.z / r);
+//        float phi = atan2(z.y, z.x);
+//        dr = pow(r, power - 1.0) * power * dr + 1.0;
 
-        // Scale and rotate the point
-        float zr = pow(r, power);
-        theta *= power;
-        phi *= power;
+//        // Scale and rotate the point
+//        float zr = pow(r, power);
+//        theta *= power;
+//        phi *= power;
 
-        // Convert back to cartesian coordinates
-        z = zr * float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
-        z += p;
-    }
+//        // Convert back to cartesian coordinates
+//        z = zr * float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+//        z += p;
+//    }
 
-    return 0.5 * log(r) * r / dr;
-}
+//    return 0.5 * log(r) * r / dr;
+//}
 
 // Union
 // .x: distance
@@ -575,26 +575,35 @@ float map(float3 p)
 	scene = opSmoothSub(obj, scene, _combineOps[1].y);
 	// ######### rmSphere #########
 
-	// ######### rmSphere #########
+	// ######### Cone #########
 	pos = mul(_invModelMats[2], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[2];
 	obj = sdSphere(pos.xyz, geoInfo.x);
 	distBuffer[2] = obj;
 
-	scene = opSmoothUnion(scene, obj, _combineOps[2].y);
-	// ######### rmSphere #########
+	scene = opU(scene, obj);
+	// ######### Cone #########
 
-	// ######### CSG #########
+	// ######### rmSphere #########
 	pos = mul(_invModelMats[3], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[3];
 	obj = sdSphere(pos.xyz, geoInfo.x);
 	distBuffer[3] = obj;
 
+	scene = opSmoothUnion(scene, obj, _combineOps[3].y);
+	// ######### rmSphere #########
 
+	// ######### CSG #########
 	pos = mul(_invModelMats[4], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[4];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[4] = obj;
+
+
+	pos = mul(_invModelMats[5], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[5];
 	obj2 = sdBox(pos.xyz, geoInfo.xyz);
-	distBuffer[4] = obj2;
+	distBuffer[5] = obj2;
 
 
 	storedCSGs[0] = opSmoothInt(obj, obj2, _combineOpsCSGs[0].y);
@@ -650,24 +659,32 @@ rmPixel mapMat()
 	scene = opSmoothSubMat(obj, scene, _combineOps[1].y);
 	// ######### rmSphere #########
 
-	// ######### rmSphere #########
+	// ######### Cone #########
 	obj.dist = distBuffer[2];
 	obj.colour = _rm_colours[2];
 	obj.reflInfo = _reflInfo[2];
 	obj.refractInfo = _refractInfo[2];
-	scene = opSmoothUnionMat(scene, obj, _combineOps[2].y);
-	// ######### rmSphere #########
+	scene = opUMat(scene, obj);
+	// ######### Cone #########
 
-	// ######### CSG #########
+	// ######### rmSphere #########
 	obj.dist = distBuffer[3];
 	obj.colour = _rm_colours[3];
 	obj.reflInfo = _reflInfo[3];
 	obj.refractInfo = _refractInfo[3];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[3].y);
+	// ######### rmSphere #########
 
-	obj2.dist = distBuffer[4];
-	obj2.colour = _rm_colours[4];
-	obj2.reflInfo = _reflInfo[4];
-	obj2.refractInfo = _refractInfo[4];
+	// ######### CSG #########
+	obj.dist = distBuffer[4];
+	obj.colour = _rm_colours[4];
+	obj.reflInfo = _reflInfo[4];
+	obj.refractInfo = _refractInfo[4];
+
+	obj2.dist = distBuffer[5];
+	obj2.colour = _rm_colours[5];
+	obj2.reflInfo = _reflInfo[5];
+	obj2.refractInfo = _refractInfo[5];
 
 	storedCSGs[0] = opSmoothIntMat(obj, obj2, _combineOpsCSGs[0].y);
 

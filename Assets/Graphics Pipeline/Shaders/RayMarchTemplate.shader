@@ -12,7 +12,8 @@
             #pragma vertex vert
             #pragma fragment frag
 			#include "UnityCG.cginc"
-			 #include "RayMarchTest.hlsl" //<Insert Include>
+			#include "PrimitiveFunctions.hlsl"
+			#include "RayMarchTest.hlsl" //<Insert Include>
 
             ENDHLSL
         }

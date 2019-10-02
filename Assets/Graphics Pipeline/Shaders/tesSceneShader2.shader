@@ -12,6 +12,7 @@ Shader "MyPipeline/tesSceneShader2"
             #pragma vertex vert
             #pragma fragment frag
 			#include "UnityCG.cginc"
+			#include "PrimitiveFunctions.hlsl"
 			#include "tesSceneShader2.hlsl"
 
             ENDHLSL

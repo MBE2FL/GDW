@@ -20,8 +20,28 @@ public enum PrimitiveTypes
 {
     Sphere,
     Box,
+    RoundBox,
     Torus,
+    CappedTorus,
+    Link,
     Cylinder,
+    CappedCylinder,
+    CappedCylinderSlower,
+    RoundedCylinder,
+    Cone,
+    CappedCone,
+    RoundCone,
+    Plane,
+    HexagonalPrism,
+    TriangularPrism,
+    Capsule,
+    VerticalCapsule,
+    SolidAngle,
+    Ellipsoid,
+    Octahedron,
+    OctahedronBound,
+    Triangle,
+    Quad,
     Tetrahedron,
     Mandelbulb
 }
@@ -324,43 +344,7 @@ public class RMComponentEditor : RMObjEditor
 
         // Display different gemotric properties based on the chosen primitive type.
         Vector4 geoInfo = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-
-        // Box
-        if (rmComp.PrimitiveType == PrimitiveTypes.Box)
-        {
-            geoInfo.x = EditorGUILayout.FloatField("Length", _geoInfo.vector4Value.x);
-            geoInfo.z = EditorGUILayout.FloatField("Breadth", _geoInfo.vector4Value.z);
-            geoInfo.y = EditorGUILayout.FloatField("Height", _geoInfo.vector4Value.y);
-            _geoInfo.vector4Value = geoInfo;
-        }
-        // Cylinder
-        else if (rmComp.PrimitiveType == PrimitiveTypes.Cylinder)
-        {
-            geoInfo.x = EditorGUILayout.FloatField("Diameter", _geoInfo.vector4Value.x);
-            geoInfo.y = EditorGUILayout.FloatField("Height", _geoInfo.vector4Value.y);
-            _geoInfo.vector4Value = geoInfo;
-        }
-        // Sphere
-        else if (rmComp.PrimitiveType == PrimitiveTypes.Sphere)
-        {
-            geoInfo.x = EditorGUILayout.FloatField("Diameter", _geoInfo.vector4Value.x);
-            _geoInfo.vector4Value = geoInfo;
-        }
-        // Torus
-        else if (rmComp.PrimitiveType == PrimitiveTypes.Torus)
-        {
-            geoInfo.x = EditorGUILayout.FloatField("Diameter", _geoInfo.vector4Value.x);
-            geoInfo.y = EditorGUILayout.FloatField("Thickness", _geoInfo.vector4Value.y);
-            _geoInfo.vector4Value = geoInfo;
-        }
-        // Mandelbulb
-        else if (rmComp.PrimitiveType == PrimitiveTypes.Mandelbulb)
-        {
-            geoInfo.x = EditorGUILayout.FloatField("Iterations", _geoInfo.vector4Value.x);
-            geoInfo.y = EditorGUILayout.FloatField("Power", _geoInfo.vector4Value.y);
-            _geoInfo.vector4Value = geoInfo;
-        }
-
+        DisplayGeoInfo(rmComp, rmComp.PrimitiveType, geoInfo);
 
 
         EditorGUI.BeginDisabledGroup(rmComp.CSGNode);
@@ -424,6 +408,147 @@ public class RMComponentEditor : RMObjEditor
 
         //if (combineOpChanged)
         //    Camera.main.GetComponent<ShaderBuilder>().build();
+    }
+
+    void DisplayGeoInfo(RMPrimitive rmComp, PrimitiveTypes type, Vector4 geoInfo)
+    {
+        switch (type)
+        {
+            case PrimitiveTypes.Sphere:
+                geoInfo.x = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.x);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Box:
+                geoInfo.x = EditorGUILayout.FloatField("Length", _geoInfo.vector4Value.x);
+                geoInfo.z = EditorGUILayout.FloatField("Breadth", _geoInfo.vector4Value.z);
+                geoInfo.y = EditorGUILayout.FloatField("Height", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.RoundBox:
+                geoInfo.x = EditorGUILayout.FloatField("Length", _geoInfo.vector4Value.x);
+                geoInfo.z = EditorGUILayout.FloatField("Breadth", _geoInfo.vector4Value.z);
+                geoInfo.y = EditorGUILayout.FloatField("Height", _geoInfo.vector4Value.y);
+                geoInfo.w = EditorGUILayout.FloatField("Roundness", _geoInfo.vector4Value.w);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Torus:
+                geoInfo.x = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Thickness", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.CappedTorus:
+                geoInfo.x = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Thickness", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("RA", _geoInfo.vector4Value.z);
+                geoInfo.w = EditorGUILayout.FloatField("RB", _geoInfo.vector4Value.w);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Link:
+                geoInfo.x = EditorGUILayout.FloatField("Length", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("R1", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("R2", _geoInfo.vector4Value.z);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Cylinder:
+                geoInfo.x = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Height", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.CappedCylinder:
+                geoInfo.x = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Hieght", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.CappedCylinderSlower:
+                geoInfo.x = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Hieght", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.RoundedCylinder:
+                geoInfo.x = EditorGUILayout.FloatField("RA", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("RB", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("Hieght", _geoInfo.vector4Value.z);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Cone:
+                geoInfo.x = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Hieght", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.CappedCone:
+                geoInfo.x = EditorGUILayout.FloatField("H", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("R1", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("R2", _geoInfo.vector4Value.z);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.RoundCone:
+                geoInfo.x = EditorGUILayout.FloatField("R1", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("R2", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("H", _geoInfo.vector4Value.z);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Plane:
+                geoInfo.x = EditorGUILayout.FloatField("X", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Y", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("Z", _geoInfo.vector4Value.z);
+                geoInfo.w = EditorGUILayout.FloatField("W", _geoInfo.vector4Value.w);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.HexagonalPrism:
+                geoInfo.x = EditorGUILayout.FloatField("X", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Y", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.TriangularPrism:
+                geoInfo.x = EditorGUILayout.FloatField("X", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Y", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Capsule:
+                geoInfo.x = EditorGUILayout.FloatField("X", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Y", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("Z", _geoInfo.vector4Value.z);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.VerticalCapsule:
+                geoInfo.x = EditorGUILayout.FloatField("Hieght", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Radius", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.SolidAngle:
+                geoInfo.x = EditorGUILayout.FloatField("X", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Y", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("Z", _geoInfo.vector4Value.z);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Ellipsoid:
+                geoInfo.x = EditorGUILayout.FloatField("X", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Y", _geoInfo.vector4Value.y);
+                geoInfo.z = EditorGUILayout.FloatField("Z", _geoInfo.vector4Value.z);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Octahedron:
+                geoInfo.x = EditorGUILayout.FloatField("S", _geoInfo.vector4Value.x);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.OctahedronBound:
+                geoInfo.x = EditorGUILayout.FloatField("S", _geoInfo.vector4Value.x);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            case PrimitiveTypes.Triangle:
+                break;
+            case PrimitiveTypes.Quad:
+                break;
+            case PrimitiveTypes.Tetrahedron:
+                break;
+            case PrimitiveTypes.Mandelbulb:
+                geoInfo.x = EditorGUILayout.FloatField("Iterations", _geoInfo.vector4Value.x);
+                geoInfo.y = EditorGUILayout.FloatField("Power", _geoInfo.vector4Value.y);
+                _geoInfo.vector4Value = geoInfo;
+                break;
+            default:
+                break;
+        }
     }
 }
 #endif
