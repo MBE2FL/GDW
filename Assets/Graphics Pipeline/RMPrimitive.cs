@@ -46,6 +46,21 @@ public enum PrimitiveTypes
     Mandelbulb
 }
 
+public enum AlterationTypes
+{
+    Elongate1D,
+    Elongate,
+    Round,
+    Onion,
+    SymX,
+    SymXZ,
+    Rep,
+    RepFinite,
+    Twist,
+    Displace,
+    Bend
+}
+
 [AddComponentMenu("Ray Marching/RMPrimitive")]
 [DisallowMultipleComponent]
 public class RMPrimitive : RMObj
@@ -91,6 +106,12 @@ public class RMPrimitive : RMObj
 
     [SerializeField]
     private bool _static = false;
+
+    [SerializeField]
+    private List<AlterationTypes> _alterationTypes = new List<AlterationTypes>();
+
+    [SerializeField]
+    private List<Vector4> _alterationInfo = new List<Vector4>();
 
 
     public Color Colour
@@ -242,6 +263,21 @@ public class RMPrimitive : RMObj
         }
     }
 
+    public List<AlterationTypes> AlterationTypes
+    {
+        get
+        {
+            return _alterationTypes;
+        }
+    }
+
+    public List<Vector4> AlterationInfo
+    {
+        get
+        {
+            return _alterationInfo;
+        }
+    }
 
     //private void Awake()
     //{
@@ -284,6 +320,31 @@ public class RMPrimitive : RMObj
         _combineSmoothness = 0.0f;
         _csgNode = false;
         _geoInfo = new Vector4(1.0f, 1.0f, 1.0f);
+    }
+
+    public void addAlteration(AlterationTypes type)
+    {
+        _alterationTypes.Add(type);
+        _alterationInfo.Add(Vector4.zero);
+    }
+
+    public void removeAlteration(AlterationTypes type)
+    {
+        int index = _alterationTypes.IndexOf(type);
+        int count = _alterationTypes.Count;
+
+        if (count > 0)
+        {
+            AlterationTypes typeTemp = _alterationTypes[count - 1];
+            Vector4 infoTemp = _alterationInfo[count - 1];
+
+            _alterationTypes[index] = typeTemp;
+            _alterationInfo[index] = infoTemp;
+        }
+
+        _alterationTypes.RemoveAt(count - 1);
+        _alterationInfo.RemoveAt(count - 1);
+
     }
 }
 
@@ -397,6 +458,18 @@ public class RMComponentEditor : RMObjEditor
         label.tooltip = "Determines how much light bends when travelling through this medium.";
 
         EditorGUILayout.PropertyField(_refractionIndex, label);
+
+
+        // Alterations
+        if (GUILayout.Button("Add Alteration"))
+        {
+            rmComp.addAlteration(AlterationTypes.Bend);
+        }
+        for (int i = 0; i < rmComp.AlterationTypes.Count; ++i)
+        {
+            AlterationTypes type = rmComp.AlterationTypes[i];
+            rmComp.AlterationTypes[i] = (AlterationTypes)EditorGUILayout.EnumFlagsField(type);
+        }
 
 
         serializedObject.ApplyModifiedProperties();
