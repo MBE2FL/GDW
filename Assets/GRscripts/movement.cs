@@ -41,50 +41,55 @@ public class movement : MonoBehaviour
     
     void Update()
     {
+
+        doCursor();
+
+        if (Input.GetKeyDown(KeyCode.Space) && onGround)
+        {
+            rb.AddForce(new Vector3(0, 300, 0));
+            Debug.Log("yes");
+        }
+    }
+
+    private void FixedUpdate()
+    {
         rampDetection();
 
 
-        if (Input.GetKey(KeyCode.W)&& onGround)
+        if (Input.GetKey(KeyCode.W) && onGround)
         {
             if (angle > 0)
-                rb.AddForce(new Vector3(0, 0, 3 * 1.8f));
+                rb.AddForce(new Vector3(0, 0, 8 * 1.8f));
             else
-            rb.AddForce(new Vector3(0, 0, 3));
+                rb.AddForce(new Vector3(0, 0, 8));
         }
 
         if (Input.GetKey(KeyCode.S) && onGround)
         {
-            rb.AddForce(new Vector3(0, 0, -3));
+            rb.AddForce(new Vector3(0, 0, -8));
         }
 
         if (Input.GetKey(KeyCode.A) && onGround)
         {
-            rb.AddForce(new Vector3(-3, 0, 0));
+            rb.AddForce(new Vector3(-8, 0, 0));
         }
 
         if (Input.GetKey(KeyCode.D) && onGround)
         {
-            rb.AddForce(new Vector3(3, 0, 0));
-        }
-
-        if (Input.GetKeyDown(KeyCode.Space) && onGround)
-        {
-            rb.AddForce(new Vector3(0, 200, 0));
+            rb.AddForce(new Vector3(8, 0, 0));
         }
         angle = 0.0f;
-
-        doCursor();
     }
 
     private void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.tag == "ground")
+        if (collision.gameObject)
             onGround = true;
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        if(collision.gameObject.tag == "ground")
+        if(collision.gameObject)
         onGround = false;
 
     }
