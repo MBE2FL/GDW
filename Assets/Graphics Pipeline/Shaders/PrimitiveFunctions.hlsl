@@ -254,7 +254,7 @@ float sdQuad(float3 pos, float3 a, float3 b, float3 c, float3 d)
 
 
 
-void opElongate(inout float3 pos, float3 h)
+void opElongate1D(inout float3 pos, float3 h)
 {
     pos -= clamp(pos, -h, h);
 }
@@ -290,10 +290,11 @@ void opSymXZ(inout float3 pos)
 
 void opRep(inout float3 pos, float3 c)
 {
-    pos = modf(pos + (0.5 * c), c) - (0.5 * c);
+    pos.x = modf(pos.x, c.x) - (c.x * 0.5);
+    //pos = modf(pos, c) - (0.5 * c);
 }
 
-void opRepLim(inout float3 pos, float c, float3 l)
+void opRepLim(inout float3 pos, float3 c, float3 l)
 {
     pos = pos - (c * clamp(round(pos / c), -l, l));
 }
@@ -301,23 +302,23 @@ void opRepLim(inout float3 pos, float c, float3 l)
 void opDisplace(float3 pos, inout float dist)
 {
     //float disp = displacement(pos);
-    float disp = sin(20.0 * pos.x) * sin(20.0 * pos.y) * sin(20.0 * pos.z);
+    float disp = sin(0.6 * pos.x) * sin(0.6 * pos.y) * sin(0.6 * pos.z);
 
     dist += disp;
 }
 
-void opTwist(inout float3 pos)
+void opTwist(inout float3 pos, float k)
 {
-    const float k = 10.0; // or some other amount
+    //const float k = 2.0; // or some other amount
     float c = cos(k * pos.y);
     float s = sin(k * pos.y);
     float2x2 m = float2x2(c, -s, s, c);
     pos = float3(mul(pos.xz, m), pos.y);
 }
 
-void opCheapBend(inout float3 pos)
+void opCheapBend(inout float3 pos, float k)
 {
-    const float k = 10.0; // or some other amount
+    //const float k = 0.2; // or some other amount
     float c = cos(k * pos.x);
     float s = sin(k * pos.x);
     float2x2 m = float2x2(c, -s, s, c);

@@ -359,12 +359,15 @@ public class RMComponentEditor : RMObjEditor
     SerializedProperty _combineSmoothness;
     SerializedProperty _geoInfo;
     //SerializedProperty _csgNode;
-    private SerializedProperty _reflectionCount;
-    private SerializedProperty _reflectionIntensity;
-    private SerializedProperty _refractionCount;
-    private SerializedProperty _refractionIndex;
-    private SerializedProperty _texture;
-    private SerializedProperty _static;
+    SerializedProperty _reflectionCount;
+    SerializedProperty _reflectionIntensity;
+    SerializedProperty _refractionCount;
+    SerializedProperty _refractionIndex;
+    SerializedProperty _texture;
+    SerializedProperty _static;
+
+    SerializedProperty _altInfo;
+
 
 
     protected override void OnEnable()
@@ -382,6 +385,8 @@ public class RMComponentEditor : RMObjEditor
         _refractionIndex = serializedObject.FindProperty("_refractionIndex");
         _texture = serializedObject.FindProperty("_texture");
         _static = serializedObject.FindProperty("_static");
+
+        _altInfo = serializedObject.FindProperty("_alterationInfo");
     }
 
     public override void OnInspectorGUI()
@@ -465,10 +470,22 @@ public class RMComponentEditor : RMObjEditor
         {
             rmComp.addAlteration(AlterationTypes.Bend);
         }
+
         for (int i = 0; i < rmComp.AlterationTypes.Count; ++i)
         {
             AlterationTypes type = rmComp.AlterationTypes[i];
-            rmComp.AlterationTypes[i] = (AlterationTypes)EditorGUILayout.EnumFlagsField(type);
+            rmComp.AlterationTypes[i] = (AlterationTypes)EditorGUILayout.EnumPopup(type);
+
+            Vector4 altInfo;
+            altInfo = Vector4.zero;
+
+            DisplayAltInfo(rmComp, type, altInfo, i);
+            
+
+            if (GUILayout.Button("Remove Alteration"))
+            {
+                rmComp.removeAlteration(rmComp.AlterationTypes[i]);
+            }
         }
 
 
@@ -618,6 +635,56 @@ public class RMComponentEditor : RMObjEditor
                 geoInfo.x = EditorGUILayout.FloatField("Iterations", _geoInfo.vector4Value.x);
                 geoInfo.y = EditorGUILayout.FloatField("Power", _geoInfo.vector4Value.y);
                 _geoInfo.vector4Value = geoInfo;
+                break;
+            default:
+                break;
+        }
+    }
+
+    void DisplayAltInfo(RMPrimitive rmPrim, AlterationTypes type, Vector4 altInfo, int index)
+    {
+        SerializedProperty property = _altInfo.GetArrayElementAtIndex(index);
+
+        switch (type)
+        {
+            case AlterationTypes.Elongate1D:
+                altInfo.x = EditorGUILayout.FloatField("h", property.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("h2", property.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("h3", property.vector4Value.z);
+                property.vector4Value = altInfo;
+                break;
+            case AlterationTypes.Elongate:
+                break;
+            case AlterationTypes.Round:
+                break;
+            case AlterationTypes.Onion:
+                break;
+            case AlterationTypes.SymX:
+                break;
+            case AlterationTypes.SymXZ:
+                break;
+            case AlterationTypes.Rep:
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", property.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("Y-Axis Spacing", property.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("Z-Axis Spacing", property.vector4Value.z);
+                property.vector4Value = altInfo;
+                break;
+            case AlterationTypes.RepFinite:
+                altInfo.x = EditorGUILayout.FloatField("C", property.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("X-Axis Reps", property.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("Y-Axis Reps", property.vector4Value.z);
+                altInfo.w = EditorGUILayout.FloatField("Z-Axis Reps", property.vector4Value.w);
+                property.vector4Value = altInfo;
+                break;
+            case AlterationTypes.Twist:
+                altInfo.x = EditorGUILayout.FloatField("Twistyness", property.vector4Value.x);
+                property.vector4Value = altInfo;
+                break;
+            case AlterationTypes.Displace:
+                break;
+            case AlterationTypes.Bend:
+                altInfo.x = EditorGUILayout.FloatField("Bendyness", property.vector4Value.x);
+                property.vector4Value = altInfo;
                 break;
             default:
                 break;

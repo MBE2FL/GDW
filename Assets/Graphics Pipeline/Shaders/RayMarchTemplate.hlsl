@@ -80,6 +80,7 @@ int _primitiveTypes[MAX_RM_OBJS];
 float2 _combineOps[MAX_RM_OBJS];
 float4 _primitiveGeoInfo[MAX_RM_OBJS];
 float4 _reflInfo[MAX_RM_OBJS];
+float4 _altInfo[MAX_RM_OBJS];
 
 //int _csgNodesPerRoot[MAX_CSG_CHILDREN];
 float4 _bufferedCSGs[MAX_CSG_CHILDREN];
@@ -383,15 +384,15 @@ float opSmoothInt(float d1, float d2, float k)
     return lerp(d2, d1, h) + (k * h * (1.0 - h));;
 }
 
-float opRep(float3 p, float3 c)
-{
-    float3 q = fmod(p, c) - 0.5 * c;
+//float opRep(float3 p, float3 c)
+//{
+//    float3 q = fmod(p, c) - 0.5 * c;
 
-    //q = p;
-    //q.xy = fmod(p.xy, 2.0) - float2(0.5, 0.5) * 2.0;
+//    //q = p;
+//    //q.xy = fmod(p.xy, 2.0) - float2(0.5, 0.5) * 2.0;
 
-    return sdSphere(q, 0.5);
-}
+//    return sdSphere(q, 0.5);
+//}
 
 
 // Union for materials
