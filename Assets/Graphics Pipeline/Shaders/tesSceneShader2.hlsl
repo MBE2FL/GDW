@@ -127,6 +127,83 @@ struct reflectInfo
 };
 
 
+/// ######### Forward Declarations #########
+float dot2(float2 v);
+
+float dot2(float3 v);
+
+float sdSphere(float3 p, float s);
+
+float sdBox(float3 p, float3 b);
+
+float sdRoundBox(float3 pos, float3 geoInfo, float roundness);
+
+float sdTorus(float3 p, float2 t);
+
+float sdCappedTorus(float3 pos, float2 sc, float ra, float rb);
+
+float sdLink(float3 pos, float le, float r1, float r2);
+
+float sdCylinder(float3 p, float h, float r);
+
+float sdCappedCylinder(float3 pos, float h, float r);
+
+float sdCappedCylinder(float3 pos, float3 a, float3 b, float r);
+
+float sdRoundedCylinder(float3 pos, float ra, float rb, float h);
+
+float sdCone(float3 pos, float2 c);
+
+float sdCappedCone(float3 pos, float h, float r1, float r2);
+
+float sdRoundCone(float3 pos, float r1, float r2, float h);
+
+float sdPlane(float3 pos, float4 n);
+
+float sdHexagonalPrism(float3 pos, float2 h);
+
+float sdTriangularPrism(float3 pos, float2 h);
+
+float sdCapsule(float3 pos, float3 a, float3 b, float r);
+
+float sdVerticalCapsule(float3 pos, float h, float r);
+
+float sdSolidAngle(float3 pos, float2 c, float ra);
+
+float sdEllipsoid(float3 pos, float3 r);
+
+float sdOctahedron(float3 pos, float s);
+
+float sdOctahedronBound(float3 pos, float s);
+
+float sdTriangle(float3 pos, float3 a, float3 b, float3 c);
+
+float sdQuad(float3 pos, float3 a, float3 b, float3 c, float3 d);
+
+void opElongate1D(inout float3 pos, float3 h);
+
+float4 opElongate(float3 pos, float3 h);
+
+float4 opRound(float3 pos, float rad);
+
+float4 opOnion(float3 pos, float thickness);
+
+void opSymX(inout float3 pos);
+
+void opSymXZ(inout float3 pos);
+
+void opRep(inout float3 pos, float3 c);
+
+void opRepLim(inout float3 pos, float3 c, float3 l);
+
+void opDisplace(float3 pos, inout float dist);
+
+void opTwist(inout float3 pos, float k);
+
+void opCheapBend(inout float3 pos, float k);
+/// ######### Forward Declarations #########
+
+
 /// ######### Conditional Functions #########
 float4 when_eq_float4(float4 x, float4 y)
 {
@@ -571,6 +648,7 @@ float map(float3 p)
 	pos = mul(_invModelMats[1], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[1];
 	opRepLim(pos.xyz, _altInfo[0].x, _altInfo[0].yzw);
+	opCheapBend(pos.xyz, _altInfo[1].x);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[1] = obj;
 
@@ -586,27 +664,28 @@ float map(float3 p)
 	scene = opSmoothSub(obj, scene, _combineOps[2].y);
 	// ######### rmSphere #########
 
-	// ######### TestObject #########
+	// ######### rmSphereOnion #########
 	pos = mul(_invModelMats[3], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[3];
-	opCheapBend(pos.xyz, _altInfo[1].x);
-	opTwist(pos.xyz, _altInfo[2].x);
-	obj = sdBox(pos.xyz, geoInfo.xyz);
+	opRepLim(pos.xyz, _altInfo[2].x, _altInfo[2].yzw);
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	opOnion(obj, _altInfo[3].x);
+	opOnion(obj, _altInfo[4].x);
 	distBuffer[3] = obj;
 
 	scene = opU(scene, obj);
-	// ######### TestObject #########
+	// ######### rmSphereOnion #########
 
-	// ######### rmSphere #########
+	// ######### TestObject #########
 	pos = mul(_invModelMats[4], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[4];
-	opSymX(pos.xyz);
-    pos.xyz = abs(pos.xyz);
-	obj = sdSphere(pos.xyz, geoInfo.x);
+	opCheapBend(pos.xyz, _altInfo[5].x);
+	opTwist(pos.xyz, _altInfo[6].x);
+	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[4] = obj;
 
 	scene = opU(scene, obj);
-	// ######### rmSphere #########
+	// ######### TestObject #########
 
 	// ######### rmSphere #########
 	pos = mul(_invModelMats[5], float4(p, 1.0));
@@ -634,6 +713,15 @@ float map(float3 p)
 
 	scene = opSmoothUnion(scene, storedCSGs[0], _combineOpsCSGs[0].w);
 	// ######### CSG #########
+
+	// ######### rmBoxOnion #########
+	pos = mul(_invModelMats[8], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[8];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[8] = obj;
+
+	scene = opS(obj, scene);
+	// ######### rmBoxOnion #########
 
 	return scene;
 }
@@ -691,21 +779,21 @@ rmPixel mapMat()
 	scene = opSmoothSubMat(obj, scene, _combineOps[2].y);
 	// ######### rmSphere #########
 
-	// ######### TestObject #########
+	// ######### rmSphereOnion #########
 	obj.dist = distBuffer[3];
 	obj.colour = _rm_colours[3];
 	obj.reflInfo = _reflInfo[3];
 	obj.refractInfo = _refractInfo[3];
 	scene = opUMat(scene, obj);
-	// ######### TestObject #########
+	// ######### rmSphereOnion #########
 
-	// ######### rmSphere #########
+	// ######### TestObject #########
 	obj.dist = distBuffer[4];
 	obj.colour = _rm_colours[4];
 	obj.reflInfo = _reflInfo[4];
 	obj.refractInfo = _refractInfo[4];
 	scene = opUMat(scene, obj);
-	// ######### rmSphere #########
+	// ######### TestObject #########
 
 	// ######### rmSphere #########
 	obj.dist = distBuffer[5];
@@ -730,6 +818,14 @@ rmPixel mapMat()
 
 	scene = opSmoothUnionMat(scene, storedCSGs[0], _combineOpsCSGs[0].w);
 	// ######### CSG #########
+
+	// ######### rmBoxOnion #########
+	obj.dist = distBuffer[8];
+	obj.colour = _rm_colours[8];
+	obj.reflInfo = _reflInfo[8];
+	obj.refractInfo = _refractInfo[8];
+	scene = opSMat(obj, scene);
+	// ######### rmBoxOnion #########
 
 	return scene;
 }

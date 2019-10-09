@@ -272,10 +272,11 @@ float4 opRound(float3 pos, float rad)
     return float4(pos, -rad);
 }
 
-float4 opOnion(float3 pos, float thickness)
+void opOnion(inout float dist, float thickness)
 {
     // return abs(sdf) - thickness;
-    return float4(abs(pos), -thickness);
+    //return float4(abs(pos), -thickness);
+    dist = abs(dist) - thickness;
 }
 
 void opSymX(inout float3 pos)

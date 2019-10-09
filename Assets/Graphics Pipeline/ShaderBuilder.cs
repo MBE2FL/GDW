@@ -255,8 +255,8 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitiveType(ref map, prim.PrimitiveType);
 
             // Store distance into distance buffer
-            map.AppendLine("\tdistBuffer[" + primIndex + "] = " + obj + ";");
             parseAlterationTypes(ref map, prim.AlterationTypes, ref altIndex);
+            map.AppendLine("\tdistBuffer[" + primIndex + "] = " + obj + ";");
             map.AppendLine();
 
             // Determine combining operation
@@ -416,35 +416,39 @@ public class ShaderBuilder : MonoBehaviour
                 {
                     case AlterationTypes.Elongate1D:
                         map.AppendLine("\topElongate1D(pos.xyz, _altInfo[" + altIndex + "]);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.Elongate:
                         break;
                     case AlterationTypes.Round:
                         break;
-                    case AlterationTypes.Onion:
-                        break;
                     case AlterationTypes.SymX:
                         map.AppendLine("\topSymX(pos.xyz);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.SymXZ:
                         map.AppendLine("\topSymXZ(pos.xyz);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.Rep:
                         map.AppendLine("\topRep(pos.xyz, _altInfo[" + altIndex + "].xyz);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.RepFinite:
                         map.AppendLine("\topRepLim(pos.xyz, _altInfo[" + altIndex + "].x, _altInfo[" + altIndex + "].yzw);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.Twist:
                         map.AppendLine("\topTwist(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.Bend:
-                            map.AppendLine("\topCheapBend(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        map.AppendLine("\topCheapBend(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
                         break;
                     default:
                         break;
                 }
-                ++altIndex;
             }
             else
             {
@@ -453,6 +457,8 @@ public class ShaderBuilder : MonoBehaviour
                     case AlterationTypes.Round:
                         break;
                     case AlterationTypes.Onion:
+                        map.AppendLine("\topOnion(obj, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.Displace:
                         map.AppendLine("\topDisplace(pos.xyz, obj);");

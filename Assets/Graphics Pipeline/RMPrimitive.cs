@@ -658,6 +658,8 @@ public class RMComponentEditor : RMObjEditor
             case AlterationTypes.Round:
                 break;
             case AlterationTypes.Onion:
+                altInfo.x = EditorGUILayout.FloatField("Thickness", property.vector4Value.x);
+                property.vector4Value = altInfo;
                 break;
             case AlterationTypes.SymX:
                 break;
