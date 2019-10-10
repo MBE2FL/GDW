@@ -255,6 +255,8 @@ public class CSG : RMObj
             else
                 ((CSG)_secondNode)._isRoot = true;
         }
+
+        Camera.main.GetComponent<RMMemoryManager>().Dirty = true;
     }
 }
 

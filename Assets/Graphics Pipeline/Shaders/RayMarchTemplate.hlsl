@@ -184,7 +184,7 @@ void opElongate1D(inout float3 pos, float3 h);
 
 float4 opElongate(float3 pos, float3 h);
 
-float4 opRound(float3 pos, float rad);
+void opRound(inout float dist, float rad);
 
 float4 opOnion(float3 pos, float thickness);
 
@@ -196,7 +196,7 @@ void opRep(inout float3 pos, float3 c);
 
 void opRepLim(inout float3 pos, float3 c, float3 l);
 
-void opDisplace(float3 pos, inout float dist);
+void opDisplace(float3 pos, inout float dist, float3 c);
 
 void opTwist(inout float3 pos, float k);
 

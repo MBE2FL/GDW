@@ -160,9 +160,9 @@ public class RayMarcher : SceneViewFilter
 
 
     // ######### Ray Marcher Inspector Variables #########
-    //private const int MAX_RM_PRIMS = 128;
-    //static private RMPrimitive[] _rmPrims = new RMPrimitive[MAX_RM_PRIMS];
-    //static private List<RMPrimitive> _rmPrims = new List<RMPrimitive>(MAX_RM_PRIMS);
+    //private const int MAX_PRIMS = 128;
+    //static private RMPrimitive[] _prims = new RMPrimitive[MAX_PRIMS];
+    //static private List<RMPrimitive> _prims = new List<RMPrimitive>(MAX_PRIMS);
     //static private uint _currentObjs = 0;
     [HideInInspector]
     private RMMemoryManager _rmMemoryManager;
@@ -277,6 +277,9 @@ public class RayMarcher : SceneViewFilter
             _rmMemoryManager = Camera.main.GetComponent<RMMemoryManager>();
         }
 
+        if (_rmMemoryManager.Dirty)
+            _rmMemoryManager.verifyMemory();
+
         int primIndex = 0;
         int csgIndex = 0;
         int altIndex = 0;
@@ -305,6 +308,19 @@ public class RayMarcher : SceneViewFilter
         for (int i = 0; i < objs.Count; ++i)
         {
             obj = objs[i];
+
+            //// If an object is null verify and remove all null objects.
+            //if (!obj)
+            //{
+            //    _rmMemoryManager.verifyMemory();
+
+            //    // There are still objects to render, after removing all the null objects.
+            //    if (i < objs.Count)
+            //        obj = objs[i];
+            //    // There are no more objects to render, after removing all the null objects.
+            //    else
+            //        break;
+            //}
 
             // Primitive
             if (obj.IsPrim)

@@ -420,8 +420,6 @@ public class ShaderBuilder : MonoBehaviour
                         break;
                     case AlterationTypes.Elongate:
                         break;
-                    case AlterationTypes.Round:
-                        break;
                     case AlterationTypes.SymX:
                         map.AppendLine("\topSymX(pos.xyz);");
                         ++altIndex;
@@ -455,13 +453,15 @@ public class ShaderBuilder : MonoBehaviour
                 switch (type)
                 {
                     case AlterationTypes.Round:
+                        map.AppendLine("\topRound(obj, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
                         break;
                     case AlterationTypes.Onion:
                         map.AppendLine("\topOnion(obj, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Displace:
-                        map.AppendLine("\topDisplace(pos.xyz, obj);");
+                        map.AppendLine("\topDisplace(pos.xyz, obj, _altInfo[" + altIndex + "].xyz);");
                         ++altIndex;
                         break;
                     default:

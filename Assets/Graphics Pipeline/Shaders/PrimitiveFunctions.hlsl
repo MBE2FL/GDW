@@ -266,10 +266,11 @@ float4 opElongate(float3 pos, float3 h)
     return float4(max(q, 0.0), min(max(q.x, max(q.y, q.z)), 0.0));
 }
 
-float4 opRound(float3 pos, float rad)
+void opRound(inout float dist, float rad)
 {
     // return primitive(pos) - rad;
-    return float4(pos, -rad);
+    //return float4(pos, -rad);
+    dist -= rad;
 }
 
 void opOnion(inout float dist, float thickness)
@@ -300,10 +301,10 @@ void opRepLim(inout float3 pos, float3 c, float3 l)
     pos = pos - (c * clamp(round(pos / c), -l, l));
 }
 
-void opDisplace(float3 pos, inout float dist)
+void opDisplace(float3 pos, inout float dist, float3 c)
 {
     //float disp = displacement(pos);
-    float disp = sin(0.6 * pos.x) * sin(0.6 * pos.y) * sin(0.6 * pos.z);
+    float disp = sin(c.x * pos.x) * sin(c.y * pos.y) * sin(c.z * pos.z);
 
     dist += disp;
 }

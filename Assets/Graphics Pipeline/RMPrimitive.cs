@@ -63,6 +63,7 @@ public enum AlterationTypes
 
 [AddComponentMenu("Ray Marching/RMPrimitive")]
 [DisallowMultipleComponent]
+[ExecuteInEditMode]
 public class RMPrimitive : RMObj
 {
     [SerializeField]
@@ -112,6 +113,9 @@ public class RMPrimitive : RMObj
 
     [SerializeField]
     private List<Vector4> _alterationInfo = new List<Vector4>();
+
+    [SerializeField]
+    private string _displaceFormula = "sin(c.x * pos.x) * sin(c.y * pos.y) * sin(c.z * pos.z);";
 
 
     public Color Colour
@@ -296,11 +300,11 @@ public class RMPrimitive : RMObj
 
     //}
 
-    private void OnDestroy()
-    {
-        //RMMemoryManager.Instance.reclaimRMPrimitive(this);
-        // TO-DO Clean lists and arrays
-    }
+    //private void OnDestroy()
+    //{
+    //    //RMMemoryManager.Instance.reclaimRMPrimitive(this);
+    //    // TO-DO Clean lists and arrays
+    //}
 
     public void loadSavedObj(RMPrimitive savedObj)
     {
@@ -367,6 +371,7 @@ public class RMComponentEditor : RMObjEditor
     SerializedProperty _static;
 
     SerializedProperty _altInfo;
+    SerializedProperty _displaceFormula;
 
 
 
@@ -387,6 +392,7 @@ public class RMComponentEditor : RMObjEditor
         _static = serializedObject.FindProperty("_static");
 
         _altInfo = serializedObject.FindProperty("_alterationInfo");
+        _displaceFormula = serializedObject.FindProperty("_displaceFormula");
     }
 
     public override void OnInspectorGUI()
@@ -656,6 +662,8 @@ public class RMComponentEditor : RMObjEditor
             case AlterationTypes.Elongate:
                 break;
             case AlterationTypes.Round:
+                altInfo.x = EditorGUILayout.FloatField("Roundness", property.vector4Value.x);
+                property.vector4Value = altInfo;
                 break;
             case AlterationTypes.Onion:
                 altInfo.x = EditorGUILayout.FloatField("Thickness", property.vector4Value.x);
@@ -683,6 +691,11 @@ public class RMComponentEditor : RMObjEditor
                 property.vector4Value = altInfo;
                 break;
             case AlterationTypes.Displace:
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Displacement", property.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("Y-Axis Displacement", property.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("Z-Axis Displacement", property.vector4Value.z);
+                EditorGUILayout.PropertyField(_displaceFormula);
+                property.vector4Value = altInfo;
                 break;
             case AlterationTypes.Bend:
                 altInfo.x = EditorGUILayout.FloatField("Bendyness", property.vector4Value.x);
