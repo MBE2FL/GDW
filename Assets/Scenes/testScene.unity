@@ -77292,7 +77292,7 @@ MonoBehaviour:
   _wood: {fileID: 2800000, guid: 9e4e7026e14ffbb4198c4e013cb987a3, type: 3}
   _brick: {fileID: 2800000, guid: be0271be91289464e98e35b11785ae0f, type: 3}
   _maxSteps: 141
-  _maxDrawDist: 64
+  _maxDrawDist: 356
   _specularExp: 160
   _attenuationConstant: 1.5
   _attenuationLinear: 0.01
@@ -89281,8 +89281,9 @@ MonoBehaviour:
   _refractionIndex: 1
   _texture: {fileID: 0}
   _static: 0
-  _alterationTypes: 09000000
+  _alterationTypes: 0500000009000000
   _alterationInfo:
+  - {x: 1.89, y: 1.5, z: 0, w: 0}
   - {x: 6, y: 6, z: 0.06, w: 0}
   _displaceFormula: sin(c.x * pos.x) * sin(c.y * pos.y) * sin(c.z * pos.z);
 --- !u!4 &1663195147
@@ -89293,7 +89294,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1663195145}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.92, y: 8.74, z: -17.79}
+  m_LocalPosition: {x: 4.92, y: 8.74, z: -18.16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
