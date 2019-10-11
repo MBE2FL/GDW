@@ -77243,10 +77243,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc499d187aab963478126497aa2ff37d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _path: C:/Users/Max/Desktop/GDW/Assets/Graphics Pipeline/Shaders/
+  _path: C:/Users/Maxke/Desktop/GDW 3 Repo/GDW/Assets/Graphics Pipeline/Shaders/
   _name: tesSceneShader2
-  _templateHLSLPath: C:/Users/Max/Desktop/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.hlsl
-  _templateShaderPath: C:/Users/Max/Desktop/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.shader
+  _templateHLSLPath: C:/Users/Maxke/Desktop/GDW 3 Repo/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.hlsl
+  _templateShaderPath: C:/Users/Maxke/Desktop/GDW 3 Repo/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.shader
 --- !u!114 &1423868084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77272,8 +77272,8 @@ MonoBehaviour:
   - {fileID: 2137858283}
   _csgs:
   - {fileID: 1892668375}
-  - {fileID: 1892668375}
   reset: 0
+  _initialLoad: 1
 --- !u!114 &1423868085
 MonoBehaviour:
   m_ObjectHideFlags: 0

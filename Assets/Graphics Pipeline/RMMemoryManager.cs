@@ -23,6 +23,8 @@ public class RMMemoryManager : MonoBehaviour
     //private static RMMemoryManager _instance;
     public bool reset = false;
     private bool _dirty = false;
+    [SerializeField]
+    private bool _initialLoad = false;
 
     public List<RMPrimitive> RM_Prims
     {
@@ -82,7 +84,10 @@ public class RMMemoryManager : MonoBehaviour
         //}
 
         // Load previously saved objects back into the memory manager.
-        loadSavedObjs();
+        //_prims.Clear();
+        //_csgs.Clear();
+        if (!_initialLoad)
+            loadSavedObjs();
     }
 
 
@@ -96,6 +101,8 @@ public class RMMemoryManager : MonoBehaviour
     {
         if (reset)
         {
+            _prims.Clear();
+            _csgs.Clear();
             reset = false;
             loadSavedObjs();
             _dirty = false;
@@ -175,6 +182,8 @@ public class RMMemoryManager : MonoBehaviour
             csg = savedCSGs[i].GetComponent<CSG>();
             _csgs.Add(csg);
         }
+
+        _initialLoad = true;
     }
 
     private RMPrimitive createPrimitive(PrimitiveTypes type)

@@ -34,7 +34,8 @@ public abstract class RMObj : MonoBehaviour
 
     private void OnDestroy()
     {
-        Camera.main.GetComponent<RMMemoryManager>().Dirty = true;
+        if (Camera.main)
+            Camera.main.GetComponent<RMMemoryManager>().Dirty = true;
     }
 }
 
