@@ -280,14 +280,14 @@ void opOnion(inout float dist, float thickness)
     dist = abs(dist) - thickness;
 }
 
-void opSymX(inout float3 pos)
+void opSymX(inout float3 pos, float c)
 {
-    pos.x = abs(pos.x);
+    pos.x = abs(pos.x) - c;
 }
 
-void opSymXZ(inout float3 pos)
+void opSymXZ(inout float3 pos, float2 c)
 {
-    pos.xz = abs(pos.xz);
+    pos.xz = abs(pos.xz) - c;
 }
 
 void opRep(inout float3 pos, float3 c)

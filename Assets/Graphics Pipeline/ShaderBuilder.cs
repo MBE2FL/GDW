@@ -421,11 +421,11 @@ public class ShaderBuilder : MonoBehaviour
                     case AlterationTypes.Elongate:
                         break;
                     case AlterationTypes.SymX:
-                        map.AppendLine("\topSymX(pos.xyz);");
+                        map.AppendLine("\topSymX(pos.xyz, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
                     case AlterationTypes.SymXZ:
-                        map.AppendLine("\topSymXZ(pos.xyz);");
+                        map.AppendLine("\topSymXZ(pos.xyz, _altInfo[" + altIndex + "].xy);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Rep:

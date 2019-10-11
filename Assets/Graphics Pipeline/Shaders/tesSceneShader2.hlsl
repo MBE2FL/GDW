@@ -188,9 +188,9 @@ void opRound(inout float dist, float rad);
 
 float4 opOnion(float3 pos, float thickness);
 
-void opSymX(inout float3 pos);
+void opSymX(inout float3 pos, float2 c);
 
-void opSymXZ(inout float3 pos);
+void opSymXZ(inout float3 pos, float3 c);
 
 void opRep(inout float3 pos, float3 c);
 
@@ -667,8 +667,9 @@ float map(float3 p)
 	// ######### rmBox #########
 	pos = mul(_invModelMats[3], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[3];
+	opSymXZ(pos.xyz, _altInfo[2].xy);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
-	opDisplace(pos.xyz, obj, _altInfo[2].xyz);
+	opDisplace(pos.xyz, obj, _altInfo[3].xyz);
 	distBuffer[3] = obj;
 
 	scene = opU(scene, obj);
@@ -677,10 +678,10 @@ float map(float3 p)
 	// ######### rmSphereOnion #########
 	pos = mul(_invModelMats[4], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[4];
-	opRepLim(pos.xyz, _altInfo[3].x, _altInfo[3].yzw);
+	opRepLim(pos.xyz, _altInfo[4].x, _altInfo[4].yzw);
 	obj = sdSphere(pos.xyz, geoInfo.x);
-	opOnion(obj, _altInfo[4].x);
 	opOnion(obj, _altInfo[5].x);
+	opOnion(obj, _altInfo[6].x);
 	distBuffer[4] = obj;
 
 	scene = opU(scene, obj);
@@ -689,8 +690,8 @@ float map(float3 p)
 	// ######### TestObject #########
 	pos = mul(_invModelMats[5], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[5];
-	opCheapBend(pos.xyz, _altInfo[6].x);
-	opTwist(pos.xyz, _altInfo[7].x);
+	opCheapBend(pos.xyz, _altInfo[7].x);
+	opTwist(pos.xyz, _altInfo[8].x);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[5] = obj;
 

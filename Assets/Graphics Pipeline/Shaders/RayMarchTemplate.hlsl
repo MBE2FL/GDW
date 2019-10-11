@@ -188,9 +188,9 @@ void opRound(inout float dist, float rad);
 
 float4 opOnion(float3 pos, float thickness);
 
-void opSymX(inout float3 pos);
+void opSymX(inout float3 pos, float2 c);
 
-void opSymXZ(inout float3 pos);
+void opSymXZ(inout float3 pos, float3 c);
 
 void opRep(inout float3 pos, float3 c);
 

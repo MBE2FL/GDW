@@ -670,8 +670,13 @@ public class RMComponentEditor : RMObjEditor
                 property.vector4Value = altInfo;
                 break;
             case AlterationTypes.SymX:
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", property.vector4Value.x);
+                property.vector4Value = altInfo;
                 break;
             case AlterationTypes.SymXZ:
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", property.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("Y-Axis Spacing", property.vector4Value.y);
+                property.vector4Value = altInfo;
                 break;
             case AlterationTypes.Rep:
                 altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", property.vector4Value.x);
