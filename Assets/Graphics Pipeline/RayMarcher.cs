@@ -101,13 +101,21 @@ public class RayMarcher : SceneViewFilter
     [Range(0.0f, 1.0f)]
     float _aoIntensity = 0.3f;
     // ######### Ambient Occlusion Variables #########
-
-    public float _refractIndex = 0.0f;
     
     [Header("Vignette")]
     [SerializeField]
     [Range(0.0f, 2.0f)]
     public float _vignetteIntensity = 0.0f;
+
+    [Header("Fog")]
+    [SerializeField]
+    [Range(0.0f, 0.04f)]
+    private float _fogExtinction = 0.0f;
+    [SerializeField]
+    [Range(0.0f, 0.04f)]
+    private float _fogInscattering = 0.0f;
+    [SerializeField]
+    private Color _fogColour = Color.grey;
 
     public Shader EffectShader
     {
@@ -184,6 +192,9 @@ public class RayMarcher : SceneViewFilter
     //private float[] csgNodesPerRoot = new float[16];
 
 
+    RMObj[] objects;
+    List<RMObj> objs = new List<RMObj>();
+
 
     private void Start()
     {
@@ -194,6 +205,14 @@ public class RayMarcher : SceneViewFilter
         if (!_rmMemoryManager)
         {
             _rmMemoryManager = Camera.main.gameObject.AddComponent<RMMemoryManager>();
+        }
+
+        if (Application.isPlaying)
+        {
+            objects = FindObjectsOfType<RMObj>();
+            objs = new List<RMObj>(objects);
+
+            objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
         }
     }
 
@@ -262,8 +281,12 @@ public class RayMarcher : SceneViewFilter
         EffectMaterial.SetFloat("_aoStepSize", _aoStepSize);
         EffectMaterial.SetFloat("_aoIntensity", _aoIntensity);
 
+        // ######### Fog Variables #########
+        EffectMaterial.SetFloat("_fogExtinction", _fogExtinction);
+        EffectMaterial.SetFloat("_fogInscattering", _fogInscattering);
+        EffectMaterial.SetColor("_fogColour", _fogColour);
 
-        EffectMaterial.SetFloat("_refractIndex", _refractIndex);
+        // ######### Vignette Variables #########
         EffectMaterial.SetFloat("_vignetteIntensity", _vignetteIntensity);
 
 
@@ -293,13 +316,18 @@ public class RayMarcher : SceneViewFilter
         bufferedCSGs = new Vector4[32];
         _altInfo = new Vector4[32];
 
-        List<RMPrimitive> rmPrims = _rmMemoryManager.RM_Prims;
-        List<CSG> csgs = _rmMemoryManager.CSGs;
-        List<RMObj> objs = new List<RMObj>(rmPrims.Count + csgs.Count);
+        if (!Application.isPlaying)
+        {
+            //List<RMPrimitive> rmPrims = _rmMemoryManager.RM_Prims;
+            //List<CSG> csgs = _rmMemoryManager.CSGs;
+            objects = FindObjectsOfType<RMObj>();
+            //List<RMObj> objs = new List<RMObj>(rmPrims.Count + csgs.Count);
+            objs = new List<RMObj>(objects);
 
-        objs.AddRange(rmPrims);
-        objs.AddRange(csgs);
-        objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
+            //objs.AddRange(rmPrims);
+            //objs.AddRange(csgs);
+            objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
+        }
 
         RMPrimitive prim;
         CSG csg;
@@ -396,11 +424,16 @@ public class RayMarcher : SceneViewFilter
         _refractInfo[primIndex] = info;
 
         // Alterations' Information
-        foreach(Vector4 altInfo in rmPrim.AlterationInfo)
+        foreach(Alteration alt in rmPrim.Alterations)
         {
-            _altInfo[altIndex] = altInfo;
+            _altInfo[altIndex] = alt.info;
             ++altIndex;
         }
+        //foreach(Vector4 altInfo in rmPrim.AlterationInfo)
+        //{
+        //    _altInfo[altIndex] = altInfo;
+        //    ++altIndex;
+        //}
 
         ++primIndex;
     }

@@ -70,6 +70,17 @@ float _aoStepSize;
 float _aoIntensity;
 // ######### Ambient Occlusion Variables #########
 
+// ######### Fog Variables #########
+float _fogExtinction;
+float _fogInscattering;
+float3 _fogColour;
+// ######### Fog Variables #########
+
+// ######### Vignette Variables #########
+float _vignetteIntensity;
+// ######### Vignette Variables #########
+
+
 /// ######### RM OBJS Information #########
 static const uint MAX_RM_OBJS = 32;
 static const uint MAX_CSG_CHILDREN = 16;
@@ -91,8 +102,6 @@ float4 _combineOpsCSGs[MAX_CSG_CHILDREN];
 sampler2D _wood;
 sampler2D _brick;
 
-float _refractIndex;
-float _vignetteIntensity;
 
 struct VertexInput
 {
@@ -114,6 +123,7 @@ struct rmPixel
     float4 reflInfo;
     float2 refractInfo;
     int texID;
+    float totalDist;
 };
 
 float distBuffer[MAX_RM_OBJS];
@@ -192,7 +202,7 @@ void opSymX(inout float3 pos, float2 c);
 
 void opSymXZ(inout float3 pos, float3 c);
 
-void opRep(inout float3 pos, float3 c);
+void opRepXZ(inout float3 pos, float2 domain, inout float2 cell);
 
 void opRepLim(inout float3 pos, float3 c, float3 l);
 
@@ -876,6 +886,7 @@ int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float m
 
     //determineMaterial(distField);
     distField = mapMat();
+    distField.totalDist = t;
 
     return rayHit;
 
@@ -952,6 +963,7 @@ int unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps,
     }
 
     distField = mapMat();
+    distField.totalDist = t;
 
     return rayHit;
 }
@@ -1393,6 +1405,32 @@ float4 frag(VertexOutput input) : SV_Target
     //col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
     //col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
 
+
+    // Fog
+    // Technique One
+    //float fogAmount = 1.0 - exp(-distField.totalDist * _fogInscattering);
+    //float3 fogColour = float3(0.5, 0.6, 0.7);
+    //col = float4(lerp(col.rgb, fogColour.rgb, fogAmount), 1.0);
+
+    // Technique Two
+    //col.rgb = (col.rgb * (1.0 - exp(-distField.dist * _fogExtinction))) + (fogColour * (exp(-distField.dist * _fogExtinction)));
+
+    // Technique Three
+    //float3 extColour = exp(-distField.totalDist * _fogExtinction.rrr);
+    //float3 insColour = exp(-distField.totalDist * _fogInscattering.rrr);
+    //float3 extColour = float3(exp(-distField.dist * _fogExtinction.x), exp(-distField.dist * _fogExtinction.y), exp(-distField.dist * _fogExtinction.z));
+    //float3 insColour = float3(exp(-distField.dist * _fogInscattering.x), exp(-distField.dist * _fogInscattering.y), exp(-distField.dist * _fogInscattering.z));
+    //col.rgb = (col.rgb * (1.0 - extColour)) + (fogColour * insColour);
+
+    // Technique Four
+    //float b = _fogInscattering;
+    //fogAmount = _fogExtinction * exp(-rayOrigin.y * b) * ((1.0 - exp(-distField.totalDist * rayDir.y * b)) / (b * rayDir.y));
+    //fogAmount = clamp(fogAmount, 0.0, 1.0);
+    //col.rgb = lerp(col.rgb, _fogColour, fogAmount);
+    
+
+    //col.rgb = float3(distField.totalDist / _maxDrawDist, 0.0, 0.0);
+    //col.rgb = float3(fogAmount, 0.0, 0.0);
 
     return col;
 }

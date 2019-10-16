@@ -54,11 +54,21 @@ public enum AlterationTypes
     Onion,
     SymX,
     SymXZ,
-    Rep,
+    RepXZ,
     RepFinite,
     Twist,
     Displace,
-    Bend
+    Bend,
+    Custom
+}
+
+[System.Serializable]
+public struct Alteration
+{
+    public AlterationTypes type;
+    public Vector4 info;
+    public bool posAlt;
+    public string command;
 }
 
 [AddComponentMenu("Ray Marching/RMPrimitive")]
@@ -102,17 +112,24 @@ public class RMPrimitive : RMObj
     [Range(1.0f, 5.0f)]
     private float _refractionIndex = 1.0f;
 
-    [SerializeField]
-    private Texture2D _texture = null;
+    //[SerializeField]
+    //private Texture2D _texture = null;
 
     [SerializeField]
     private bool _static = false;
 
-    [SerializeField]
-    private List<AlterationTypes> _alterationTypes = new List<AlterationTypes>();
+    //[SerializeField]
+    //private List<AlterationTypes> _alterationTypes = new List<AlterationTypes>();
 
+    //[SerializeField]
+    //private List<Vector4> _alterationInfo = new List<Vector4>();
+
+    //[SerializeField]
+    //private List<string> _altCustomInfo = new List<string>();
+
+    [Header("Alterations")]
     [SerializeField]
-    private List<Vector4> _alterationInfo = new List<Vector4>();
+    private List<Alteration> _alterations = new List<Alteration>();
 
     [SerializeField]
     private string _displaceFormula = "sin(c.x * pos.x) * sin(c.y * pos.y) * sin(c.z * pos.z);";
@@ -267,19 +284,35 @@ public class RMPrimitive : RMObj
         }
     }
 
-    public List<AlterationTypes> AlterationTypes
-    {
-        get
-        {
-            return _alterationTypes;
-        }
-    }
+    //public List<AlterationTypes> AlterationTypes
+    //{
+    //    get
+    //    {
+    //        return _alterationTypes;
+    //    }
+    //}
 
-    public List<Vector4> AlterationInfo
+    //public List<Vector4> AlterationInfo
+    //{
+    //    get
+    //    {
+    //        return _alterationInfo;
+    //    }
+    //}
+
+    //public List<string> AltCustomInfo
+    //{
+    //    get
+    //    {
+    //        return _altCustomInfo;
+    //    }
+    //}
+
+    public List<Alteration> Alterations
     {
         get
         {
-            return _alterationInfo;
+            return _alterations;
         }
     }
 
@@ -328,27 +361,73 @@ public class RMPrimitive : RMObj
 
     public void addAlteration(AlterationTypes type)
     {
-        _alterationTypes.Add(type);
-        _alterationInfo.Add(Vector4.zero);
+        //_alterationTypes.Add(type);
+        //_alterationInfo.Add(Vector4.zero);
+        //_altCustomInfo.Add("");
+
+        Alteration alt;
+        alt.type = type;
+        alt.info = Vector4.zero;
+        alt.posAlt = true;
+        alt.command = "";
+
+        _alterations.Add(alt);
     }
 
-    public void removeAlteration(AlterationTypes type)
+    public void removeAlteration(Alteration alt)
     {
-        int index = _alterationTypes.IndexOf(type);
-        int count = _alterationTypes.Count;
+        //int index = _alterationTypes.IndexOf(type);
+        //int count = _alterationTypes.Count;
+
+        //if (count > 0)
+        //{
+        //    AlterationTypes typeTemp = _alterationTypes[count - 1];
+        //    Vector4 infoTemp = _alterationInfo[count - 1];
+        //    string customInfoTemp = _altCustomInfo[count - 1];
+
+        //    _alterationTypes[index] = typeTemp;
+        //    _alterationInfo[index] = infoTemp;
+        //    _altCustomInfo[index] = customInfoTemp;
+        //}
+
+        //_alterationTypes.RemoveAt(count - 1);
+        //_alterationInfo.RemoveAt(count - 1);
+        //_altCustomInfo.RemoveAt(count - 1);
+
+        int index = _alterations.IndexOf(alt);
+        int count = _alterations.Count;
 
         if (count > 0)
         {
-            AlterationTypes typeTemp = _alterationTypes[count - 1];
-            Vector4 infoTemp = _alterationInfo[count - 1];
-
-            _alterationTypes[index] = typeTemp;
-            _alterationInfo[index] = infoTemp;
+            Alteration altTemp = _alterations[count - 1];
+            _alterations[index] = altTemp;
         }
 
-        _alterationTypes.RemoveAt(count - 1);
-        _alterationInfo.RemoveAt(count - 1);
+        _alterations.RemoveAt(count - 1);
+    }
 
+    public void moveAlterationUp(int index)
+    {
+        // Avoid invalid indices
+        if (index <= 0)
+            return;
+
+        Alteration temp = _alterations[index - 1];
+        _alterations[index - 1] = _alterations[index];
+        _alterations[index] = temp;
+    }
+
+    public void moveAlterationDown(int index)
+    {
+        int count = _alterations.Count;
+
+        // Avoid invalid indices
+        if (index >= count - 1)
+            return;
+
+        Alteration temp = _alterations[index + 1];
+        _alterations[index + 1] = _alterations[index];
+        _alterations[index] = temp;
     }
 }
 
@@ -367,10 +446,12 @@ public class RMComponentEditor : RMObjEditor
     SerializedProperty _reflectionIntensity;
     SerializedProperty _refractionCount;
     SerializedProperty _refractionIndex;
-    SerializedProperty _texture;
+    //SerializedProperty _texture;
     SerializedProperty _static;
 
-    SerializedProperty _altInfo;
+    //SerializedProperty _altInfo;
+    //SerializedProperty _altCustomInfo;
+    SerializedProperty _alterations;
     SerializedProperty _displaceFormula;
 
 
@@ -388,10 +469,12 @@ public class RMComponentEditor : RMObjEditor
         _reflectionIntensity = serializedObject.FindProperty("_reflectionIntensity");
         _refractionCount = serializedObject.FindProperty("_refractionCount");
         _refractionIndex = serializedObject.FindProperty("_refractionIndex");
-        _texture = serializedObject.FindProperty("_texture");
+        //_texture = serializedObject.FindProperty("_texture");
         _static = serializedObject.FindProperty("_static");
 
-        _altInfo = serializedObject.FindProperty("_alterationInfo");
+        //_altInfo = serializedObject.FindProperty("_alterationInfo");
+        //_altCustomInfo = serializedObject.FindProperty("_altCustomInfo");
+        _alterations = serializedObject.FindProperty("_alterations");
         _displaceFormula = serializedObject.FindProperty("_displaceFormula");
     }
 
@@ -450,7 +533,7 @@ public class RMComponentEditor : RMObjEditor
         label.text = "Reflection Count";
         label.tooltip = "The amount of reflection rays this object will cast.";
 
-        EditorGUILayout.PropertyField(_texture);
+        //EditorGUILayout.PropertyField(_texture);
         EditorGUILayout.PropertyField(_reflectionCount, label);
 
         label.text = "Reflection Intensity";
@@ -472,26 +555,41 @@ public class RMComponentEditor : RMObjEditor
 
 
         // Alterations
-        if (GUILayout.Button("Add Alteration"))
-        {
-            rmComp.addAlteration(AlterationTypes.Bend);
-        }
+        label.text = "Alterations";
+        label.tooltip = "";
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
-        for (int i = 0; i < rmComp.AlterationTypes.Count; ++i)
+        // Display all alterations
+        for (int i = 0; i < rmComp.Alterations.Count; ++i)
         {
-            AlterationTypes type = rmComp.AlterationTypes[i];
-            rmComp.AlterationTypes[i] = (AlterationTypes)EditorGUILayout.EnumPopup(type);
+            Alteration alt = rmComp.Alterations[i];
+            alt.type = (AlterationTypes)EditorGUILayout.EnumPopup(alt.type);
+            rmComp.Alterations[i] = alt;
 
             Vector4 altInfo;
             altInfo = Vector4.zero;
 
-            DisplayAltInfo(rmComp, type, altInfo, i);
-            
+            DisplayAltInfo(rmComp, alt.type, altInfo, alt, i);
 
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Remove Alteration"))
-            {
-                rmComp.removeAlteration(rmComp.AlterationTypes[i]);
-            }
+                rmComp.removeAlteration(rmComp.Alterations[i]);
+
+            EditorGUI.BeginDisabledGroup(i == 0);
+            if (GUILayout.Button("Move Up"))
+                rmComp.moveAlterationUp(i);
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUI.BeginDisabledGroup(i == (rmComp.Alterations.Count - 1));
+            if (GUILayout.Button("Move Down"))
+                rmComp.moveAlterationDown(i);
+            EditorGUI.EndDisabledGroup();
+            GUILayout.EndHorizontal();
+        }
+
+        if (GUILayout.Button("Add Alteration"))
+        {
+            rmComp.addAlteration(AlterationTypes.Bend);
         }
 
 
@@ -647,64 +745,94 @@ public class RMComponentEditor : RMObjEditor
         }
     }
 
-    void DisplayAltInfo(RMPrimitive rmPrim, AlterationTypes type, Vector4 altInfo, int index)
+    void DisplayAltInfo(RMPrimitive rmPrim, AlterationTypes type, Vector4 altInfo, Alteration alt, int index)
     {
-        SerializedProperty property = _altInfo.GetArrayElementAtIndex(index);
+        SerializedProperty currentAlt = _alterations.GetArrayElementAtIndex(index);
+        SerializedProperty infoProperty = currentAlt.FindPropertyRelative("info");
 
         switch (type)
         {
             case AlterationTypes.Elongate1D:
-                altInfo.x = EditorGUILayout.FloatField("h", property.vector4Value.x);
-                altInfo.y = EditorGUILayout.FloatField("h2", property.vector4Value.y);
-                altInfo.z = EditorGUILayout.FloatField("h3", property.vector4Value.z);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("h", infoProperty.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("h2", infoProperty.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("h3", infoProperty.vector4Value.z);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = true;
                 break;
             case AlterationTypes.Elongate:
+                alt.posAlt = true;
                 break;
             case AlterationTypes.Round:
-                altInfo.x = EditorGUILayout.FloatField("Roundness", property.vector4Value.x);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("Roundness", infoProperty.vector4Value.x);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = false;
                 break;
             case AlterationTypes.Onion:
-                altInfo.x = EditorGUILayout.FloatField("Thickness", property.vector4Value.x);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("Thickness", infoProperty.vector4Value.x);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = false;
                 break;
             case AlterationTypes.SymX:
-                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", property.vector4Value.x);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", infoProperty.vector4Value.x);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = true;
                 break;
             case AlterationTypes.SymXZ:
-                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", property.vector4Value.x);
-                altInfo.y = EditorGUILayout.FloatField("Y-Axis Spacing", property.vector4Value.y);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", infoProperty.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("Y-Axis Spacing", infoProperty.vector4Value.y);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = true;
                 break;
-            case AlterationTypes.Rep:
-                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", property.vector4Value.x);
-                altInfo.y = EditorGUILayout.FloatField("Y-Axis Spacing", property.vector4Value.y);
-                altInfo.z = EditorGUILayout.FloatField("Z-Axis Spacing", property.vector4Value.z);
-                property.vector4Value = altInfo;
+            case AlterationTypes.RepXZ:
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Spacing", infoProperty.vector4Value.x);
+                altInfo.z = EditorGUILayout.FloatField("Z-Axis Spacing", infoProperty.vector4Value.z);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = true;
                 break;
             case AlterationTypes.RepFinite:
-                altInfo.x = EditorGUILayout.FloatField("C", property.vector4Value.x);
-                altInfo.y = EditorGUILayout.FloatField("X-Axis Reps", property.vector4Value.y);
-                altInfo.z = EditorGUILayout.FloatField("Y-Axis Reps", property.vector4Value.z);
-                altInfo.w = EditorGUILayout.FloatField("Z-Axis Reps", property.vector4Value.w);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("C", infoProperty.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("X-Axis Reps", infoProperty.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("Y-Axis Reps", infoProperty.vector4Value.z);
+                altInfo.w = EditorGUILayout.FloatField("Z-Axis Reps", infoProperty.vector4Value.w);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = true;
                 break;
             case AlterationTypes.Twist:
-                altInfo.x = EditorGUILayout.FloatField("Twistyness", property.vector4Value.x);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("Twistyness", infoProperty.vector4Value.x);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = true;
                 break;
             case AlterationTypes.Displace:
-                altInfo.x = EditorGUILayout.FloatField("X-Axis Displacement", property.vector4Value.x);
-                altInfo.y = EditorGUILayout.FloatField("Y-Axis Displacement", property.vector4Value.y);
-                altInfo.z = EditorGUILayout.FloatField("Z-Axis Displacement", property.vector4Value.z);
+                altInfo.x = EditorGUILayout.FloatField("X-Axis Displacement", infoProperty.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("Y-Axis Displacement", infoProperty.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("Z-Axis Displacement", infoProperty.vector4Value.z);
                 EditorGUILayout.PropertyField(_displaceFormula);
-                property.vector4Value = altInfo;
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = false;
                 break;
             case AlterationTypes.Bend:
-                altInfo.x = EditorGUILayout.FloatField("Bendyness", property.vector4Value.x);
-                property.vector4Value = altInfo;
+                altInfo.x = EditorGUILayout.FloatField("Bendyness", infoProperty.vector4Value.x);
+                infoProperty.vector4Value = altInfo;
+                alt.posAlt = true;
+                break;
+            case AlterationTypes.Custom:
+                SerializedProperty command = currentAlt.FindPropertyRelative("command");
+
+                GUIContent label = new GUIContent();
+                label.text = "Position Alt";
+                label.tooltip = "Will this alter the position or the distance?";
+
+                alt.posAlt = EditorGUILayout.Toggle(label, alt.posAlt);
+
+                altInfo.x = EditorGUILayout.FloatField("altInfo.x", infoProperty.vector4Value.x);
+                altInfo.y = EditorGUILayout.FloatField("altInfo.y", infoProperty.vector4Value.y);
+                altInfo.z = EditorGUILayout.FloatField("altInfo.z", infoProperty.vector4Value.z);
+                altInfo.w = EditorGUILayout.FloatField("altInfo.w", infoProperty.vector4Value.w);
+                infoProperty.vector4Value = altInfo;
+
+                label.text = "Command";
+                label.tooltip = "";
+                EditorGUILayout.PropertyField(command, label);
                 break;
             default:
                 break;

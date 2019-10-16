@@ -70,6 +70,17 @@ float _aoStepSize;
 float _aoIntensity;
 // ######### Ambient Occlusion Variables #########
 
+// ######### Fog Variables #########
+float _fogExtinction;
+float _fogInscattering;
+float3 _fogColour;
+// ######### Fog Variables #########
+
+// ######### Vignette Variables #########
+float _vignetteIntensity;
+// ######### Vignette Variables #########
+
+
 /// ######### RM OBJS Information #########
 static const uint MAX_RM_OBJS = 32;
 static const uint MAX_CSG_CHILDREN = 16;
@@ -91,8 +102,6 @@ float4 _combineOpsCSGs[MAX_CSG_CHILDREN];
 sampler2D _wood;
 sampler2D _brick;
 
-float _refractIndex;
-float _vignetteIntensity;
 
 struct VertexInput
 {
@@ -114,6 +123,7 @@ struct rmPixel
     float4 reflInfo;
     float2 refractInfo;
     int texID;
+    float totalDist;
 };
 
 float distBuffer[MAX_RM_OBJS];
@@ -192,7 +202,7 @@ void opSymX(inout float3 pos, float2 c);
 
 void opSymXZ(inout float3 pos, float3 c);
 
-void opRep(inout float3 pos, float3 c);
+void opRepXZ(inout float3 pos, float2 domain, inout float2 cell);
 
 void opRepLim(inout float3 pos, float3 c, float3 l);
 
@@ -635,6 +645,8 @@ float map(float3 p)
 	float csg;
 	float storedCSGs[MAX_CSG_CHILDREN];
 
+	float3 cell = float3(0.0, 0.0, 0.0);
+
 	// ######### rmBox #########
 	pos = mul(_invModelMats[0], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[0];
@@ -644,80 +656,114 @@ float map(float3 p)
 	scene = opU(scene, obj);
 	// ######### rmBox #########
 
-	// ######### TestBox #########
+	// ######### Infinite Water Four #########
 	pos = mul(_invModelMats[1], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[1];
-	opRepLim(pos.xyz, _altInfo[0].x, _altInfo[0].yzw);
-	opCheapBend(pos.xyz, _altInfo[1].x);
-	obj = sdBox(pos.xyz, geoInfo.xyz);
+	opRepXZ(pos.xyz, _altInfo[0].xz, cell.xz);
+	pos.y += 0.5 * sin(1.5 * _totalTime + cell.x);
+	pos.y += 0.2 * sin(1.2 * _totalTime + cell.z);
+	opElongate1D(pos.xyz, _altInfo[3]);
+	obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
 	distBuffer[1] = obj;
 
 	scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+	// ######### Infinite Water Four #########
+
+	// ######### Infinite Water Three #########
+	pos = mul(_invModelMats[2], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[2];
+	opRepXZ(pos.xyz, _altInfo[4].xz, cell.xz);
+	pos.y += 0.5 * sin(1.5 * _totalTime + cell.x);
+	pos.y += 0.2 * sin(1.2 * _totalTime + cell.z);
+	opElongate1D(pos.xyz, _altInfo[7]);
+	obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
+	distBuffer[2] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[2].y);
+	// ######### Infinite Water Three #########
+
+	// ######### TestBox #########
+	pos = mul(_invModelMats[3], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[3];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[3] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[3].y);
 	// ######### TestBox #########
 
 	// ######### rmSphere #########
-	pos = mul(_invModelMats[2], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[2];
-	obj = sdSphere(pos.xyz, geoInfo.x);
-	distBuffer[2] = obj;
-
-	scene = opSmoothSub(obj, scene, _combineOps[2].y);
-	// ######### rmSphere #########
-
-	// ######### rmBox #########
-	pos = mul(_invModelMats[3], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[3];
-	opSymXZ(pos.xyz, _altInfo[2].xy);
-	obj = sdBox(pos.xyz, geoInfo.xyz);
-	opDisplace(pos.xyz, obj, _altInfo[3].xyz);
-	distBuffer[3] = obj;
-
-	scene = opU(scene, obj);
-	// ######### rmBox #########
-
-	// ######### rmSphereOnion #########
 	pos = mul(_invModelMats[4], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[4];
-	opRepLim(pos.xyz, _altInfo[4].x, _altInfo[4].yzw);
 	obj = sdSphere(pos.xyz, geoInfo.x);
-	opOnion(obj, _altInfo[5].x);
-	opOnion(obj, _altInfo[6].x);
 	distBuffer[4] = obj;
 
-	scene = opU(scene, obj);
-	// ######### rmSphereOnion #########
+	scene = opSmoothSub(obj, scene, _combineOps[4].y);
+	// ######### rmSphere #########
 
-	// ######### TestObject #########
+	// ######### Infinite Water #########
 	pos = mul(_invModelMats[5], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[5];
-	opCheapBend(pos.xyz, _altInfo[7].x);
-	opTwist(pos.xyz, _altInfo[8].x);
-	obj = sdBox(pos.xyz, geoInfo.xyz);
+	opRepXZ(pos.xyz, _altInfo[8].xz, cell.xz);
+	pos.y += 0.5 * sin(1.5 * _totalTime + cell.x);
+	pos.y += 0.2 * sin(1.2 * _totalTime + cell.z);
+	opElongate1D(pos.xyz, _altInfo[11]);
+	obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
 	distBuffer[5] = obj;
 
 	scene = opU(scene, obj);
-	// ######### TestObject #########
+	// ######### Infinite Water #########
 
-	// ######### rmSphere #########
+	// ######### rmBox #########
 	pos = mul(_invModelMats[6], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[6];
-	obj = sdSphere(pos.xyz, geoInfo.x);
+	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[6] = obj;
 
-	scene = opSmoothUnion(scene, obj, _combineOps[6].y);
-	// ######### rmSphere #########
+	scene = opU(scene, obj);
+	// ######### rmBox #########
 
-	// ######### CSG #########
+	// ######### rmSphereOnion #########
 	pos = mul(_invModelMats[7], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[7];
 	obj = sdSphere(pos.xyz, geoInfo.x);
 	distBuffer[7] = obj;
 
+	scene = opU(scene, obj);
+	// ######### rmSphereOnion #########
 
+	// ######### Infinite Water Two #########
 	pos = mul(_invModelMats[8], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[8];
+	opRepXZ(pos.xyz, _altInfo[12].xz, cell.xz);
+	pos.y += 0.5 * sin(1.5 * _totalTime + cell.x);
+	pos.y += 0.2 * sin(1.2 * _totalTime + cell.z);
+	opElongate1D(pos.xyz, _altInfo[15]);
+	obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
+	distBuffer[8] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[8].y);
+	// ######### Infinite Water Two #########
+
+	// ######### rmSphere #########
+	pos = mul(_invModelMats[9], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[9];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[9] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[9].y);
+	// ######### rmSphere #########
+
+	// ######### CSG #########
+	pos = mul(_invModelMats[10], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[10];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[10] = obj;
+
+
+	pos = mul(_invModelMats[11], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[11];
 	obj2 = sdBox(pos.xyz, geoInfo.xyz);
-	distBuffer[8] = obj2;
+	distBuffer[11] = obj2;
 
 
 	storedCSGs[0] = opSmoothInt(obj, obj2, _combineOpsCSGs[0].y);
@@ -726,10 +772,10 @@ float map(float3 p)
 	// ######### CSG #########
 
 	// ######### rmBoxOnion #########
-	pos = mul(_invModelMats[9], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[9];
+	pos = mul(_invModelMats[12], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[12];
 	obj = sdBox(pos.xyz, geoInfo.xyz);
-	distBuffer[9] = obj;
+	distBuffer[12] = obj;
 
 	scene = opS(obj, scene);
 	// ######### rmBoxOnion #########
@@ -774,64 +820,88 @@ rmPixel mapMat()
 	scene = opUMat(scene, obj);
 	// ######### rmBox #########
 
-	// ######### TestBox #########
+	// ######### Infinite Water Four #########
 	obj.dist = distBuffer[1];
 	obj.colour = _rm_colours[1];
 	obj.reflInfo = _reflInfo[1];
 	obj.refractInfo = _refractInfo[1];
 	scene = opSmoothUnionMat(scene, obj, _combineOps[1].y);
-	// ######### TestBox #########
+	// ######### Infinite Water Four #########
 
-	// ######### rmSphere #########
+	// ######### Infinite Water Three #########
 	obj.dist = distBuffer[2];
 	obj.colour = _rm_colours[2];
 	obj.reflInfo = _reflInfo[2];
 	obj.refractInfo = _refractInfo[2];
-	scene = opSmoothSubMat(obj, scene, _combineOps[2].y);
-	// ######### rmSphere #########
+	scene = opSmoothUnionMat(scene, obj, _combineOps[2].y);
+	// ######### Infinite Water Three #########
 
-	// ######### rmBox #########
+	// ######### TestBox #########
 	obj.dist = distBuffer[3];
 	obj.colour = _rm_colours[3];
 	obj.reflInfo = _reflInfo[3];
 	obj.refractInfo = _refractInfo[3];
-	scene = opUMat(scene, obj);
-	// ######### rmBox #########
+	scene = opSmoothUnionMat(scene, obj, _combineOps[3].y);
+	// ######### TestBox #########
 
-	// ######### rmSphereOnion #########
+	// ######### rmSphere #########
 	obj.dist = distBuffer[4];
 	obj.colour = _rm_colours[4];
 	obj.reflInfo = _reflInfo[4];
 	obj.refractInfo = _refractInfo[4];
-	scene = opUMat(scene, obj);
-	// ######### rmSphereOnion #########
+	scene = opSmoothSubMat(obj, scene, _combineOps[4].y);
+	// ######### rmSphere #########
 
-	// ######### TestObject #########
+	// ######### Infinite Water #########
 	obj.dist = distBuffer[5];
 	obj.colour = _rm_colours[5];
 	obj.reflInfo = _reflInfo[5];
 	obj.refractInfo = _refractInfo[5];
 	scene = opUMat(scene, obj);
-	// ######### TestObject #########
+	// ######### Infinite Water #########
 
-	// ######### rmSphere #########
+	// ######### rmBox #########
 	obj.dist = distBuffer[6];
 	obj.colour = _rm_colours[6];
 	obj.reflInfo = _reflInfo[6];
 	obj.refractInfo = _refractInfo[6];
-	scene = opSmoothUnionMat(scene, obj, _combineOps[6].y);
-	// ######### rmSphere #########
+	scene = opUMat(scene, obj);
+	// ######### rmBox #########
 
-	// ######### CSG #########
+	// ######### rmSphereOnion #########
 	obj.dist = distBuffer[7];
 	obj.colour = _rm_colours[7];
 	obj.reflInfo = _reflInfo[7];
 	obj.refractInfo = _refractInfo[7];
+	scene = opUMat(scene, obj);
+	// ######### rmSphereOnion #########
 
-	obj2.dist = distBuffer[8];
-	obj2.colour = _rm_colours[8];
-	obj2.reflInfo = _reflInfo[8];
-	obj2.refractInfo = _refractInfo[8];
+	// ######### Infinite Water Two #########
+	obj.dist = distBuffer[8];
+	obj.colour = _rm_colours[8];
+	obj.reflInfo = _reflInfo[8];
+	obj.refractInfo = _refractInfo[8];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[8].y);
+	// ######### Infinite Water Two #########
+
+	// ######### rmSphere #########
+	obj.dist = distBuffer[9];
+	obj.colour = _rm_colours[9];
+	obj.reflInfo = _reflInfo[9];
+	obj.refractInfo = _refractInfo[9];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[9].y);
+	// ######### rmSphere #########
+
+	// ######### CSG #########
+	obj.dist = distBuffer[10];
+	obj.colour = _rm_colours[10];
+	obj.reflInfo = _reflInfo[10];
+	obj.refractInfo = _refractInfo[10];
+
+	obj2.dist = distBuffer[11];
+	obj2.colour = _rm_colours[11];
+	obj2.reflInfo = _reflInfo[11];
+	obj2.refractInfo = _refractInfo[11];
 
 	storedCSGs[0] = opSmoothIntMat(obj, obj2, _combineOpsCSGs[0].y);
 
@@ -839,10 +909,10 @@ rmPixel mapMat()
 	// ######### CSG #########
 
 	// ######### rmBoxOnion #########
-	obj.dist = distBuffer[9];
-	obj.colour = _rm_colours[9];
-	obj.reflInfo = _reflInfo[9];
-	obj.refractInfo = _refractInfo[9];
+	obj.dist = distBuffer[12];
+	obj.colour = _rm_colours[12];
+	obj.reflInfo = _reflInfo[12];
+	obj.refractInfo = _refractInfo[12];
 	scene = opSMat(obj, scene);
 	// ######### rmBoxOnion #########
 
@@ -1093,6 +1163,7 @@ int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float m
 
     //determineMaterial(distField);
     distField = mapMat();
+    distField.totalDist = t;
 
     return rayHit;
 
@@ -1169,6 +1240,7 @@ int unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps,
     }
 
     distField = mapMat();
+    distField.totalDist = t;
 
     return rayHit;
 }
@@ -1589,20 +1661,20 @@ float4 frag(VertexOutput input) : SV_Target
         cheapRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
 
 		// Distance field reflection.
-		float quality;
-		float4 refl = distField.reflInfo;
-		float prevRefl = 0;
+		//float quality;
+		//float4 refl = distField.reflInfo;
+		//float prevRefl = 0;
 
-		quality = 0.5;
-		rayDir = normalize(reflect(rayDir, normal));
-		rayOrigin = p + (rayDir * 0.01);
-		rayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl.x) * quality, _maxDrawDist * quality, p, distField);
+		//quality = 0.5;
+		//rayDir = normalize(reflect(rayDir, normal));
+		//rayOrigin = p + (rayDir * 0.01);
+		//rayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl.x) * quality, _maxDrawDist * quality, p, distField);
 
-		if (rayHit)
-		{
-			normal = calcNormal(p);
-			add += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;
-		}
+		//if (rayHit)
+		//{
+		//	normal = calcNormal(p);
+		//	add += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;
+		//}
 		// Skybox reflection.
 		//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;
     }
@@ -1626,6 +1698,33 @@ float4 frag(VertexOutput input) : SV_Target
     //col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
     //col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
 
+
+    // Fog
+    // Technique One
+    float fogAmount = 1.0 - exp(-distField.totalDist * _fogInscattering);
+    //float3 fogColour = float3(0.5, 0.6, 0.7);
+    //col = float4(lerp(col.rgb, fogColour.rgb, fogAmount), 1.0);
+
+    // Technique Two
+    //col.rgb = (col.rgb * (1.0 - exp(-distField.dist * _fogExtinction))) + (fogColour * (exp(-distField.dist * _fogExtinction)));
+
+    // Technique Three
+    //float3 extColour = exp(-distField.totalDist * _fogExtinction.rrr);
+    //float3 insColour = exp(-distField.totalDist * _fogInscattering.rrr);
+    //float3 extColour = float3(exp(-distField.dist * _fogExtinction.x), exp(-distField.dist * _fogExtinction.y), exp(-distField.dist * _fogExtinction.z));
+    //float3 insColour = float3(exp(-distField.dist * _fogInscattering.x), exp(-distField.dist * _fogInscattering.y), exp(-distField.dist * _fogInscattering.z));
+    //col.rgb = (col.rgb * (1.0 - extColour)) + (fogColour * insColour);
+
+    // Technique Four
+    //float c = _fogInscattering.x / _fogInscattering.y;
+    float b = _fogInscattering;
+    fogAmount = _fogExtinction * exp(-rayOrigin.y * b) * ((1.0 - exp(-distField.totalDist * rayDir.y * b)) / (b * rayDir.y));
+    fogAmount = clamp(fogAmount, 0.0, 1.0);
+    col.rgb = lerp(col.rgb, _fogColour, fogAmount);
+    
+
+    //col.rgb = float3(distField.totalDist / _maxDrawDist, 0.0, 0.0);
+    //col.rgb = float3(fogAmount, 0.0, 0.0);
 
     return col;
 }

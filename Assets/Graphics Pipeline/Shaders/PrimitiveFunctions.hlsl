@@ -290,10 +290,10 @@ void opSymXZ(inout float3 pos, float2 c)
     pos.xz = abs(pos.xz) - c;
 }
 
-void opRep(inout float3 pos, float3 c)
+void opRepXZ(inout float3 pos, float2 domain, inout float2 cell)
 {
-    pos.x = modf(pos.x, c.x) - (c.x * 0.5);
-    //pos = modf(pos, c) - (0.5 * c);
+    cell = floor((pos.xz + (domain.xy * 0.5)) / domain.xy);
+    pos.xz = fmod(abs(pos.xz) + (domain.xy * 0.5), domain.xy) - (domain.xy * 0.5);
 }
 
 void opRepLim(inout float3 pos, float3 c, float3 l)
