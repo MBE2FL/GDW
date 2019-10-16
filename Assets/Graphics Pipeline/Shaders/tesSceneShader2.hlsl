@@ -557,59 +557,106 @@ float map(float3 p)
 	float csg;
 	float storedCSGs[MAX_CSG_CHILDREN];
 
-	// ######### rmBox #########
+	// ######### floor #########
 	pos = mul(_invModelMats[0], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[0];
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[0] = obj;
 
 	scene = opU(scene, obj);
-	// ######### rmBox #########
+	// ######### floor #########
 
-	// ######### rmSphere #########
+	// ######### cube #########
 	pos = mul(_invModelMats[1], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[1];
-	obj = sdSphere(pos.xyz, geoInfo.x);
+	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[1] = obj;
 
-	scene = opSmoothSub(obj, scene, _combineOps[1].y);
-	// ######### rmSphere #########
+	scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+	// ######### cube #########
 
-	// ######### Cone #########
+	// ######### cube #########
 	pos = mul(_invModelMats[2], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[2];
-	obj = sdSphere(pos.xyz, geoInfo.x);
+	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[2] = obj;
 
-	scene = opU(scene, obj);
-	// ######### Cone #########
+	scene = opSmoothUnion(scene, obj, _combineOps[2].y);
+	// ######### cube #########
 
-	// ######### rmSphere #########
+	// ######### cube #########
 	pos = mul(_invModelMats[3], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[3];
-	obj = sdSphere(pos.xyz, geoInfo.x);
+	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[3] = obj;
 
 	scene = opSmoothUnion(scene, obj, _combineOps[3].y);
-	// ######### rmSphere #########
+	// ######### cube #########
 
-	// ######### CSG #########
+	// ######### cube #########
 	pos = mul(_invModelMats[4], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[4];
-	obj = sdSphere(pos.xyz, geoInfo.x);
+	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[4] = obj;
 
+	scene = opSmoothUnion(scene, obj, _combineOps[4].y);
+	// ######### cube #########
 
+	// ######### cube #########
 	pos = mul(_invModelMats[5], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[5];
-	obj2 = sdBox(pos.xyz, geoInfo.xyz);
-	distBuffer[5] = obj2;
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[5] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[5].y);
+	// ######### cube #########
+
+	// ######### cube #########
+	pos = mul(_invModelMats[6], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[6];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[6] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[6].y);
+	// ######### cube #########
+
+	// ######### Cock'n Balls #########
+	pos = mul(_invModelMats[7], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[7];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[7] = obj;
 
 
-	storedCSGs[0] = opSmoothInt(obj, obj2, _combineOpsCSGs[0].y);
+	pos = mul(_invModelMats[8], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[8];
+	obj2 = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+	distBuffer[8] = obj2;
 
-	scene = opSmoothUnion(scene, storedCSGs[0], _combineOpsCSGs[0].w);
-	// ######### CSG #########
+
+	storedCSGs[0] = opSmoothUnion(obj, obj2, _combineOpsCSGs[0].y);
+
+	pos = mul(_invModelMats[9], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[9];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[9] = obj;
+
+
+	pos = mul(_invModelMats[10], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[10];
+	obj2 = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[10] = obj2;
+
+
+	storedCSGs[1] = opSmoothUnion(obj, obj2, _combineOpsCSGs[1].y);
+
+	obj = storedCSGs[0];
+
+	obj2 = storedCSGs[1];
+
+	storedCSGs[2] = opSmoothUnion(obj, obj2, _combineOpsCSGs[2].y);
+
+	scene = opU(scene, storedCSGs[2]);
+	// ######### Cock'n Balls #########
 
 	return scene;
 }
@@ -643,53 +690,95 @@ rmPixel mapMat()
 	rmPixel storedCSGs[MAX_CSG_CHILDREN];
 
 	float reflWeight;
-	// ######### rmBox #########
+	// ######### floor #########
 	obj.dist = distBuffer[0];
 	obj.colour = _rm_colours[0];
 	obj.reflInfo = _reflInfo[0];
 	obj.refractInfo = _refractInfo[0];
 	scene = opUMat(scene, obj);
-	// ######### rmBox #########
+	// ######### floor #########
 
-	// ######### rmSphere #########
+	// ######### cube #########
 	obj.dist = distBuffer[1];
 	obj.colour = _rm_colours[1];
 	obj.reflInfo = _reflInfo[1];
 	obj.refractInfo = _refractInfo[1];
-	scene = opSmoothSubMat(obj, scene, _combineOps[1].y);
-	// ######### rmSphere #########
+	scene = opSmoothUnionMat(scene, obj, _combineOps[1].y);
+	// ######### cube #########
 
-	// ######### Cone #########
+	// ######### cube #########
 	obj.dist = distBuffer[2];
 	obj.colour = _rm_colours[2];
 	obj.reflInfo = _reflInfo[2];
 	obj.refractInfo = _refractInfo[2];
-	scene = opUMat(scene, obj);
-	// ######### Cone #########
+	scene = opSmoothUnionMat(scene, obj, _combineOps[2].y);
+	// ######### cube #########
 
-	// ######### rmSphere #########
+	// ######### cube #########
 	obj.dist = distBuffer[3];
 	obj.colour = _rm_colours[3];
 	obj.reflInfo = _reflInfo[3];
 	obj.refractInfo = _refractInfo[3];
 	scene = opSmoothUnionMat(scene, obj, _combineOps[3].y);
-	// ######### rmSphere #########
+	// ######### cube #########
 
-	// ######### CSG #########
+	// ######### cube #########
 	obj.dist = distBuffer[4];
 	obj.colour = _rm_colours[4];
 	obj.reflInfo = _reflInfo[4];
 	obj.refractInfo = _refractInfo[4];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[4].y);
+	// ######### cube #########
 
-	obj2.dist = distBuffer[5];
-	obj2.colour = _rm_colours[5];
-	obj2.reflInfo = _reflInfo[5];
-	obj2.refractInfo = _refractInfo[5];
+	// ######### cube #########
+	obj.dist = distBuffer[5];
+	obj.colour = _rm_colours[5];
+	obj.reflInfo = _reflInfo[5];
+	obj.refractInfo = _refractInfo[5];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[5].y);
+	// ######### cube #########
 
-	storedCSGs[0] = opSmoothIntMat(obj, obj2, _combineOpsCSGs[0].y);
+	// ######### cube #########
+	obj.dist = distBuffer[6];
+	obj.colour = _rm_colours[6];
+	obj.reflInfo = _reflInfo[6];
+	obj.refractInfo = _refractInfo[6];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[6].y);
+	// ######### cube #########
 
-	scene = opSmoothUnionMat(scene, storedCSGs[0], _combineOpsCSGs[0].w);
-	// ######### CSG #########
+	// ######### Cock'n Balls #########
+	obj.dist = distBuffer[7];
+	obj.colour = _rm_colours[7];
+	obj.reflInfo = _reflInfo[7];
+	obj.refractInfo = _refractInfo[7];
+
+	obj2.dist = distBuffer[8];
+	obj2.colour = _rm_colours[8];
+	obj2.reflInfo = _reflInfo[8];
+	obj2.refractInfo = _refractInfo[8];
+
+	storedCSGs[0] = opSmoothUnionMat(obj, obj2, _combineOpsCSGs[0].y);
+
+	obj.dist = distBuffer[9];
+	obj.colour = _rm_colours[9];
+	obj.reflInfo = _reflInfo[9];
+	obj.refractInfo = _refractInfo[9];
+
+	obj2.dist = distBuffer[10];
+	obj2.colour = _rm_colours[10];
+	obj2.reflInfo = _reflInfo[10];
+	obj2.refractInfo = _refractInfo[10];
+
+	storedCSGs[1] = opSmoothUnionMat(obj, obj2, _combineOpsCSGs[1].y);
+
+	obj = storedCSGs[0];
+
+	obj2 = storedCSGs[1];
+
+	storedCSGs[2] = opSmoothUnionMat(obj, obj2, _combineOpsCSGs[2].y);
+
+	scene = opUMat(scene, storedCSGs[2]);
+	// ######### Cock'n Balls #########
 
 	return scene;
 }
