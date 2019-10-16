@@ -285,6 +285,56 @@ public class RMMemoryManager : MonoBehaviour
         _dirty = false;
     }
 
+    public void deletePrimitive(RMPrimitive prim)
+    {
+        int count = _prims.Count;
+
+        if (count >= 1)
+        {
+            RMPrimitive temp = _prims[count - 1];
+            _prims[_prims.IndexOf(prim)] = temp;
+        }
+
+        _prims.RemoveAt(count - 1);
+    }
+
+    public void deleteCSG(CSG csg)
+    {
+        int count = _csgs.Count;
+
+        if (count >= 1)
+        {
+            CSG temp = _csgs[count - 1];
+            _csgs[_csgs.IndexOf(csg)] = temp;
+        }
+
+        _csgs.RemoveAt(count - 1);
+    }
+
+    public void refresh()
+    {
+        RMPrimitive prim;
+        CSG csg;
+
+        _prims.Clear();
+        _csgs.Clear();
+
+        GameObject[] savedPrims = GameObject.FindGameObjectsWithTag("RM_Primitive");
+        GameObject[] savedCSGs = GameObject.FindGameObjectsWithTag("RM_CSG");
+
+        for (uint i = 0; i < savedPrims.Length; ++i)
+        {
+            prim = savedPrims[i].GetComponent<RMPrimitive>();
+            _prims.Add(prim);
+        }
+
+        for (uint i = 0; i < savedCSGs.Length; ++i)
+        {
+            csg = savedCSGs[i].GetComponent<CSG>();
+            _csgs.Add(csg);
+        }
+    }
+
 
 #if UNITY_EDITOR
     [MenuItem("GameObject/Ray Marched/rmSphere", false, 10)]

@@ -32,6 +32,8 @@ public abstract class RMObj : MonoBehaviour
         }
     }
 
+
+
     private void OnDestroy()
     {
         if (Camera.main)

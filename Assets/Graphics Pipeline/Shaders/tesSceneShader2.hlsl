@@ -70,6 +70,17 @@ float _aoStepSize;
 float _aoIntensity;
 // ######### Ambient Occlusion Variables #########
 
+// ######### Fog Variables #########
+float _fogExtinction;
+float _fogInscattering;
+float3 _fogColour;
+// ######### Fog Variables #########
+
+// ######### Vignette Variables #########
+float _vignetteIntensity;
+// ######### Vignette Variables #########
+
+
 /// ######### RM OBJS Information #########
 static const uint MAX_RM_OBJS = 32;
 static const uint MAX_CSG_CHILDREN = 16;
@@ -91,8 +102,6 @@ float4 _combineOpsCSGs[MAX_CSG_CHILDREN];
 sampler2D _wood;
 sampler2D _brick;
 
-float _refractIndex;
-float _vignetteIntensity;
 
 struct VertexInput
 {
@@ -114,6 +123,7 @@ struct rmPixel
     float4 reflInfo;
     float2 refractInfo;
     int texID;
+    float totalDist;
 };
 
 float distBuffer[MAX_RM_OBJS];
@@ -192,7 +202,7 @@ void opSymX(inout float3 pos, float2 c);
 
 void opSymXZ(inout float3 pos, float3 c);
 
-void opRep(inout float3 pos, float3 c);
+void opRepXZ(inout float3 pos, float2 domain, inout float2 cell);
 
 void opRepLim(inout float3 pos, float3 c, float3 l);
 
@@ -635,6 +645,8 @@ float map(float3 p)
 	float csg;
 	float storedCSGs[MAX_CSG_CHILDREN];
 
+	float3 cell = float3(0.0, 0.0, 0.0);
+
 	// ######### floor #########
 	pos = mul(_invModelMats[0], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[0];
@@ -656,8 +668,6 @@ float map(float3 p)
 	// ######### cube #########
 	pos = mul(_invModelMats[2], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[2];
-	opTwist(pos.xyz, _altInfo[0].x);
-	opElongate1D(pos.xyz, _altInfo[1]);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[2] = obj;
 
@@ -667,8 +677,6 @@ float map(float3 p)
 	// ######### cube #########
 	pos = mul(_invModelMats[3], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[3];
-	opTwist(pos.xyz, _altInfo[2].x);
-	opElongate1D(pos.xyz, _altInfo[3]);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[3] = obj;
 
@@ -678,8 +686,6 @@ float map(float3 p)
 	// ######### cube #########
 	pos = mul(_invModelMats[4], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[4];
-	opTwist(pos.xyz, _altInfo[4].x);
-	opElongate1D(pos.xyz, _altInfo[5]);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[4] = obj;
 
@@ -689,8 +695,6 @@ float map(float3 p)
 	// ######### cube #########
 	pos = mul(_invModelMats[5], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[5];
-	opTwist(pos.xyz, _altInfo[6].x);
-	opElongate1D(pos.xyz, _altInfo[7]);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[5] = obj;
 
@@ -700,8 +704,6 @@ float map(float3 p)
 	// ######### cube #########
 	pos = mul(_invModelMats[6], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[6];
-	opTwist(pos.xyz, _altInfo[8].x);
-	opElongate1D(pos.xyz, _altInfo[9]);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[6] = obj;
 
@@ -711,8 +713,6 @@ float map(float3 p)
 	// ######### cube #########
 	pos = mul(_invModelMats[7], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[7];
-	opTwist(pos.xyz, _altInfo[10].x);
-	opElongate1D(pos.xyz, _altInfo[11]);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[7] = obj;
 
@@ -729,7 +729,6 @@ float map(float3 p)
 	pos = mul(_invModelMats[9], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[9];
 	obj2 = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
-	opDisplace(pos.xyz, obj, _altInfo[12].xyz);
 	distBuffer[9] = obj2;
 
 
@@ -758,55 +757,68 @@ float map(float3 p)
 	scene = opU(scene, storedCSGs[2]);
 	// ######### Cock'n Balls #########
 
-	// ######### Cock'n Balls #########
+	// ######### rmBox #########
 	pos = mul(_invModelMats[12], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[12];
-	obj = sdSphere(pos.xyz, geoInfo.x);
-	distBuffer[12] = obj;
-
-
-	pos = mul(_invModelMats[13], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[13];
-	obj2 = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
-	opDisplace(pos.xyz, obj, _altInfo[13].xyz);
-	distBuffer[13] = obj2;
-
-
-	storedCSGs[3] = opSmoothUnion(obj, obj2, _combineOpsCSGs[3].y);
-
-	pos = mul(_invModelMats[14], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[14];
-	obj = sdSphere(pos.xyz, geoInfo.x);
-	distBuffer[14] = obj;
-
-
-	pos = mul(_invModelMats[15], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[15];
-	obj2 = sdSphere(pos.xyz, geoInfo.x);
-	distBuffer[15] = obj2;
-
-
-	storedCSGs[4] = opSmoothUnion(obj, obj2, _combineOpsCSGs[4].y);
-
-	obj = storedCSGs[3];
-
-	obj2 = storedCSGs[4];
-
-	storedCSGs[5] = opSmoothUnion(obj, obj2, _combineOpsCSGs[5].y);
-
-	scene = opU(scene, storedCSGs[5]);
-	// ######### Cock'n Balls #########
-
-	// ######### rmBox #########
-	pos = mul(_invModelMats[16], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[16];
-	opTwist(pos.xyz, _altInfo[14].x);
 	obj = sdBox(pos.xyz, geoInfo.xyz);
-	opDisplace(pos.xyz, obj, _altInfo[15].xyz);
-	distBuffer[16] = obj;
+	distBuffer[12] = obj;
 
 	scene = opU(scene, obj);
 	// ######### rmBox #########
+
+	// ######### cube #########
+	pos = mul(_invModelMats[13], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[13];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[13] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[13].y);
+	// ######### cube #########
+
+	// ######### cube #########
+	pos = mul(_invModelMats[14], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[14];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[14] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[14].y);
+	// ######### cube #########
+
+	// ######### cube #########
+	pos = mul(_invModelMats[15], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[15];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[15] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[15].y);
+	// ######### cube #########
+
+	// ######### cube #########
+	pos = mul(_invModelMats[16], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[16];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[16] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[16].y);
+	// ######### cube #########
+
+	// ######### cube #########
+	pos = mul(_invModelMats[17], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[17];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[17] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[17].y);
+	// ######### cube #########
+
+	// ######### cube #########
+	pos = mul(_invModelMats[18], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[18];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[18] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[18].y);
+	// ######### cube #########
 
 	return scene;
 }
@@ -1227,6 +1239,7 @@ int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float m
 
     //determineMaterial(distField);
     distField = mapMat();
+    distField.totalDist = t;
 
     return rayHit;
 
@@ -1303,6 +1316,7 @@ int unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps,
     }
 
     distField = mapMat();
+    distField.totalDist = t;
 
     return rayHit;
 }
@@ -1760,6 +1774,32 @@ float4 frag(VertexOutput input) : SV_Target
     //col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
     //col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
 
+
+    // Fog
+    // Technique One
+    //float fogAmount = 1.0 - exp(-distField.totalDist * _fogInscattering);
+    //float3 fogColour = float3(0.5, 0.6, 0.7);
+    //col = float4(lerp(col.rgb, fogColour.rgb, fogAmount), 1.0);
+
+    // Technique Two
+    //col.rgb = (col.rgb * (1.0 - exp(-distField.dist * _fogExtinction))) + (fogColour * (exp(-distField.dist * _fogExtinction)));
+
+    // Technique Three
+    //float3 extColour = exp(-distField.totalDist * _fogExtinction.rrr);
+    //float3 insColour = exp(-distField.totalDist * _fogInscattering.rrr);
+    //float3 extColour = float3(exp(-distField.dist * _fogExtinction.x), exp(-distField.dist * _fogExtinction.y), exp(-distField.dist * _fogExtinction.z));
+    //float3 insColour = float3(exp(-distField.dist * _fogInscattering.x), exp(-distField.dist * _fogInscattering.y), exp(-distField.dist * _fogInscattering.z));
+    //col.rgb = (col.rgb * (1.0 - extColour)) + (fogColour * insColour);
+
+    // Technique Four
+    //float b = _fogInscattering;
+    //fogAmount = _fogExtinction * exp(-rayOrigin.y * b) * ((1.0 - exp(-distField.totalDist * rayDir.y * b)) / (b * rayDir.y));
+    //fogAmount = clamp(fogAmount, 0.0, 1.0);
+    //col.rgb = lerp(col.rgb, _fogColour, fogAmount);
+    
+
+    //col.rgb = float3(distField.totalDist / _maxDrawDist, 0.0, 0.0);
+    //col.rgb = float3(fogAmount, 0.0, 0.0);
 
     return col;
 }

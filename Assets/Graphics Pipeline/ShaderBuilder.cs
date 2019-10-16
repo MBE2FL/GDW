@@ -138,17 +138,26 @@ public class ShaderBuilder : MonoBehaviour
         map.AppendLine("\tfloat csg;");
         map.AppendLine("\tfloat storedCSGs[MAX_CSG_CHILDREN];");
         map.AppendLine();
+        map.AppendLine("\tfloat3 cell = float3(0.0, 0.0, 0.0);");
+        map.AppendLine();
 
         uint primIndex = 0;
         uint csgIndex = 0;
         uint altIndex = 0;
 
-        List<RMPrimitive> prims = _rmMemoryManager.RM_Prims;
-        List<CSG> csgs = _rmMemoryManager.CSGs;
+        //List<RMPrimitive> prims = _rmMemoryManager.RM_Prims;
+        //List<CSG> csgs = _rmMemoryManager.CSGs;
 
-        List<RMObj> objs = new List<RMObj>(prims.Count + csgs.Count);
-        objs.AddRange(prims);
-        objs.AddRange(csgs);
+        //List<RMObj> objs = new List<RMObj>(prims.Count + csgs.Count);
+        //objs.AddRange(prims);
+        //objs.AddRange(csgs);
+
+        //objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
+
+        RMObj[] objects = FindObjectsOfType<RMObj>();
+        List<RMObj> objs = new List<RMObj>();
+
+        objs = new List<RMObj>(objects);
 
         objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
 
@@ -243,7 +252,7 @@ public class ShaderBuilder : MonoBehaviour
             map.AppendLine("\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
             map.AppendLine("\tgeoInfo = _primitiveGeoInfo[" + primIndex + "];");
 
-            parseAlterationTypes(ref map, prim.AlterationTypes, ref altIndex, true);
+            parseAlterationTypes(ref map, prim.Alterations, ref altIndex);
 
             string obj = "obj";
             if (csgNodeTwo)
@@ -255,7 +264,7 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitiveType(ref map, prim.PrimitiveType);
 
             // Store distance into distance buffer
-            parseAlterationTypes(ref map, prim.AlterationTypes, ref altIndex);
+            parseAlterationTypes(ref map, prim.Alterations, ref altIndex, false);
             map.AppendLine("\tdistBuffer[" + primIndex + "] = " + obj + ";");
             map.AppendLine();
 
@@ -406,13 +415,13 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
-    private void parseAlterationTypes(ref StringBuilder map, List<AlterationTypes> types, ref uint altIndex, bool posAlt = false)
+    private void parseAlterationTypes(ref StringBuilder map, List<Alteration> alterations, ref uint altIndex, bool posAlt = true)
     {
-        foreach (AlterationTypes type in types)
+        foreach (Alteration alt in alterations)
         {
-            if (posAlt)
+            if (alt.posAlt && posAlt)
             {
-                switch (type)
+                switch (alt.type)
                 {
                     case AlterationTypes.Elongate1D:
                         map.AppendLine("\topElongate1D(pos.xyz, _altInfo[" + altIndex + "]);");
@@ -428,8 +437,8 @@ public class ShaderBuilder : MonoBehaviour
                         map.AppendLine("\topSymXZ(pos.xyz, _altInfo[" + altIndex + "].xy);");
                         ++altIndex;
                         break;
-                    case AlterationTypes.Rep:
-                        map.AppendLine("\topRep(pos.xyz, _altInfo[" + altIndex + "].xyz);");
+                    case AlterationTypes.RepXZ:
+                        map.AppendLine("\topRepXZ(pos.xyz, _altInfo[" + altIndex + "].xz, cell.xz);");
                         ++altIndex;
                         break;
                     case AlterationTypes.RepFinite:
@@ -444,13 +453,17 @@ public class ShaderBuilder : MonoBehaviour
                         map.AppendLine("\topCheapBend(pos.xyz, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
+                    case AlterationTypes.Custom:
+                        map.AppendLine("\t" + alt.command);
+                        ++altIndex;
+                        break;
                     default:
                         break;
                 }
             }
             else
             {
-                switch (type)
+                switch (alt.type)
                 {
                     case AlterationTypes.Round:
                         map.AppendLine("\topRound(obj, _altInfo[" + altIndex + "].x);");
@@ -978,10 +991,17 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
-    [MenuItem("My Commands/Special Command _F6")]
-    static void SpecialCommand()
+
+    [MenuItem("Shader Builder/Build Command _F6")]
+    static void BuildCommand()
     {
         Camera.main.GetComponent<ShaderBuilder>().build();
+    }
+
+    [MenuItem("Shader Builder/Refresh Command _F7")]
+    static void RefreshCommand()
+    {
+        Camera.main.GetComponent<RMMemoryManager>().refresh();
     }
 }
 
