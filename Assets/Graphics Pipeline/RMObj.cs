@@ -31,6 +31,12 @@ public abstract class RMObj : MonoBehaviour
             _drawOrder = value;
         }
     }
+
+    private void OnDestroy()
+    {
+        if (Camera.main)
+            Camera.main.GetComponent<RMMemoryManager>().Dirty = true;
+    }
 }
 
 #if UNITY_EDITOR

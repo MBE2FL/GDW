@@ -160,9 +160,9 @@ public class RayMarcher : SceneViewFilter
 
 
     // ######### Ray Marcher Inspector Variables #########
-    //private const int MAX_RM_PRIMS = 128;
-    //static private RMPrimitive[] _rmPrims = new RMPrimitive[MAX_RM_PRIMS];
-    //static private List<RMPrimitive> _rmPrims = new List<RMPrimitive>(MAX_RM_PRIMS);
+    //private const int MAX_PRIMS = 128;
+    //static private RMPrimitive[] _prims = new RMPrimitive[MAX_PRIMS];
+    //static private List<RMPrimitive> _prims = new List<RMPrimitive>(MAX_PRIMS);
     //static private uint _currentObjs = 0;
     [HideInInspector]
     private RMMemoryManager _rmMemoryManager;
@@ -176,6 +176,7 @@ public class RayMarcher : SceneViewFilter
     private Vector4[] primitiveGeoInfo = new Vector4[32];
     private Vector4[] _reflInfo = new Vector4[32];
     private Vector4[] _refractInfo = new Vector4[32];
+    private Vector4[] _altInfo = new Vector4[32];
 
 
     private Vector4[] bufferedCSGs = new Vector4[16];
@@ -276,8 +277,12 @@ public class RayMarcher : SceneViewFilter
             _rmMemoryManager = Camera.main.GetComponent<RMMemoryManager>();
         }
 
+        if (_rmMemoryManager.Dirty)
+            _rmMemoryManager.verifyMemory();
+
         int primIndex = 0;
         int csgIndex = 0;
+        int altIndex = 0;
         //int totalRootCSGs = -1;
         //int csgNodes = 0;
         invModelMats = new Matrix4x4[32];
@@ -286,6 +291,7 @@ public class RayMarcher : SceneViewFilter
         _reflInfo = new Vector4[32];
         combineOps = new Vector4[32];
         bufferedCSGs = new Vector4[32];
+        _altInfo = new Vector4[32];
 
         List<RMPrimitive> rmPrims = _rmMemoryManager.RM_Prims;
         List<CSG> csgs = _rmMemoryManager.CSGs;
@@ -303,6 +309,19 @@ public class RayMarcher : SceneViewFilter
         {
             obj = objs[i];
 
+            //// If an object is null verify and remove all null objects.
+            //if (!obj)
+            //{
+            //    _rmMemoryManager.verifyMemory();
+
+            //    // There are still objects to render, after removing all the null objects.
+            //    if (i < objs.Count)
+            //        obj = objs[i];
+            //    // There are no more objects to render, after removing all the null objects.
+            //    else
+            //        break;
+            //}
+
             // Primitive
             if (obj.IsPrim)
             {
@@ -312,7 +331,7 @@ public class RayMarcher : SceneViewFilter
                 if (prim.CSGNode)
                     continue;
 
-                renderPrimitive(prim, ref primIndex);
+                renderPrimitive(prim, ref primIndex, ref altIndex);
             }
             // CSG
             else
@@ -324,7 +343,7 @@ public class RayMarcher : SceneViewFilter
                 if (!csg.IsRoot || !csg.IsValid)
                     continue;
 
-                renderCSG(csg, ref primIndex, ref csgIndex);
+                renderCSG(csg, ref primIndex, ref csgIndex, ref altIndex);
             }
         }
 
@@ -336,6 +355,7 @@ public class RayMarcher : SceneViewFilter
             EffectMaterial.SetVectorArray("_combineOps", combineOps);
             EffectMaterial.SetVectorArray("_primitiveGeoInfo", primitiveGeoInfo);
             EffectMaterial.SetVectorArray("_reflInfo", _reflInfo);
+            EffectMaterial.SetVectorArray("_altInfo", _altInfo);
 
             EffectMaterial.SetVectorArray("_bufferedCSGs", bufferedCSGs);
             EffectMaterial.SetVectorArray("_combineOpsCSGs", combineOpsCSGs);
@@ -349,7 +369,7 @@ public class RayMarcher : SceneViewFilter
         // Cleanup arrays
     }
 
-    private void renderPrimitive(RMPrimitive rmPrim, ref int primIndex)
+    private void renderPrimitive(RMPrimitive rmPrim, ref int primIndex, ref int altIndex)
     {
         // Homogeneous transformation matrices
         invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix.inverse;
@@ -375,18 +395,25 @@ public class RayMarcher : SceneViewFilter
             info.x = 1.0f;
         _refractInfo[primIndex] = info;
 
+        // Alterations' Information
+        foreach(Vector4 altInfo in rmPrim.AlterationInfo)
+        {
+            _altInfo[altIndex] = altInfo;
+            ++altIndex;
+        }
+
         ++primIndex;
     }
 
-    private void renderCSG(CSG csg, ref int primIndex, ref int csgIndex)
+    private void renderCSG(CSG csg, ref int primIndex, ref int csgIndex, ref int altIndex)
     {
         // TO-DO Don't let incomplete CSG children nodes be added to other CSGs.
         // Base case: Both nodes are primitives.
         if (csg.AllPrimNodes)
         {
             // Render both nodes.
-            renderPrimitive(csg.FirstNode as RMPrimitive, ref primIndex);
-            renderPrimitive(csg.SecondNode as RMPrimitive, ref primIndex);
+            renderPrimitive(csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
+            renderPrimitive(csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex);
 
             // Buffer this CSG.
             bufferedCSGs[csgIndex] = new Vector4(primIndex - 1, primIndex, -1, -1);
@@ -398,10 +425,10 @@ public class RayMarcher : SceneViewFilter
         else if (csg.IsFirstPrim)
         {
             // Recurse through second node (Must be a CSG).
-            renderCSG(csg.SecondNode as CSG, ref primIndex, ref csgIndex);
+            renderCSG(csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
             // Render first node.
-            renderPrimitive(csg.FirstNode as RMPrimitive, ref primIndex);
+            renderPrimitive(csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
 
             // Buffer this CSG.
             bufferedCSGs[csgIndex] = new Vector4(primIndex, -1, -1, csgIndex - 1);
@@ -413,10 +440,10 @@ public class RayMarcher : SceneViewFilter
         else if (csg.IsSecondPrim)
         {
             // Recurse through first node (Must be a csg).
-            renderCSG(csg.FirstNode as CSG, ref primIndex, ref csgIndex);
+            renderCSG(csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
             // Render second node.
-            renderPrimitive(csg.SecondNode as RMPrimitive, ref primIndex);
+            renderPrimitive(csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex);
 
             // Buffer this CSG.
             bufferedCSGs[csgIndex] = new Vector4(-1, primIndex, csgIndex - 1, -1);
@@ -430,11 +457,11 @@ public class RayMarcher : SceneViewFilter
             Vector4 tempCSG = new Vector4(-1, -1, -1, -1);
 
             // Recurse through first node.
-            renderCSG(csg.FirstNode as CSG, ref primIndex, ref csgIndex);
+            renderCSG(csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
             tempCSG.z = csgIndex;
 
             // Recurse through second node.
-            renderCSG(csg.SecondNode as CSG, ref primIndex, ref csgIndex);
+            renderCSG(csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
             tempCSG.w = csgIndex;
 
             // Buffer this CSG.

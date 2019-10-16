@@ -254,7 +254,7 @@ float sdQuad(float3 pos, float3 a, float3 b, float3 c, float3 d)
 
 
 
-void opElongate(inout float3 pos, float3 h)
+void opElongate1D(inout float3 pos, float3 h)
 {
     pos -= clamp(pos, -h, h);
 }
@@ -266,58 +266,61 @@ float4 opElongate(float3 pos, float3 h)
     return float4(max(q, 0.0), min(max(q.x, max(q.y, q.z)), 0.0));
 }
 
-float4 opRound(float3 pos, float rad)
+void opRound(inout float dist, float rad)
 {
     // return primitive(pos) - rad;
-    return float4(pos, -rad);
+    //return float4(pos, -rad);
+    dist -= rad;
 }
 
-float4 opOnion(float3 pos, float thickness)
+void opOnion(inout float dist, float thickness)
 {
     // return abs(sdf) - thickness;
-    return float4(abs(pos), -thickness);
+    //return float4(abs(pos), -thickness);
+    dist = abs(dist) - thickness;
 }
 
-void opSymX(inout float3 pos)
+void opSymX(inout float3 pos, float c)
 {
-    pos.x = abs(pos.x);
+    pos.x = abs(pos.x) - c;
 }
 
-void opSymXZ(inout float3 pos)
+void opSymXZ(inout float3 pos, float2 c)
 {
-    pos.xz = abs(pos.xz);
+    pos.xz = abs(pos.xz) - c;
 }
 
 void opRep(inout float3 pos, float3 c)
 {
-    pos = modf(pos + (0.5 * c), c) - (0.5 * c);
+    pos.x = modf(pos.x, c.x) - (c.x * 0.5);
+    //pos = modf(pos, c) - (0.5 * c);
 }
 
-void opRepLim(inout float3 pos, float c, float3 l)
+void opRepLim(inout float3 pos, float3 c, float3 l)
 {
     pos = pos - (c * clamp(round(pos / c), -l, l));
 }
 
-void opDisplace(float3 pos, inout float dist)
+void opDisplace(float3 pos, inout float dist, float3 c)
 {
     //float disp = displacement(pos);
-    float disp = sin(20.0 * pos.x) * sin(20.0 * pos.y) * sin(20.0 * pos.z);
+    float disp = sin(c.x * pos.x) * sin(c.y * pos.y) * sin(c.z * pos.z);
 
     dist += disp;
 }
 
-void opTwist(inout float3 pos)
+void opTwist(inout float3 pos, float k)
 {
-    const float k = 10.0; // or some other amount
+    //const float k = 2.0; // or some other amount
     float c = cos(k * pos.y);
     float s = sin(k * pos.y);
     float2x2 m = float2x2(c, -s, s, c);
     pos = float3(mul(pos.xz, m), pos.y);
 }
 
-void opCheapBend(inout float3 pos)
+void opCheapBend(inout float3 pos, float k)
 {
-    const float k = 10.0; // or some other amount
+    //const float k = 0.2; // or some other amount
     float c = cos(k * pos.x);
     float s = sin(k * pos.x);
     float2x2 m = float2x2(c, -s, s, c);

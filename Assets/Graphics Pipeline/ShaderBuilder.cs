@@ -141,6 +141,7 @@ public class ShaderBuilder : MonoBehaviour
 
         uint primIndex = 0;
         uint csgIndex = 0;
+        uint altIndex = 0;
 
         List<RMPrimitive> prims = _rmMemoryManager.RM_Prims;
         List<CSG> csgs = _rmMemoryManager.CSGs;
@@ -165,7 +166,7 @@ public class ShaderBuilder : MonoBehaviour
                     continue;
 
                 map.AppendLine("\t// ######### " + prim.gameObject.name + " #########");
-                parsePrimitive(ref map, prim, ref primIndex);
+                parsePrimitive(ref map, prim, ref primIndex, ref altIndex);
                 map.AppendLine("\t// ######### " + prim.gameObject.name + " #########");
                 map.AppendLine();
             }
@@ -181,7 +182,7 @@ public class ShaderBuilder : MonoBehaviour
 
                 map.AppendLine("\t// ######### " + csg.gameObject.name + " #########");
 
-                parseCSG(ref map, csg, ref primIndex, ref csgIndex);
+                parseCSG(ref map, csg, ref primIndex, ref csgIndex, ref altIndex);
 
                 determineCombineOp(ref map, null, csg, csgIndex - 1);
                 map.AppendLine("\t// ######### " + csg.gameObject.name + " #########");
@@ -234,13 +235,15 @@ public class ShaderBuilder : MonoBehaviour
     //}
     #endregion Old
 
-    private void parsePrimitive(ref StringBuilder map, RMPrimitive prim, ref uint primIndex, bool csgNodeTwo = false)
+    private void parsePrimitive(ref StringBuilder map, RMPrimitive prim, ref uint primIndex, ref uint altIndex, bool csgNodeTwo = false)
     {
         if (!prim.Static)
         {
             // Determine position and geometric information
             map.AppendLine("\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
             map.AppendLine("\tgeoInfo = _primitiveGeoInfo[" + primIndex + "];");
+
+            parseAlterationTypes(ref map, prim.AlterationTypes, ref altIndex, true);
 
             string obj = "obj";
             if (csgNodeTwo)
@@ -252,6 +255,7 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitiveType(ref map, prim.PrimitiveType);
 
             // Store distance into distance buffer
+            parseAlterationTypes(ref map, prim.AlterationTypes, ref altIndex);
             map.AppendLine("\tdistBuffer[" + primIndex + "] = " + obj + ";");
             map.AppendLine();
 
@@ -402,14 +406,80 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
-    private void parseCSG(ref StringBuilder map, CSG csg, ref uint primIndex, ref uint csgIndex)
+    private void parseAlterationTypes(ref StringBuilder map, List<AlterationTypes> types, ref uint altIndex, bool posAlt = false)
+    {
+        foreach (AlterationTypes type in types)
+        {
+            if (posAlt)
+            {
+                switch (type)
+                {
+                    case AlterationTypes.Elongate1D:
+                        map.AppendLine("\topElongate1D(pos.xyz, _altInfo[" + altIndex + "]);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.Elongate:
+                        break;
+                    case AlterationTypes.SymX:
+                        map.AppendLine("\topSymX(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.SymXZ:
+                        map.AppendLine("\topSymXZ(pos.xyz, _altInfo[" + altIndex + "].xy);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.Rep:
+                        map.AppendLine("\topRep(pos.xyz, _altInfo[" + altIndex + "].xyz);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.RepFinite:
+                        map.AppendLine("\topRepLim(pos.xyz, _altInfo[" + altIndex + "].x, _altInfo[" + altIndex + "].yzw);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.Twist:
+                        map.AppendLine("\topTwist(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.Bend:
+                        map.AppendLine("\topCheapBend(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                switch (type)
+                {
+                    case AlterationTypes.Round:
+                        map.AppendLine("\topRound(obj, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.Onion:
+                        map.AppendLine("\topOnion(obj, _altInfo[" + altIndex + "].x);");
+                        ++altIndex;
+                        break;
+                    case AlterationTypes.Displace:
+                        map.AppendLine("\topDisplace(pos.xyz, obj, _altInfo[" + altIndex + "].xyz);");
+                        ++altIndex;
+                        break;
+                    default:
+                        break;
+                }
+                //++altIndex;
+            }
+        }
+    }
+
+    private void parseCSG(ref StringBuilder map, CSG csg, ref uint primIndex, ref uint csgIndex, ref uint altIndex)
     {
         // Base case: Both nodes are primitives.
         if (csg.AllPrimNodes)
         {
             // Parse both nodes.
-            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex);
-            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, true);
+            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
+            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex, true);
 
             // Parse this CSG.
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
@@ -422,10 +492,10 @@ public class ShaderBuilder : MonoBehaviour
         else if (csg.IsFirstPrim)
         {
             // Recurse through second node (Must be a CSG).
-            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex);
+            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
             // Parse first node.
-            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex);
+            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
 
             // Parse this CSG.
             map.AppendLine("\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
@@ -440,13 +510,13 @@ public class ShaderBuilder : MonoBehaviour
         else if (csg.IsSecondPrim)
         {
             // Recurse through first node (Must be a csg).
-            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex);
+            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
             map.AppendLine("\tobj = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
 
             // Parse second node.
-            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, true);
+            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex, true);
 
             // Parse this CSG.
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
@@ -459,12 +529,12 @@ public class ShaderBuilder : MonoBehaviour
         else
         {
             // Recurse through first node.
-            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex);
+            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
             uint firstNodeIndex = (csgIndex - 1);
 
             // Recurse through second node.
-            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex);
+            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
             map.AppendLine("\tobj = storedCSGs[" + firstNodeIndex + "];");
             map.AppendLine();

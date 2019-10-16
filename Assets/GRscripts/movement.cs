@@ -61,6 +61,8 @@ public class movement : MonoBehaviour
 
         if (Input.GetKey(KeyCode.W) && onGround)
         {
+            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+
             if (angle > 0)
                 rb.AddForce((transform.forward * 8) * 1.8f);
             else
@@ -82,7 +84,6 @@ public class movement : MonoBehaviour
             rb.AddForce(transform.right * 8);
         }
         angle = 0.0f;
-        transform.rotation = Quaternion.Euler(0, mousePosX, 0);
     }
 
     private void OnCollisionStay(Collision collision)

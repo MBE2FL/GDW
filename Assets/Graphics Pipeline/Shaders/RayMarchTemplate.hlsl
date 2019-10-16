@@ -80,6 +80,7 @@ int _primitiveTypes[MAX_RM_OBJS];
 float2 _combineOps[MAX_RM_OBJS];
 float4 _primitiveGeoInfo[MAX_RM_OBJS];
 float4 _reflInfo[MAX_RM_OBJS];
+float4 _altInfo[MAX_RM_OBJS];
 
 //int _csgNodesPerRoot[MAX_CSG_CHILDREN];
 float4 _bufferedCSGs[MAX_CSG_CHILDREN];
@@ -124,6 +125,83 @@ struct reflectInfo
     float3 dir;
     rmPixel distField;
 };
+
+
+/// ######### Forward Declarations #########
+float dot2(float2 v);
+
+float dot2(float3 v);
+
+float sdSphere(float3 p, float s);
+
+float sdBox(float3 p, float3 b);
+
+float sdRoundBox(float3 pos, float3 geoInfo, float roundness);
+
+float sdTorus(float3 p, float2 t);
+
+float sdCappedTorus(float3 pos, float2 sc, float ra, float rb);
+
+float sdLink(float3 pos, float le, float r1, float r2);
+
+float sdCylinder(float3 p, float h, float r);
+
+float sdCappedCylinder(float3 pos, float h, float r);
+
+float sdCappedCylinder(float3 pos, float3 a, float3 b, float r);
+
+float sdRoundedCylinder(float3 pos, float ra, float rb, float h);
+
+float sdCone(float3 pos, float2 c);
+
+float sdCappedCone(float3 pos, float h, float r1, float r2);
+
+float sdRoundCone(float3 pos, float r1, float r2, float h);
+
+float sdPlane(float3 pos, float4 n);
+
+float sdHexagonalPrism(float3 pos, float2 h);
+
+float sdTriangularPrism(float3 pos, float2 h);
+
+float sdCapsule(float3 pos, float3 a, float3 b, float r);
+
+float sdVerticalCapsule(float3 pos, float h, float r);
+
+float sdSolidAngle(float3 pos, float2 c, float ra);
+
+float sdEllipsoid(float3 pos, float3 r);
+
+float sdOctahedron(float3 pos, float s);
+
+float sdOctahedronBound(float3 pos, float s);
+
+float sdTriangle(float3 pos, float3 a, float3 b, float3 c);
+
+float sdQuad(float3 pos, float3 a, float3 b, float3 c, float3 d);
+
+void opElongate1D(inout float3 pos, float3 h);
+
+float4 opElongate(float3 pos, float3 h);
+
+void opRound(inout float dist, float rad);
+
+float4 opOnion(float3 pos, float thickness);
+
+void opSymX(inout float3 pos, float2 c);
+
+void opSymXZ(inout float3 pos, float3 c);
+
+void opRep(inout float3 pos, float3 c);
+
+void opRepLim(inout float3 pos, float3 c, float3 l);
+
+void opDisplace(float3 pos, inout float dist, float3 c);
+
+void opTwist(inout float3 pos, float k);
+
+void opCheapBend(inout float3 pos, float k);
+/// ######### Forward Declarations #########
 
 
 /// ######### Conditional Functions #########
@@ -383,15 +461,15 @@ float opSmoothInt(float d1, float d2, float k)
     return lerp(d2, d1, h) + (k * h * (1.0 - h));;
 }
 
-float opRep(float3 p, float3 c)
-{
-    float3 q = fmod(p, c) - 0.5 * c;
+//float opRep(float3 p, float3 c)
+//{
+//    float3 q = fmod(p, c) - 0.5 * c;
 
-    //q = p;
-    //q.xy = fmod(p.xy, 2.0) - float2(0.5, 0.5) * 2.0;
+//    //q = p;
+//    //q.xy = fmod(p.xy, 2.0) - float2(0.5, 0.5) * 2.0;
 
-    return sdSphere(q, 0.5);
-}
+//    return sdSphere(q, 0.5);
+//}
 
 
 // Union for materials
