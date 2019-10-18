@@ -732,12 +732,10 @@ public class ShaderBuilder : MonoBehaviour
         uint primIndex = 0;
         uint csgIndex = 0;
 
-        List<RMPrimitive> prims = _rmMemoryManager.RM_Prims;
-        List<CSG> csgs = _rmMemoryManager.CSGs;
+        RMObj[] objects = FindObjectsOfType<RMObj>();
+        List<RMObj> objs = new List<RMObj>();
 
-        List<RMObj> objs = new List<RMObj>(prims.Count + csgs.Count);
-        objs.AddRange(prims);
-        objs.AddRange(csgs);
+        objs = new List<RMObj>(objects);
 
         objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
 
