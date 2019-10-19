@@ -20,7 +20,8 @@ public class MetaBallFluid : MonoBehaviour
     IntPtr velocities;
     IntPtr phases;
 
-    RMMemoryManager _memoryManager;
+    //RMMemoryManager _memoryManager;
+    RayMarcher _rayMarcher;
 
 
     private void Awake()
@@ -53,7 +54,7 @@ public class MetaBallFluid : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        _memoryManager = Camera.main.GetComponent<RMMemoryManager>();
+        _rayMarcher = Camera.main.GetComponent<RayMarcher>();
 
         Flex.Params param = new Flex.Params();
         param.radius = 10.0f;
@@ -118,7 +119,6 @@ public class MetaBallFluid : MonoBehaviour
 
     void spawnParticles(IntPtr particles, IntPtr velocities, IntPtr phases)
     {
-        List<RMPrimitive> prims = _memoryManager.RM_Prims;
         Vector4 particle;
         Vector3 velocity;
         int phase = Flex.MakePhase(0, Flex.Phase.SelfCollide | Flex.Phase.Fluid);
@@ -141,7 +141,8 @@ public class MetaBallFluid : MonoBehaviour
 
     void RenderParticles(IntPtr particles, IntPtr velocities, IntPtr phases)
     {
-        List<RMPrimitive> prims = _memoryManager.RM_Prims;
+        //List<RMPrimitive> prims = _memoryManager.RM_Prims;
+        List<RMObj> renderList = _rayMarcher.RenderList;
         Vector4 particle;
         Vector3 velocity;
 
@@ -159,8 +160,8 @@ public class MetaBallFluid : MonoBehaviour
                 //velocity += new Vector3(0.0f, -9.81f, 0.0f) * Time.deltaTime;
 
                 //prims[i].transform.localPosition += velocity;// * Time.deltaTime;
-                prims[i].transform.position = new Vector3(particle.x, particle.y, particle.z);
-                prims[i].transform.position += velocity;
+                renderList[i].transform.position = new Vector3(particle.x, particle.y, particle.z);
+                renderList[i].transform.position += velocity;
                 Debug.Log("Position: " + particle.ToString());
                 Debug.Log("Velocity: " + velocity.ToString());
             }
