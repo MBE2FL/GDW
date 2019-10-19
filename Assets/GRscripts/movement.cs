@@ -12,7 +12,9 @@ public class movement : MonoBehaviour
 
     private float angle = 0.0f;
     private float mousePosX = 0.0f;
-    private float mousePosY = 0.0f;
+    private float controllerPosX = 0.0f;
+    private float controllerMovementVert = 1;
+    private float controllerMovementHori = 1;
 
     bool onGround = true;
     private void Start()
@@ -43,13 +45,13 @@ public class movement : MonoBehaviour
 
         doCursor();
 
-        if (Input.GetKeyDown(KeyCode.Space) && onGround)
+        if (Input.GetKeyDown(KeyCode.Space) && onGround || Input.GetButtonDown("Fire1") && onGround)
         {
             rb.AddForce(new Vector3(0, 200, 0));
         }
 
         mousePosX += Input.GetAxis("Mouse X");
-        mousePosY += Input.GetAxis("Mouse Y");
+        controllerPosX += Input.GetAxis("HorizontalC");
 
         
     }
@@ -58,10 +60,14 @@ public class movement : MonoBehaviour
     {
         rampDetection();
 
+        controllerMovementVert = Input.GetAxis("Vertical") * -1f;
+        controllerMovementHori = Input.GetAxis("Horizontal") * -1f;
 
-        if (Input.GetKey(KeyCode.W) && onGround)
+
+        if (Input.GetKey(KeyCode.W) && onGround || controllerMovementVert == 1 && onGround)
         {
             transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
 
             if (angle > 0)
                 rb.AddForce((transform.forward * 8) * 1.8f);
@@ -69,18 +75,25 @@ public class movement : MonoBehaviour
                 rb.AddForce(transform.forward * 8);
         }
 
-        if (Input.GetKey(KeyCode.S) && onGround)
+        if (Input.GetKey(KeyCode.S) && onGround || controllerMovementVert == -1 && onGround)
         {
+            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+
             rb.AddForce(transform.forward * -8);
         }
 
-        if (Input.GetKey(KeyCode.A) && onGround)
+        if (Input.GetKey(KeyCode.A) && onGround || controllerMovementHori == 1 && onGround)
         {
+            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
             rb.AddForce(transform.right * -8);
         }
 
-        if (Input.GetKey(KeyCode.D) && onGround)
+        if (Input.GetKey(KeyCode.D) && onGround || controllerMovementHori == -1 && onGround)
         {
+            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
             rb.AddForce(transform.right * 8);
         }
         angle = 0.0f;

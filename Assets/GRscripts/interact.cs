@@ -31,14 +31,14 @@ public class interact : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && holdingObject)
+        if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject)
         {
             interactingObject.transform.SetParent(null);
             interRB.isKinematic = false;
             interactingObject = null;
             holdingObject = false;
         }
-        else if (Input.GetKeyDown(KeyCode.E) && objectDetection())
+        else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
         {
             interactingObject.transform.SetParent(transform);
             interObjPos = interactingObject.transform.position;
