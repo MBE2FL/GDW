@@ -67,7 +67,7 @@ public class movement : MonoBehaviour
 
         if (Input.GetKey(KeyCode.W) && onGround || controllerMovementVert == 1 && onGround)
         {
-            if(Input.GetJoystickNames()[0].Length != 0)
+            if(Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
                 transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
             else
                 transform.rotation = Quaternion.Euler(0, mousePosX, 0);
@@ -81,7 +81,7 @@ public class movement : MonoBehaviour
 
         if (Input.GetKey(KeyCode.S) && onGround || controllerMovementVert == -1 && onGround)
         {
-            if (Input.GetJoystickNames()[0].Length != 0)
+            if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
                 transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
             else
                 transform.rotation = Quaternion.Euler(0, mousePosX, 0);
@@ -91,7 +91,7 @@ public class movement : MonoBehaviour
 
         if (Input.GetKey(KeyCode.A) && onGround || controllerMovementHori == 1 && onGround)
         {
-            if (Input.GetJoystickNames()[0].Length != 0)
+            if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
                 transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
             else
                 transform.rotation = Quaternion.Euler(0, mousePosX, 0);
@@ -101,7 +101,7 @@ public class movement : MonoBehaviour
 
         if (Input.GetKey(KeyCode.D) && onGround || controllerMovementHori == -1 && onGround)
         {
-            if (Input.GetJoystickNames()[0].Length != 0)
+            if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
                 transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
             else
                 transform.rotation = Quaternion.Euler(0, mousePosX, 0);

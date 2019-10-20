@@ -16,7 +16,7 @@ public class cameraMovement : MonoBehaviour
     void Update()
     {
 
-        if (Input.GetJoystickNames()[0].Length != 0)
+        if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
         {
             ControllerPosX += Input.GetAxis("HorizontalC");
             ControllerPosY += Input.GetAxis("VerticalC");
