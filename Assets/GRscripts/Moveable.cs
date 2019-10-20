@@ -2,21 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class interact : MonoBehaviour
+public class Moveable : MonoBehaviour
 {
     private GameObject interactingObject;
-    private Rigidbody interRB;
+    public Rigidbody interRB;
 
     private Vector3 interObjPos;
     private Vector3 rayPos;
 
-    private bool holdingObject = false;
-
+    public bool holdingObject = false;
     bool objectDetection()
     {
         rayPos = new Vector3(transform.position.x, transform.position.y - 0.6f, transform.position.z);
         RaycastHit ray;
-        if (Physics.Raycast(rayPos, transform.TransformDirection(Vector3.forward), out ray, 1f, 1 << 9))
+        if (Physics.Raycast(rayPos, transform.TransformDirection(Vector3.forward), out ray, 1f, 1 << 10))
         {
             interactingObject = ray.transform.gameObject;
             interRB = interactingObject.GetComponent<Rigidbody>();
@@ -31,24 +30,23 @@ public class interact : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && holdingObject)
+        if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject)
         {
             interactingObject.transform.SetParent(null);
             interRB.isKinematic = false;
+            //interRB.useGravity = true;
             interactingObject = null;
             holdingObject = false;
         }
-        else if (Input.GetKeyDown(KeyCode.E) && objectDetection())
+        else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
         {
             interactingObject.transform.SetParent(transform);
             interObjPos = interactingObject.transform.position;
-            interactingObject.GetComponent("rigidbody");
-            interactingObject.transform.position = new Vector3(interObjPos.x,(transform.position.y * 1.25f), interObjPos.z);
+            //interactingObject.transform.position = new Vector3(interObjPos.x, (transform.position.y + 0.1f), interObjPos.z);
+            interactingObject.transform.position = interObjPos;
             interRB.isKinematic = true;
+            //interRB.useGravity = false;
             holdingObject = true;
         }
-
-        if(holdingObject)
-            interObjPos = interactingObject.transform.position;
     }
 }
