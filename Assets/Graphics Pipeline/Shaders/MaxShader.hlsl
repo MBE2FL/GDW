@@ -676,9 +676,9 @@ float map(float3 p)
 	// ######### Infinite Water Three #########
 
 	// ######### TestBox #########
-	pos = mul(_invModelMats[3], float4(p, 1.0));
+	pos = mul(_invModelMats[3], float4(p, 1.0)); 
 	geoInfo = _primitiveGeoInfo[3];
-	obj = sdBox(pos.xyz, geoInfo.xyz);
+    obj = sdBox(pos.xyz / float3(1.0, 1.0, 2.0), geoInfo.xyz) * min(1.0, min(1.0, 2.0));
 	distBuffer[3] = obj;
 
 	scene = opSmoothUnion(scene, obj, _combineOps[3].y);
@@ -1578,14 +1578,21 @@ float4 frag(VertexOutput input) : SV_Target
     //    //col.rgb = (a + (b / distField.pos.z)) + 0.3;
 
 
-    //    zc = mul(float4(distField.pos, 1.0), UNITY_MATRIX_MVP).z;
-    //    //zc = mul(UNITY_MATRIX_MVP, float4(distField.pos, 1.0)).z;
-    //    wc = mul(float4(distField.pos, 1.0), UNITY_MATRIX_MVP).w;
-    //    //wc = mul(UNITY_MATRIX_MVP, float4(distField.pos, 1.0)).w;
-    //    col.rgb = (zc / wc) + 0.3;
+    //    zc = mul(float4(p, 1.0), UNITY_MATRIX_MVP).z;
+    //    //zc = mul(UNITY_MATRIX_MVP, float4(p, 1.0)).z;
+    //    wc = mul(float4(p, 1.0), UNITY_MATRIX_MVP).w;
+    //    //wc = mul(UNITY_MATRIX_MVP, float4(p, 1.0)).w;
+    //    col.rgb = (zc / wc) + 0.5;
     //}
     //else
-    //    col.rgb = tex2D(_CameraDepthTexture, uv).rrr +0.5;
+    //    col.rgb = tex2D(_CameraDepthTexture, uv).rrr + 0.5;
+
+    
+    //if (rayHit)
+    //{
+    //    col.rgb = distField.totalDist / _maxDrawDist;
+    //}
+
 
     return col;
 }

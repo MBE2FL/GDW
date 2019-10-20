@@ -384,6 +384,11 @@ public class CSGEditor : RMObjEditor
         EditorGUI.EndDisabledGroup();
 
 
+
+        // Display Alterations
+        displayAlterations(label, csg);
+
+
         serializedObject.ApplyModifiedProperties();
 
 
