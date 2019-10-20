@@ -7,7 +7,7 @@ TagManager:
   - RM_Primitive
   - RM_CSG
   - ground
-  - interactable
+  - Interactable
   layers:
   - Default
   - TransparentFX
@@ -18,8 +18,8 @@ TagManager:
   - 
   - 
   - ground
-  - interactable
-  - 
+  - PickUp
+  - Moveable
   - 
   - 
   - 

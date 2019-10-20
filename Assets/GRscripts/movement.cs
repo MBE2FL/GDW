@@ -45,7 +45,8 @@ public class movement : MonoBehaviour
 
         doCursor();
 
-        if (Input.GetKeyDown(KeyCode.Space) && onGround || Input.GetButtonDown("Fire1") && onGround)
+        if (Input.GetKeyDown(KeyCode.Space) && onGround && !GetComponent<Moveable>().holdingObject ||
+            Input.GetButtonDown("Fire1") && onGround && !GetComponent<Moveable>().holdingObject)
         {
             rb.AddForce(new Vector3(0, 200, 0));
         }
@@ -66,8 +67,11 @@ public class movement : MonoBehaviour
 
         if (Input.GetKey(KeyCode.W) && onGround || controllerMovementVert == 1 && onGround)
         {
-            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            if(Input.GetJoystickNames()[0].Length != 0)
+                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            else
+                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+            
 
             if (angle > 0)
                 rb.AddForce((transform.forward * 8) * 1.8f);
@@ -77,37 +81,46 @@ public class movement : MonoBehaviour
 
         if (Input.GetKey(KeyCode.S) && onGround || controllerMovementVert == -1 && onGround)
         {
-            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            if (Input.GetJoystickNames()[0].Length != 0)
+                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            else
+                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
 
             rb.AddForce(transform.forward * -8);
         }
 
         if (Input.GetKey(KeyCode.A) && onGround || controllerMovementHori == 1 && onGround)
         {
-            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            if (Input.GetJoystickNames()[0].Length != 0)
+                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            else
+                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+
             rb.AddForce(transform.right * -8);
         }
 
         if (Input.GetKey(KeyCode.D) && onGround || controllerMovementHori == -1 && onGround)
         {
-            transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-            transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            if (Input.GetJoystickNames()[0].Length != 0)
+                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
+            else
+                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
+
             rb.AddForce(transform.right * 8);
         }
+
         angle = 0.0f;
     }
 
     private void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.tag == "ground" || collision.gameObject.tag == "interactable")
+        if (collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
             onGround = true;
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        if(collision.gameObject.tag == "ground" || collision.gameObject.tag == "interactable")
+        if(collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
         onGround = false;
 
     }
