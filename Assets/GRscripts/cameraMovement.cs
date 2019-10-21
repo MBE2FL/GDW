@@ -24,8 +24,8 @@ public class cameraMovement : MonoBehaviour
         }
         else
         {
-            mousePosX += Input.GetAxis("Mouse X");
-            mousePosY += Input.GetAxis("Mouse Y");
+            mousePosX += Input.GetAxis("HorizontalC");
+            mousePosY += Input.GetAxis("VerticalC");
             transform.position = (player.transform.position + Quaternion.Euler(mousePosY, mousePosX, 0) * posOffset);
         }
         transform.LookAt(player.transform.position);

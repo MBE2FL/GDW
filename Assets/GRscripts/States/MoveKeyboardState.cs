@@ -41,7 +41,7 @@ public class MoveKeyboardState : IPlayerState
 
     public void update()
     {
-        _mousePosX += Input.GetAxis("Mouse X");
+        _mousePosX += Input.GetAxis("HorizontalC");
     }
 
     public void fixedUpdate()

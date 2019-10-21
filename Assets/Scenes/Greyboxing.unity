@@ -341,10 +341,10 @@ GameObject:
   - component: {fileID: 470835692}
   - component: {fileID: 470835691}
   - component: {fileID: 470835694}
-  - component: {fileID: 470835695}
   - component: {fileID: 470835696}
   - component: {fileID: 470835697}
   - component: {fileID: 470835690}
+  - component: {fileID: 470835695}
   m_Layer: 11
   m_Name: sister
   m_TagString: Untagged
@@ -868,7 +868,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 112
+  m_Constraints: 114
   m_CollisionDetection: 0
 --- !u!1 &1388729126
 GameObject:

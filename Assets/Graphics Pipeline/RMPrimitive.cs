@@ -270,7 +270,62 @@ public class RMPrimitive : RMObj
             return _static;
         }
     }
+    
+    //public List<AlterationTypes> AlterationTypes
+    //{
+    //    get
+    //    {
+    //        return _alterationTypes;
+    //    }
+    //}
 
+    //public List<Vector4> AlterationInfo
+    //{
+    //    get
+    //    {
+    //        return _alterationInfo;
+    //    }
+    //}
+
+    //public List<string> AltCustomInfo
+    //{
+    //    get
+    //    {
+    //        return _altCustomInfo;
+    //    }
+    //}
+
+    public List<Alteration> Alterations
+    {
+        get
+        {
+            return _alterations;
+        }
+        set
+        {
+            _alterations = value;
+        }
+    }
+
+    public Vector4 TEST_A
+    {
+        get
+        {
+            return _alterations[0].info;
+        }
+        set
+        {
+            Alteration zero = _alterations[0];
+            zero.info = value;
+        }
+    }
+
+    public Vector4 Test2;
+
+    //private void Awake()
+    //{
+    //    _drawOrder = 0;
+    //}
 
     #region
     //// Start is called before the first frame update

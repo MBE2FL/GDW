@@ -714,7 +714,7 @@ public class ShaderBuilder : MonoBehaviour
 
         uint primIndex = 0;
         uint csgIndex = 0;
-
+        
 
         List<RMObj> objs = _rayMarcher.RenderList;
 
