@@ -25,9 +25,6 @@ public class MoveKeyboardState : IPlayerState
         if (Input.GetKeyDown(KeyCode.Space) && _movement.OnGround && !_moveable.holdingObject)
             return Movement.JumpState;
 
-        string[] test = Input.GetJoystickNames();
-        string test2 = Input.GetJoystickNames()[0];
-
         // Change to controller movement state.
         if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
             return Movement.MoveControllerState;
