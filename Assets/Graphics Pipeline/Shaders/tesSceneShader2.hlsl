@@ -647,80 +647,106 @@ float map(float3 p)
 
 	float3 cell = float3(0.0, 0.0, 0.0);
 
-	// ######### platform #########
+	// ######### platform (3) #########
 	pos = mul(_invModelMats[0], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[0];
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[0] = obj;
 
-	scene = opU(scene, obj);
-	// ######### platform #########
+	scene = opSmoothUnion(scene, obj, _combineOps[0].y);
+	// ######### platform (3) #########
 
-	// ######### floor #########
+	// ######### platform (2) #########
 	pos = mul(_invModelMats[1], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[1];
 	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[1] = obj;
 
+	scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+	// ######### platform (2) #########
+
+	// ######### platform (1) #########
+	pos = mul(_invModelMats[2], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[2];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[2] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[2].y);
+	// ######### platform (1) #########
+
+	// ######### platform #########
+	pos = mul(_invModelMats[3], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[3];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[3] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[3].y);
+	// ######### platform #########
+
+	// ######### floor #########
+	pos = mul(_invModelMats[4], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[4];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[4] = obj;
+
 	scene = opU(scene, obj);
 	// ######### floor #########
 
-	// ######### brother #########
-	pos = mul(_invModelMats[2], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[2];
+	// ######### sister (1) #########
+	pos = mul(_invModelMats[5], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[5];
 	obj = sdSphere(pos.xyz, geoInfo.x);
 	opDisplace(pos.xyz, obj, _altInfo[0].xyz);
-	distBuffer[2] = obj;
+	distBuffer[5] = obj;
 
 
-	pos = mul(_invModelMats[3], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[3];
-	opTwist(pos.xyz, _altInfo[1].x);
-	obj2 = sdTorus(pos.xyz, geoInfo.xy);
-	distBuffer[3] = obj2;
+	pos = mul(_invModelMats[6], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[6];
+	obj2 = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
+	distBuffer[6] = obj2;
 
 
 	storedCSGs[0] = opSmoothUnion(obj, obj2, _combineOpsCSGs[0].y);
 
 	scene = opSmoothUnion(scene, storedCSGs[0], _combineOpsCSGs[0].w);
+	// ######### sister (1) #########
+
 	// ######### brother #########
-
-	// ######### sister #########
-	pos = mul(_invModelMats[4], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[4];
+	pos = mul(_invModelMats[7], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[7];
 	obj = sdSphere(pos.xyz, geoInfo.x);
-	opDisplace(pos.xyz, obj, _altInfo[2].xyz);
-	distBuffer[4] = obj;
+	opDisplace(pos.xyz, obj, _altInfo[1].xyz);
+	distBuffer[7] = obj;
 
 
-	pos = mul(_invModelMats[5], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[5];
-	opTwist(pos.xyz, _altInfo[3].x);
-	obj2 = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
-	distBuffer[5] = obj2;
+	pos = mul(_invModelMats[8], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[8];
+	opTwist(pos.xyz, _altInfo[2].x);
+	obj2 = sdTorus(pos.xyz, geoInfo.xy);
+	distBuffer[8] = obj2;
 
 
 	storedCSGs[1] = opSmoothUnion(obj, obj2, _combineOpsCSGs[1].y);
 
 	scene = opSmoothUnion(scene, storedCSGs[1], _combineOpsCSGs[1].w);
-	// ######### sister #########
+	// ######### brother #########
 
 	// ######### smaller box #########
-	pos = mul(_invModelMats[6], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[6];
+	pos = mul(_invModelMats[9], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[9];
 	obj = sdBox(pos.xyz, geoInfo.xyz);
-	distBuffer[6] = obj;
+	distBuffer[9] = obj;
 
-	scene = opU(scene, obj);
+	scene = opSmoothUnion(scene, obj, _combineOps[9].y);
 	// ######### smaller box #########
 
 	// ######### box #########
-	pos = mul(_invModelMats[7], float4(p, 1.0));
-	geoInfo = _primitiveGeoInfo[7];
+	pos = mul(_invModelMats[10], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[10];
 	obj = sdBox(pos.xyz, geoInfo.xyz);
-	distBuffer[7] = obj;
+	distBuffer[10] = obj;
 
-	scene = opU(scene, obj);
+	scene = opSmoothUnion(scene, obj, _combineOps[10].y);
 	// ######### box #########
 
 	return scene;
@@ -755,68 +781,92 @@ rmPixel mapMat()
 	rmPixel storedCSGs[MAX_CSG_CHILDREN];
 
 	float reflWeight;
-	// ######### platform #########
+	// ######### platform (3) #########
 	obj.dist = distBuffer[0];
 	obj.colour = _rm_colours[0];
 	obj.reflInfo = _reflInfo[0];
 	obj.refractInfo = _refractInfo[0];
-	scene = opUMat(scene, obj);
-	// ######### platform #########
+	scene = opSmoothUnionMat(scene, obj, _combineOps[0].y);
+	// ######### platform (3) #########
 
-	// ######### floor #########
+	// ######### platform (2) #########
 	obj.dist = distBuffer[1];
 	obj.colour = _rm_colours[1];
 	obj.reflInfo = _reflInfo[1];
 	obj.refractInfo = _refractInfo[1];
-	scene = opUMat(scene, obj);
-	// ######### floor #########
+	scene = opSmoothUnionMat(scene, obj, _combineOps[1].y);
+	// ######### platform (2) #########
 
-	// ######### brother #########
+	// ######### platform (1) #########
 	obj.dist = distBuffer[2];
 	obj.colour = _rm_colours[2];
 	obj.reflInfo = _reflInfo[2];
 	obj.refractInfo = _refractInfo[2];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[2].y);
+	// ######### platform (1) #########
 
-	obj2.dist = distBuffer[3];
-	obj2.colour = _rm_colours[3];
-	obj2.reflInfo = _reflInfo[3];
-	obj2.refractInfo = _refractInfo[3];
+	// ######### platform #########
+	obj.dist = distBuffer[3];
+	obj.colour = _rm_colours[3];
+	obj.reflInfo = _reflInfo[3];
+	obj.refractInfo = _refractInfo[3];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[3].y);
+	// ######### platform #########
 
-	storedCSGs[0] = opSmoothUnionMat(obj, obj2, _combineOpsCSGs[0].y);
-
-	scene = opSmoothUnionMat(scene, storedCSGs[0], _combineOpsCSGs[0].w);
-	// ######### brother #########
-
-	// ######### sister #########
+	// ######### floor #########
 	obj.dist = distBuffer[4];
 	obj.colour = _rm_colours[4];
 	obj.reflInfo = _reflInfo[4];
 	obj.refractInfo = _refractInfo[4];
-
-	obj2.dist = distBuffer[5];
-	obj2.colour = _rm_colours[5];
-	obj2.reflInfo = _reflInfo[5];
-	obj2.refractInfo = _refractInfo[5];
-
-	storedCSGs[1] = opSmoothUnionMat(obj, obj2, _combineOpsCSGs[1].y);
-
-	scene = opSmoothUnionMat(scene, storedCSGs[1], _combineOpsCSGs[1].w);
-	// ######### sister #########
-
-	// ######### smaller box #########
-	obj.dist = distBuffer[6];
-	obj.colour = _rm_colours[6];
-	obj.reflInfo = _reflInfo[6];
-	obj.refractInfo = _refractInfo[6];
 	scene = opUMat(scene, obj);
-	// ######### smaller box #########
+	// ######### floor #########
 
-	// ######### box #########
+	// ######### sister (1) #########
+	obj.dist = distBuffer[5];
+	obj.colour = _rm_colours[5];
+	obj.reflInfo = _reflInfo[5];
+	obj.refractInfo = _refractInfo[5];
+
+	obj2.dist = distBuffer[6];
+	obj2.colour = _rm_colours[6];
+	obj2.reflInfo = _reflInfo[6];
+	obj2.refractInfo = _refractInfo[6];
+
+	storedCSGs[0] = opSmoothUnionMat(obj, obj2, _combineOpsCSGs[0].y);
+
+	scene = opSmoothUnionMat(scene, storedCSGs[0], _combineOpsCSGs[0].w);
+	// ######### sister (1) #########
+
+	// ######### brother #########
 	obj.dist = distBuffer[7];
 	obj.colour = _rm_colours[7];
 	obj.reflInfo = _reflInfo[7];
 	obj.refractInfo = _refractInfo[7];
-	scene = opUMat(scene, obj);
+
+	obj2.dist = distBuffer[8];
+	obj2.colour = _rm_colours[8];
+	obj2.reflInfo = _reflInfo[8];
+	obj2.refractInfo = _refractInfo[8];
+
+	storedCSGs[1] = opSmoothUnionMat(obj, obj2, _combineOpsCSGs[1].y);
+
+	scene = opSmoothUnionMat(scene, storedCSGs[1], _combineOpsCSGs[1].w);
+	// ######### brother #########
+
+	// ######### smaller box #########
+	obj.dist = distBuffer[9];
+	obj.colour = _rm_colours[9];
+	obj.reflInfo = _reflInfo[9];
+	obj.refractInfo = _refractInfo[9];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[9].y);
+	// ######### smaller box #########
+
+	// ######### box #########
+	obj.dist = distBuffer[10];
+	obj.colour = _rm_colours[10];
+	obj.reflInfo = _reflInfo[10];
+	obj.refractInfo = _refractInfo[10];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[10].y);
 	// ######### box #########
 
 	return scene;
@@ -1268,155 +1318,6 @@ void performReflection(inout float4 add, float3 rayOrigin, float3 rayDir, float3
     info.normal = normal;
     info.dir = rayDir;
     info.distField = distField;
-}
-
-// Will skip the case of if another reflective or refractive is inside another refractive object.
-void performRefraction(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
-{
-    reflectInfo info;
-
-    bool rayHit = false;
-    float3 refractRayDir = normalize(calcRefractRay(rayDir, normal, distField.refractInfo.y));
-    float3 refractRayOrigin = pos + (refractRayDir * 0.05);
-
-
-    // March along refraction ray THROUGH the current object (medium).
-    rayHit = unsignedRaymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
-
-    // See inside of current object.
-    if (rayHit)
-    {
-        // Add colour of any object hit inside of the current object, or the current object itself.
-        normal = calcNormal(pos);
-        add += float4(calcLighting(pos, normal, distField, 1.0, 0.0).rgb, 0.0) * ratio.y;
-
-        ratio = fresnel(distField.refractInfo.y, refractRayDir, normal);
-        performReflection(add, refractRayOrigin, refractRayDir, pos, -normal, distField, ratio, info);
-        //add = float4(ratio.xxx, 1.0);
-        //add = float4(ratio.yyy, 1.0);
-        //add += float4(1.0, 0.0, 0.0, 1.0);
-
-        // March along refraction ray EXITING the current object (medium).
-        refractRayDir = normalize(calcRefractRay(refractRayDir, normal, 1.5));
-        refractRayOrigin = pos + (refractRayDir * 0.05);
-        rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
-
-        // See behind the current object.
-        if (rayHit)
-        {
-            // Add the colour of what is behind the current object.
-            normal = calcNormal(pos);
-            add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * ratio.y;
-            //add = float4(ratio.xxx, 1.0);
-
-            ratio = fresnel(distField.refractInfo.y, refractRayDir, normal);
-            //ratio.x = 1.0;
-            ratio.x = (distField.refractInfo.x > 0.0) ? ratio.x : 1.0;
-            performReflection(add, refractRayOrigin, refractRayDir, pos, normal, distField, ratio, info); // TO-DO check if inside object still (Total internal reflection)
-
-            //add += float4(0.0, 1.0, 0.0, 0.0);
-            //add = float4(ratio.xxx, 1.0);
-            //add = float4(ratio.yyy, 1.0);
-
-            refractRayDir = normalize(calcRefractRay(refractRayDir, normal, 1.5));
-            refractRayOrigin = pos + (refractRayDir * 0.05);
-            rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
-
-            if (rayHit)
-            {
-                normal = calcNormal(pos);
-                add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * ratio.y;
-            }
-        }
-    }
-}
-
-void ReflectAndRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
-{
-    reflectInfo info;
-
-    // Calculate refraction.
-    bool rayHit = false;
-    float3 refractRayDir = normalize(calcRefractRay(rayDir, normal, distField.refractInfo.y));
-    refractRayDir = normalize(refract(rayDir, normal, 1.0 / distField.refractInfo.y));
-    float3 refractRayOrigin = pos + (refractRayDir * 0.05);
-
-    // March along refraction ray THROUGH the current object (medium).
-    rayHit = unsignedRaymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
-
-
-    // See inside of current object.
-    if (rayHit)
-    {
-        // Add colour of any object hit inside of the current object, or the current object itself.
-        normal = calcNormal(pos);
-        add += float4(calcLighting(pos, normal, distField, 1.0, 0.0).rgb, 0.0) * ratio.y;
-
-        // Calculate frensel ratio.
-        ratio = fresnel(distField.refractInfo.y, refractRayDir, normal);
-
-        // Calculate reflection.
-        performReflection(add, refractRayOrigin, refractRayDir, pos, -normal, distField, ratio, info);
-
-        // Calculate refraction for reflection.
-        info.dir = normalize(calcRefractRay(info.dir, info.normal, distField.refractInfo.y));
-        //info.dir = normalize(refract(info.dir, -info.normal, distField.refractInfo.y / 1.0));
-        info.pos = info.pos + (info.dir * 0.05);
-
-        if (dot(info.dir, info.normal) > 0.0)
-        {
-            rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) info.distField.refractInfo.x, _maxDrawDist, info.pos, info.distField);
-            if (rayHit)
-            {
-                float2 reflectRatio = fresnel(info.distField.refractInfo.y, info.dir, info.normal);
-                //normal = calcNormal(reflectPos);
-                add += float4(calcLighting(info.pos, info.normal, info.distField, 1.0, 1.0).rgb, 0.0) * reflectRatio.y * ratio.x;
-                //add = float4(reflectRatio.yyy, 1.0);
-            }
-        }
-
-
-        // Calculate refraction.
-        // March along refraction ray EXITING the current object (medium).
-        //refractRayDir = normalize(calcRefractRay(refractRayDir, normal, distField.refractInfo.y));
-        refractRayDir = normalize(refract(refractRayDir, -normal, distField.refractInfo.y / 1.0));
-        refractRayOrigin = pos + (refractRayDir * 0.05);
-        //float refractive = when
-        rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
-
-
-        // See behind the current object.
-        if (rayHit)
-        {
-            // Add the colour of what is behind the current object.
-            normal = calcNormal(pos);
-            add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * ratio.y * 0.6;
-            //add = float4(pos, 1.0);
-
-            // Calculate frensel ratio.
-            ratio = fresnel(distField.refractInfo.y, refractRayDir, normal) * ratio.x;
-            ratio.x = (distField.refractInfo.x > 0.0) ? ratio.x : 1.0;
-
-            // Calculate reflection.
-            //if (dot(refractRayDir, normal) < 0.0)
-            //{
-            //    performReflection(add, refractRayOrigin, refractRayDir, pos, normal, distField, ratio, reflectPos, reflectNormal, reflectDir, reflectDistField); // TO-DO check if inside object still (Total internal reflection)
-
-
-            //    // Calculate refraction.
-            //    refractRayDir = normalize(calcRefractRay(refractRayDir, normal, distField.refractInfo.y));
-            //    refractRayOrigin = pos + (refractRayDir * 0.05);
-            //    rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
-
-
-            //    if (rayHit)
-            //    {
-            //        normal = calcNormal(pos);
-            //        add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * ratio.y;
-            //    }
-            //}
-        }
-    }
 }
 
 void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
