@@ -10,6 +10,7 @@ public class MoveKeyboardState : IPlayerState
     Moveable _moveable;
     float _mousePosX;
     //Vector3 _force;
+    Transform camTransform = Camera.main.transform;
 
     public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
     {
@@ -52,7 +53,8 @@ public class MoveKeyboardState : IPlayerState
             // Move forward
             if (Input.GetKey(KeyCode.W))
             {
-                _transform.rotation = Quaternion.Euler(0, _mousePosX, 0);
+                //_transform.rotation = Quaternion.Euler(0, _mousePosX, 0);
+                _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
 
                 // Increase forward speed while moving up ramps.
                 if (_movement.Angle > 0)
@@ -64,21 +66,21 @@ public class MoveKeyboardState : IPlayerState
             // Move backward
             if (Input.GetKey(KeyCode.S))
             {
-                _transform.rotation = Quaternion.Euler(0, _mousePosX, 0);
+                _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
                 _rb.AddForce(_transform.forward * -8 * 2.0f);
             }
 
             // Move left
             if (Input.GetKey(KeyCode.A))
             {
-                _transform.rotation = Quaternion.Euler(0, _mousePosX, 0);
+                _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
                 _rb.AddForce(_transform.right * -8 * 2.0f);
             }
 
             // Move right
             if (Input.GetKey(KeyCode.D))
             {
-                _transform.rotation = Quaternion.Euler(0, _mousePosX, 0);
+                _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
                 _rb.AddForce(_transform.right * 8 * 2.0f);
             }
         }

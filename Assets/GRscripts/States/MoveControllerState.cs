@@ -11,6 +11,7 @@ public class MoveControllerState : IPlayerState
     private float _controllerPosX = 0.0f;
     private float _controllerMovementVert = 1;
     private float _controllerMovementHori = 1;
+    Transform camTransform = Camera.main.transform;
 
     public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
     {
@@ -52,7 +53,7 @@ public class MoveControllerState : IPlayerState
             if (_controllerMovementVert == 1)
             {
                 if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                    _transform.rotation = Quaternion.Euler(0, _controllerPosX, 0);
+                    _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
 
 
                 if (_movement.Angle > 0)
@@ -65,7 +66,7 @@ public class MoveControllerState : IPlayerState
             if (_controllerMovementVert == -1)
             {
                 if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                    _transform.rotation = Quaternion.Euler(0, _controllerPosX, 0);
+                    _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
 
                 _rb.AddForce(_transform.forward * -8.0f * 2.0f);
             }
@@ -73,7 +74,7 @@ public class MoveControllerState : IPlayerState
             if (_controllerMovementHori == 1)
             {
                 if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                    _transform.rotation = Quaternion.Euler(0, _controllerPosX, 0);
+                    _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
 
                 _rb.AddForce(_transform.right * -8.0f * 2.0f);
             }
@@ -81,7 +82,7 @@ public class MoveControllerState : IPlayerState
             if (_controllerMovementHori == -1)
             {
                 if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                    _transform.rotation = Quaternion.Euler(0, _controllerPosX, 0);
+                    _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
 
                 _rb.AddForce(_transform.right * 8.0f * 2.0f);
             }
