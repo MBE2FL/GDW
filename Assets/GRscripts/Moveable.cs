@@ -14,6 +14,10 @@ public class Moveable : MonoBehaviour
     private float _distRange = 5.0f;
     [SerializeField]
     private float _maxSpeed = 60.0f;
+    [SerializeField]
+    private float _minDist = 1.3f;
+    [SerializeField]
+    private float _maxDist = 2.0f;
 
     public bool holdingObject = false;
     bool objectDetection()
@@ -65,7 +69,8 @@ public class Moveable : MonoBehaviour
             ////interactingObject.transform.localPosition = new Vector3(0.0f, 0.0f, 2.0f);
             //Rigidbody interRB = interactingObject.GetComponent<Rigidbody>();
 
-            Vector3 offset = (transform.forward * 2.0f) - interactingObject.transform.localPosition;
+            //Vector3 offset = (transform.forward * 2.0f) - interactingObject.transform.localPosition;
+            Vector3 offset = new Vector3(0.0f, 0.0f, 2.0f) - interactingObject.transform.localPosition;
             float dist = offset.magnitude;
             //float distScaler = Mathf.Clamp(dist, 0.0f, _distRange) / _distRange;
             //float speed = Mathf.Lerp(0.0f, 60.0f, distScaler);
@@ -92,31 +97,41 @@ public class Moveable : MonoBehaviour
             //}
 
             Rigidbody rb = gameObject.GetComponent<Rigidbody>();
+            float objSpeed = 1.0f;
 
-            if (dist < 0.2f)
+            Debug.Log(dist);
+            // Object is too close to the player.
+            if (dist < _minDist)
             {
                 // Find local velocity.
                 Vector3 localVelocity = transform.InverseTransformDirection(rb.velocity);
 
+                Debug.Log("Stopping velocity" + localVelocity.z);
                 // NOTE: Should be stopping the rigidbody. Most likely player's move is called after, thus still adding some force.
                 // Solution: Make a pick up state where only W and S are allowed, and W is also toggeled by this if.
                 if (localVelocity.z > 0.0f)
                 {
-                    localVelocity.z = 0.0f;
-                    Debug.Log("Local Vel: " + localVelocity);
+                    
+                    //localVelocity.z = 0.0f;
+                    //localVelocity.z = Mathf.Lerp(0.0f, localVelocity.z, dist / _minDist);
+                    //localVelocity.z = Mathf.SmoothStep(0.5f, localVelocity.z, dist / _minDist);
 
-                    Movement.PushPullState.ForwardMovement = false;
+                    if (localVelocity.z == 0.0f)
+                        Movement.PushPullState.ForwardMovement = false;
                 }
                 else
                     Movement.PushPullState.ForwardMovement = true;
 
                 // Change global velocity, based on local velocity.
-                rb.velocity = transform.TransformDirection(localVelocity);
-
-                
+                rb.velocity = transform.TransformDirection(localVelocity);   
+            }
+            // Object is too far from the player.
+            else if (dist > _maxDist)
+            {
+                objSpeed = 2.0f;
             }
 
-            interRB.velocity = rb.velocity;
+            interRB.velocity = rb.velocity * objSpeed;
         }
     }
 }
