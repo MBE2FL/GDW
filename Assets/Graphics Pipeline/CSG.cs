@@ -256,8 +256,8 @@ public class CSG : RMObj
                 ((CSG)_secondNode)._isRoot = true;
         }
 
-        if (Camera.main)
-            Camera.main.GetComponent<RMMemoryManager>().Dirty = true;
+        //if (Camera.main)
+        //    Camera.main.GetComponent<RMMemoryManager>().Dirty = true;
     }
 }
 
@@ -382,6 +382,11 @@ public class CSGEditor : RMObjEditor
             csg.CombineSmoothness = Mathf.Clamp(_combineSmoothness.floatValue, 0.0f, Mathf.Infinity);
         }
         EditorGUI.EndDisabledGroup();
+
+
+
+        // Display Alterations
+        displayAlterations(label, csg);
 
 
         serializedObject.ApplyModifiedProperties();

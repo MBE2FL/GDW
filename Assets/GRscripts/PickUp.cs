@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class interact : MonoBehaviour
+public class PickUp : MonoBehaviour
 {
     private GameObject interactingObject;
     private Rigidbody interRB;
 
-    private Vector3 interObjPos;
+    private Vector3 interObjPos;// a vector that is used to hold the position of the current interacting object(for ease of code)
     private Vector3 rayPos;
 
     private bool holdingObject = false;
@@ -31,24 +31,20 @@ public class interact : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && holdingObject)
+        if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject)
         {
             interactingObject.transform.SetParent(null);
             interRB.isKinematic = false;
             interactingObject = null;
             holdingObject = false;
         }
-        else if (Input.GetKeyDown(KeyCode.E) && objectDetection())
+        else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
         {
             interactingObject.transform.SetParent(transform);
             interObjPos = interactingObject.transform.position;
-            interactingObject.GetComponent("rigidbody");
-            interactingObject.transform.position = new Vector3(interObjPos.x,(transform.position.y * 1.25f), interObjPos.z);
+            interactingObject.transform.position = new Vector3(interObjPos.x,(transform.position.y * 1.25f), transform.position.z + 0.6f);
             interRB.isKinematic = true;
             holdingObject = true;
         }
-
-        if(holdingObject)
-            interObjPos = interactingObject.transform.position;
     }
 }

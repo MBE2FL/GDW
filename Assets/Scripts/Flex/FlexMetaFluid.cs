@@ -31,15 +31,17 @@ public class FlexMetaFluid : FlexFluidRenderer
             Array.Sort<Vector4>(particles, new Comparison<Vector4>(
                                                                     (i1, i2) => Vector4.SqrMagnitude(i2).CompareTo(Vector4.SqrMagnitude(i1))));
 
-            RMMemoryManager rmm = Camera.main.GetComponent<RMMemoryManager>();
-            List<RMPrimitive> prims = rmm.RM_Prims;
+            //RMMemoryManager rmm = Camera.main.GetComponent<RMMemoryManager>();
+            //List<RMPrimitive> prims = rmm.RM_Prims;
+            RayMarcher rayMarcher = Camera.main.GetComponent<RayMarcher>();
+            List<RMObj> renderList = rayMarcher.RenderList;
             Vector4 force;
 
             for (int i = 0; i < 28; ++i)
             {
                 force = particles[i];
                 force += new Vector4(0.0f, -9.81f, 0.0f, 0.0f);
-                prims[i].transform.position += new Vector3(force.x, force.y, force.z) * Time.deltaTime;
+                renderList[i].transform.position += new Vector3(force.x, force.y, force.z) * Time.deltaTime;
             }
         }
     }

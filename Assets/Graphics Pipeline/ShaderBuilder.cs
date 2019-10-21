@@ -21,8 +21,6 @@ public class ShaderBuilder : MonoBehaviour
     [SerializeField]
     private string _templateShaderPath;
     [HideInInspector]
-    private RMMemoryManager _rmMemoryManager;
-    [HideInInspector]
     private RayMarcher _rayMarcher;
 
 
@@ -36,22 +34,8 @@ public class ShaderBuilder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // Retrieve a reference to the ray marching memory manager from the main camera.
-        _rmMemoryManager = Camera.main.GetComponent<RMMemoryManager>();
-
-        // Make sure a memory manager exists, else create one.
-        if (!_rmMemoryManager)
-        {
-            _rmMemoryManager = Camera.main.gameObject.AddComponent<RMMemoryManager>();
-        }
-
         // Retrieve a reference to the ray marcher from the main camera.
         _rayMarcher = Camera.main.GetComponent<RayMarcher>();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
     }
 
     public void build()
@@ -154,12 +138,7 @@ public class ShaderBuilder : MonoBehaviour
 
         //objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
 
-        RMObj[] objects = FindObjectsOfType<RMObj>();
-        List<RMObj> objs = new List<RMObj>();
-
-        objs = new List<RMObj>(objects);
-
-        objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
+        List<RMObj> objs = _rayMarcher.RenderList;
 
         RMPrimitive prim;
         CSG csg;
@@ -419,6 +398,10 @@ public class ShaderBuilder : MonoBehaviour
     {
         foreach (Alteration alt in alterations)
         {
+            //// Skip any non-active alterations.
+            //if (!alt.active)
+            //    continue;
+
             if (alt.posAlt && posAlt)
             {
                 switch (alt.type)
@@ -731,13 +714,10 @@ public class ShaderBuilder : MonoBehaviour
 
         uint primIndex = 0;
         uint csgIndex = 0;
+        
 
-        RMObj[] objects = FindObjectsOfType<RMObj>();
-        List<RMObj> objs = new List<RMObj>();
+        List<RMObj> objs = _rayMarcher.RenderList;
 
-        objs = new List<RMObj>(objects);
-
-        objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
 
         RMPrimitive prim;
         CSG csg;
@@ -994,12 +974,6 @@ public class ShaderBuilder : MonoBehaviour
     static void BuildCommand()
     {
         Camera.main.GetComponent<ShaderBuilder>().build();
-    }
-
-    [MenuItem("Shader Builder/Refresh Command _F7")]
-    static void RefreshCommand()
-    {
-        Camera.main.GetComponent<RMMemoryManager>().refresh();
     }
 }
 

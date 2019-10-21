@@ -172,8 +172,6 @@ public class RayMarcher : SceneViewFilter
     //static private RMPrimitive[] _prims = new RMPrimitive[MAX_PRIMS];
     //static private List<RMPrimitive> _prims = new List<RMPrimitive>(MAX_PRIMS);
     //static private uint _currentObjs = 0;
-    [HideInInspector]
-    private RMMemoryManager _rmMemoryManager;
     // ######### Ray Marcher Inspector Variables #########
 
 
@@ -195,18 +193,16 @@ public class RayMarcher : SceneViewFilter
     RMObj[] objects;
     List<RMObj> objs = new List<RMObj>();
 
+    public List<RMObj> RenderList
+    {
+        get
+        {
+            return objs;
+        }
+    }
 
     private void Start()
     {
-        // Retrieve a reference to the ray marching memory manager from the main camera.
-        _rmMemoryManager = Camera.main.GetComponent<RMMemoryManager>();
-
-        // Make sure a memory manager exists, else create one.
-        if (!_rmMemoryManager)
-        {
-            _rmMemoryManager = Camera.main.gameObject.AddComponent<RMMemoryManager>();
-        }
-
         if (Application.isPlaying)
         {
             objects = FindObjectsOfType<RMObj>();
@@ -290,27 +286,11 @@ public class RayMarcher : SceneViewFilter
         EffectMaterial.SetFloat("_vignetteIntensity", _vignetteIntensity);
 
 
-
-        //List<Matrix4x4> invModelMats = new List<Matrix4x4>(new Matrix4x4[128]);
-        //List<Color> colours = new List<Color>(new Color[128]);
-        //List<float> primitiveTypes = new List<float>(new float[128]);
-        //_rmMemoryManager = RMMemoryManager.Instance;
-        if (!_rmMemoryManager)
-        {
-            _rmMemoryManager = Camera.main.GetComponent<RMMemoryManager>();
-        }
-
-        if (_rmMemoryManager.Dirty)
-            _rmMemoryManager.verifyMemory();
-
         int primIndex = 0;
         int csgIndex = 0;
         int altIndex = 0;
-        //int totalRootCSGs = -1;
-        //int csgNodes = 0;
         invModelMats = new Matrix4x4[32];
         colours = new Color[32];
-        //primitiveTypes = new float[32];
         _reflInfo = new Vector4[32];
         combineOps = new Vector4[32];
         bufferedCSGs = new Vector4[32];
@@ -318,14 +298,9 @@ public class RayMarcher : SceneViewFilter
 
         if (!Application.isPlaying)
         {
-            //List<RMPrimitive> rmPrims = _rmMemoryManager.RM_Prims;
-            //List<CSG> csgs = _rmMemoryManager.CSGs;
             objects = FindObjectsOfType<RMObj>();
-            //List<RMObj> objs = new List<RMObj>(rmPrims.Count + csgs.Count);
             objs = new List<RMObj>(objects);
 
-            //objs.AddRange(rmPrims);
-            //objs.AddRange(csgs);
             objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
         }
 
@@ -336,19 +311,6 @@ public class RayMarcher : SceneViewFilter
         for (int i = 0; i < objs.Count; ++i)
         {
             obj = objs[i];
-
-            //// If an object is null verify and remove all null objects.
-            //if (!obj)
-            //{
-            //    _rmMemoryManager.verifyMemory();
-
-            //    // There are still objects to render, after removing all the null objects.
-            //    if (i < objs.Count)
-            //        obj = objs[i];
-            //    // There are no more objects to render, after removing all the null objects.
-            //    else
-            //        break;
-            //}
 
             // Primitive
             if (obj.IsPrim)
@@ -379,7 +341,6 @@ public class RayMarcher : SceneViewFilter
         {
             EffectMaterial.SetMatrixArray("_invModelMats", invModelMats);
             EffectMaterial.SetColorArray("_rm_colours", colours);
-            //EffectMaterial.SetFloatArray("_primitiveTypes", primitiveTypes);
             EffectMaterial.SetVectorArray("_combineOps", combineOps);
             EffectMaterial.SetVectorArray("_primitiveGeoInfo", primitiveGeoInfo);
             EffectMaterial.SetVectorArray("_reflInfo", _reflInfo);
