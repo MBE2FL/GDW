@@ -10,6 +10,11 @@ public class Moveable : MonoBehaviour
     private Vector3 interObjPos;
     private Vector3 rayPos;
 
+    [SerializeField]
+    private float _distRange = 5.0f;
+    [SerializeField]
+    private float _maxSpeed = 60.0f;
+
     public bool holdingObject = false;
     bool objectDetection()
     {
@@ -33,10 +38,13 @@ public class Moveable : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject)
         {
             interactingObject.transform.SetParent(null);
-            interRB.isKinematic = false;
+            //interRB.isKinematic = false;
             //interRB.useGravity = true;
             interactingObject = null;
             holdingObject = false;
+
+            Physics.IgnoreLayerCollision(9, 11, false);
+            Physics.IgnoreLayerCollision(10, 11, false);
         }
         else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
         {
@@ -44,9 +52,44 @@ public class Moveable : MonoBehaviour
             interObjPos = interactingObject.transform.position;
             //interactingObject.transform.position = new Vector3(interObjPos.x, (transform.position.y + 0.1f), interObjPos.z);
             interactingObject.transform.position = interObjPos;
-            interRB.isKinematic = true;
+            //interRB.isKinematic = true;
             //interRB.useGravity = false;
             holdingObject = true;
+
+            Physics.IgnoreLayerCollision(9, 11, true);
+            Physics.IgnoreLayerCollision(10, 11, true);
+        }
+
+        if (holdingObject)
+        {
+            //interactingObject.transform.localPosition = new Vector3(0.0f, 0.0f, 2.0f);
+            Rigidbody interRB = interactingObject.GetComponent<Rigidbody>();
+
+            Vector3 offset = (transform.forward * 2.0f) - interactingObject.transform.localPosition;
+            float dist = offset.magnitude;
+            float distScaler = Mathf.Clamp(dist, 0.0f, _distRange) / _distRange;
+            float speed = Mathf.Lerp(0.0f, 60.0f, distScaler);
+            Vector3 force = (offset / dist) * speed;
+
+
+            //interRB.AddForceAtPosition(force, _rayHitPos);
+            interRB.AddForce(force);
+
+
+            //Debug.DrawLine(transform.position, transform.position + transform.forward * _distRange, Color.red);
+            Debug.DrawLine(transform.position, transform.position + transform.forward * dist, Color.cyan);
+
+            //if (distScaler > 0.1f)
+            //{
+            //    Debug.Log("Vel: " + interRB.velocity);
+            //    interRB.velocity = Vector3.Lerp(Vector3.zero, interRB.velocity, distScaler / 0.1f);
+            //}
+
+            if (dist < 0.5f)
+            {
+                Debug.Log("Dist: " + dist);
+                interRB.velocity = Vector3.zero;
+            }
         }
     }
 }

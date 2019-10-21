@@ -2,24 +2,83 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class movement : MonoBehaviour
+public class Movement : MonoBehaviour
 {
+    static MoveKeyboardState _moveKeyboardState = new MoveKeyboardState();
+    static JumpState _jumpState = new JumpState();
+    static MoveControllerState _moveControllerState = new MoveControllerState();
+
+    private IPlayerState _currentState = MoveKeyboardState;
+    private IPlayerState _newState = null;
+
     // Update is called once per frame
     public Rigidbody rb;
     CursorLockMode cursorLock;
     Vector3 rayPos;
     Vector3 otherNormal;
+    Moveable _moveable;
 
     private float angle = 0.0f;
-    private float mousePosX = 0.0f;
+    //private float mousePosX = 0.0f;
     private float controllerPosX = 0.0f;
     private float controllerMovementVert = 1;
     private float controllerMovementHori = 1;
 
     bool onGround = true;
+
+    public float Angle
+    {
+        get
+        {
+            return angle;
+        }
+        set
+        {
+            angle = value;
+        }
+    }
+    public bool OnGround
+    {
+        get
+        {
+            return onGround;
+        }
+        set
+        {
+            onGround = value;
+        }
+    }
+
+    public static MoveKeyboardState MoveKeyboardState
+    {
+        get
+        {
+            return _moveKeyboardState;
+        }
+    }
+
+    public static JumpState JumpState
+    {
+        get
+        {
+            return _jumpState;
+        }
+    }
+
+    public static MoveControllerState MoveControllerState
+    {
+        get
+        {
+            return _moveControllerState;
+        }
+    }
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        _moveable = GetComponent<Moveable>();
+
+        _currentState.Entry(this, rb, transform, _moveable);
     }
 
     void doCursor()
@@ -28,7 +87,7 @@ public class movement : MonoBehaviour
         cursorLock = CursorLockMode.Locked;
     }
 
-    void rampDetection()
+    public void rampDetection()
     {
         rayPos = new Vector3(transform.position.x, transform.position.y - 0.8f, transform.position.z);
         otherNormal = transform.TransformDirection(Vector3.forward);
@@ -45,71 +104,21 @@ public class movement : MonoBehaviour
 
         doCursor();
 
-        if (Input.GetKeyDown(KeyCode.Space) && onGround && !GetComponent<Moveable>().holdingObject ||
-            Input.GetButtonDown("Fire1") && onGround && !GetComponent<Moveable>().holdingObject)
+        _newState = _currentState.input();
+
+        if (_newState == null)
+            _currentState.update();
+        else
         {
-            rb.AddForce(new Vector3(0, 200, 0));
+            _currentState = _newState;
+            _currentState.Entry(this, rb, transform, _moveable);
         }
-
-        mousePosX += Input.GetAxis("Mouse X");
-        controllerPosX += Input.GetAxis("HorizontalC");
-
-        
     }
 
     private void FixedUpdate()
     {
-        rampDetection();
-
-        controllerMovementVert = Input.GetAxis("Vertical") * -1f;
-        controllerMovementHori = Input.GetAxis("Horizontal") * -1f;
-
-
-        if (Input.GetKey(KeyCode.W) && onGround || controllerMovementVert == 1 && onGround)
-        {
-            if(Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
-            else
-                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-            
-
-            if (angle > 0)
-                rb.AddForce((transform.forward * 8) * 1.8f);
-            else
-                rb.AddForce(transform.forward * 8);
-        }
-
-        if (Input.GetKey(KeyCode.S) && onGround || controllerMovementVert == -1 && onGround)
-        {
-            if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
-            else
-                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-
-            rb.AddForce(transform.forward * -8);
-        }
-
-        if (Input.GetKey(KeyCode.A) && onGround || controllerMovementHori == 1 && onGround)
-        {
-            if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
-            else
-                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-
-            rb.AddForce(transform.right * -8);
-        }
-
-        if (Input.GetKey(KeyCode.D) && onGround || controllerMovementHori == -1 && onGround)
-        {
-            if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-                transform.rotation = Quaternion.Euler(0, controllerPosX, 0);
-            else
-                transform.rotation = Quaternion.Euler(0, mousePosX, 0);
-
-            rb.AddForce(transform.right * 8);
-        }
-
-        angle = 0.0f;
+        if (_newState == null)
+            _currentState.fixedUpdate();
     }
 
     private void OnCollisionStay(Collision collision)

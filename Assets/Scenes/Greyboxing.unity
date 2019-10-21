@@ -340,12 +340,12 @@ GameObject:
   - component: {fileID: 470835693}
   - component: {fileID: 470835692}
   - component: {fileID: 470835691}
-  - component: {fileID: 470835690}
   - component: {fileID: 470835694}
   - component: {fileID: 470835695}
   - component: {fileID: 470835696}
   - component: {fileID: 470835697}
-  m_Layer: 0
+  - component: {fileID: 470835690}
+  m_Layer: 11
   m_Name: sister
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -420,7 +420,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 470835689}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.44, y: 0.8, z: -6.0791655}
+  m_LocalPosition: {x: 1.44, y: 0.86, z: -6.0791655}
   m_LocalScale: {x: 0.5, y: 0.8, z: 0.6}
   m_Children: []
   m_Father: {fileID: 0}
@@ -480,6 +480,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   interRB: {fileID: 0}
+  _distRange: 5
+  _maxSpeed: 60
   holdingObject: 0
 --- !u!1 &585740416
 GameObject:
@@ -864,7 +866,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 112
+  m_Constraints: 118
   m_CollisionDetection: 0
 --- !u!1 &1388729126
 GameObject:
