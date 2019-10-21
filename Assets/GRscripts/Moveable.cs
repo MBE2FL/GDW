@@ -93,8 +93,9 @@ public class Moveable : MonoBehaviour
 
             Rigidbody rb = gameObject.GetComponent<Rigidbody>();
 
-            if (dist < 0.8f)
+            if (dist < 0.2f)
             {
+                // Find local velocity.
                 Vector3 localVelocity = transform.InverseTransformDirection(rb.velocity);
 
                 // NOTE: Should be stopping the rigidbody. Most likely player's move is called after, thus still adding some force.
@@ -103,8 +104,13 @@ public class Moveable : MonoBehaviour
                 {
                     localVelocity.z = 0.0f;
                     Debug.Log("Local Vel: " + localVelocity);
-                }
 
+                    Movement.PushPullState.ForwardMovement = false;
+                }
+                else
+                    Movement.PushPullState.ForwardMovement = true;
+
+                // Change global velocity, based on local velocity.
                 rb.velocity = transform.TransformDirection(localVelocity);
 
                 

@@ -7,6 +7,7 @@ public class Movement : MonoBehaviour
     static MoveKeyboardState _moveKeyboardState = new MoveKeyboardState();
     static JumpState _jumpState = new JumpState();
     static MoveControllerState _moveControllerState = new MoveControllerState();
+    static PushPullState _pushPullState = new PushPullState();
 
     private IPlayerState _currentState = MoveKeyboardState;
     private IPlayerState _newState = null;
@@ -70,6 +71,14 @@ public class Movement : MonoBehaviour
         get
         {
             return _moveControllerState;
+        }
+    }
+
+    public static PushPullState PushPullState
+    {
+        get
+        {
+            return _pushPullState;
         }
     }
 
