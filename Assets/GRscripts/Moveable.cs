@@ -62,34 +62,55 @@ public class Moveable : MonoBehaviour
 
         if (holdingObject)
         {
-            //interactingObject.transform.localPosition = new Vector3(0.0f, 0.0f, 2.0f);
-            Rigidbody interRB = interactingObject.GetComponent<Rigidbody>();
+            ////interactingObject.transform.localPosition = new Vector3(0.0f, 0.0f, 2.0f);
+            //Rigidbody interRB = interactingObject.GetComponent<Rigidbody>();
 
             Vector3 offset = (transform.forward * 2.0f) - interactingObject.transform.localPosition;
             float dist = offset.magnitude;
-            float distScaler = Mathf.Clamp(dist, 0.0f, _distRange) / _distRange;
-            float speed = Mathf.Lerp(0.0f, 60.0f, distScaler);
-            Vector3 force = (offset / dist) * speed;
+            //float distScaler = Mathf.Clamp(dist, 0.0f, _distRange) / _distRange;
+            //float speed = Mathf.Lerp(0.0f, 60.0f, distScaler);
+            //Vector3 force = (offset / dist) * speed;
 
 
-            //interRB.AddForceAtPosition(force, _rayHitPos);
-            interRB.AddForce(force);
+            ////interRB.AddForceAtPosition(force, _rayHitPos);
+            //interRB.AddForce(force);
 
 
-            //Debug.DrawLine(transform.position, transform.position + transform.forward * _distRange, Color.red);
-            Debug.DrawLine(transform.position, transform.position + transform.forward * dist, Color.cyan);
+            ////Debug.DrawLine(transform.position, transform.position + transform.forward * _distRange, Color.red);
+            //Debug.DrawLine(transform.position, transform.position + transform.forward * dist, Color.cyan);
 
-            //if (distScaler > 0.1f)
+            ////if (distScaler > 0.1f)
+            ////{
+            ////    Debug.Log("Vel: " + interRB.velocity);
+            ////    interRB.velocity = Vector3.Lerp(Vector3.zero, interRB.velocity, distScaler / 0.1f);
+            ////}
+
+            //if (dist < 0.5f)
             //{
-            //    Debug.Log("Vel: " + interRB.velocity);
-            //    interRB.velocity = Vector3.Lerp(Vector3.zero, interRB.velocity, distScaler / 0.1f);
+            //    Debug.Log("Dist: " + dist);
+            //    interRB.velocity = Vector3.zero;
             //}
 
-            if (dist < 0.5f)
+            Rigidbody rb = gameObject.GetComponent<Rigidbody>();
+
+            if (dist < 0.8f)
             {
-                Debug.Log("Dist: " + dist);
-                interRB.velocity = Vector3.zero;
+                Vector3 localVelocity = transform.InverseTransformDirection(rb.velocity);
+
+                // NOTE: Should be stopping the rigidbody. Most likely player's move is called after, thus still adding some force.
+                // Solution: Make a pick up state where only W and S are allowed, and W is also toggeled by this if.
+                if (localVelocity.z > 0.0f)
+                {
+                    localVelocity.z = 0.0f;
+                    Debug.Log("Local Vel: " + localVelocity);
+                }
+
+                rb.velocity = transform.TransformDirection(localVelocity);
+
+                
             }
+
+            interRB.velocity = rb.velocity;
         }
     }
 }

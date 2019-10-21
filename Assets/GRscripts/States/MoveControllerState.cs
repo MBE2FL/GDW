@@ -11,7 +11,7 @@ public class MoveControllerState : IPlayerState
     private float _controllerPosX = 0.0f;
     private float _controllerMovementVert = 1;
     private float _controllerMovementHori = 1;
-    Transform camTransform = Camera.main.transform;
+    Transform camTransform;
 
     public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
     {
@@ -19,6 +19,7 @@ public class MoveControllerState : IPlayerState
         _rb = rb;
         _transform = transform;
         _moveable = moveable;
+        camTransform = Camera.main.transform;
     }
 
     public IPlayerState input()

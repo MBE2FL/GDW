@@ -10,7 +10,7 @@ public class MoveKeyboardState : IPlayerState
     Moveable _moveable;
     float _mousePosX;
     //Vector3 _force;
-    Transform camTransform = Camera.main.transform;
+    Transform camTransform;
 
     public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
     {
@@ -18,6 +18,7 @@ public class MoveKeyboardState : IPlayerState
         _rb = rb;
         _transform = transform;
         _moveable = moveable;
+        camTransform = Camera.main.transform;
     }
 
     public IPlayerState input()
