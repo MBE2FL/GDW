@@ -101,7 +101,7 @@ public class RayMarcher : SceneViewFilter
     [Range(0.0f, 1.0f)]
     float _aoIntensity = 0.3f;
     // ######### Ambient Occlusion Variables #########
-    
+
     [Header("Vignette")]
     [SerializeField]
     [Range(0.0f, 2.0f)]
@@ -385,7 +385,7 @@ public class RayMarcher : SceneViewFilter
         _refractInfo[primIndex] = info;
 
         // Alterations' Information
-        foreach(Alteration alt in rmPrim.Alterations)
+        foreach (Alteration alt in rmPrim.Alterations)
         {
             _altInfo[altIndex] = alt.info;
             ++altIndex;
@@ -477,7 +477,7 @@ public class RayMarcher : SceneViewFilter
     static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNum)
     {
         RenderTexture.active = dest;
-        
+
 
         fxMaterial.SetTexture("_MainTex", source);
 
@@ -543,6 +543,28 @@ public class RayMarcher : SceneViewFilter
         return frustumCorners;
     }
 
+
+    [MenuItem("GameObject/Ray Marched/Sphere", false, 10)]
+    static void CreateBox(MenuCommand menuCommand)
+    {
+        GameObject obj = new GameObject();
+        obj.AddComponent<RMPrimitive>();
+
+        // Ensure the obj gets parented if this was a context click (otherwise does nothing).
+        GameObjectUtility.SetParentAndAlign(obj, menuCommand.context as GameObject);
+        Undo.RegisterCreatedObjectUndo(obj, obj.name);
+    }
+
+    [MenuItem("GameObject/Ray Marched/CSG", false, 10)]
+    static void CreateCSG(MenuCommand menuCommand)
+    {
+        GameObject obj = new GameObject();
+        obj.AddComponent<CSG>();
+
+        // Ensure the obj gets parented if this was a context click (otherwise does nothing).
+        GameObjectUtility.SetParentAndAlign(obj, menuCommand.context as GameObject);
+        Undo.RegisterCreatedObjectUndo(obj, obj.name);
+    }
 }
 
 #if UNITY_EDITOR
