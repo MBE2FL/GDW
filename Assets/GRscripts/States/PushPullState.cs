@@ -62,8 +62,7 @@ public class PushPullState : IPlayerState
             // Move forward
             if (Input.GetKey(KeyCode.W) && _forwardMovement)
             {
-                //_transform.rotation = Quaternion.Euler(0, _mousePosX, 0);
-                _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
+                //_transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
 
                 // Increase forward speed while moving up ramps.
                 if (_movement.Angle > 0)
@@ -75,7 +74,7 @@ public class PushPullState : IPlayerState
             // Move backward
             if (Input.GetKey(KeyCode.S))
             {
-                _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
+                //_transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
                 _rb.AddForce(_transform.forward * -8 * 2.0f);
             }
         }
