@@ -647,32 +647,32 @@ float map(float3 p)
 
 	float3 cell = float3(0.0, 0.0, 0.0);
 
-	// ######### Play Block #########
+	// ######### rmBox #########
 	pos = mul(_invModelMats[0], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[0];
-	obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
+	obj = sdBox(pos.xyz, geoInfo.xyz);
 	distBuffer[0] = obj;
 
 	scene = opU(scene, obj);
-	// ######### Play Block #########
-
 	// ######### rmBox #########
+
+	// ######### TestBox #########
 	pos = mul(_invModelMats[1], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[1];
-	obj = sdBox(pos.xyz, geoInfo.xyz);
+	obj = sdSphere(pos.xyz, geoInfo.x);
 	distBuffer[1] = obj;
 
-	scene = opU(scene, obj);
-	// ######### rmBox #########
-
+	scene = opSmoothUnion(scene, obj, _combineOps[1].y);
 	// ######### TestBox #########
+
+	// ######### Play Block #########
 	pos = mul(_invModelMats[2], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[2];
-	obj = sdSphere(pos.xyz, geoInfo.x);
+	obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
 	distBuffer[2] = obj;
 
-	scene = opSmoothUnion(scene, obj, _combineOps[2].y);
-	// ######### TestBox #########
+	scene = opU(scene, obj);
+	// ######### Play Block #########
 
 	// ######### Infinite Water #########
 	pos = mul(_invModelMats[3], float4(p, 1.0));
@@ -694,7 +694,7 @@ float map(float3 p)
 	scene = opU(scene, obj);
 	// ######### rmBox #########
 
-	// ######### rmSphereOnion #########
+	// ######### Smile #########
 	pos = mul(_invModelMats[5], float4(p, 1.0));
 	geoInfo = _primitiveGeoInfo[5];
 	opRepLim(pos.xyz, _altInfo[2].x, _altInfo[2].yzw);
@@ -703,7 +703,7 @@ float map(float3 p)
 	distBuffer[5] = obj;
 
 	scene = opSmoothSub(obj, scene, _combineOps[5].y);
-	// ######### rmSphereOnion #########
+	// ######### Smile #########
 
 	// ######### rmSphere #########
 	pos = mul(_invModelMats[6], float4(p, 1.0));
@@ -758,29 +758,29 @@ rmPixel mapMat()
 	rmPixel storedCSGs[MAX_CSG_CHILDREN];
 
 	float reflWeight;
-	// ######### Play Block #########
+	// ######### rmBox #########
 	obj.dist = distBuffer[0];
 	obj.colour = _rm_colours[0];
 	obj.reflInfo = _reflInfo[0];
 	obj.refractInfo = _refractInfo[0];
 	scene = opUMat(scene, obj);
-	// ######### Play Block #########
-
 	// ######### rmBox #########
+
+	// ######### TestBox #########
 	obj.dist = distBuffer[1];
 	obj.colour = _rm_colours[1];
 	obj.reflInfo = _reflInfo[1];
 	obj.refractInfo = _refractInfo[1];
-	scene = opUMat(scene, obj);
-	// ######### rmBox #########
-
+	scene = opSmoothUnionMat(scene, obj, _combineOps[1].y);
 	// ######### TestBox #########
+
+	// ######### Play Block #########
 	obj.dist = distBuffer[2];
 	obj.colour = _rm_colours[2];
 	obj.reflInfo = _reflInfo[2];
 	obj.refractInfo = _refractInfo[2];
-	scene = opSmoothUnionMat(scene, obj, _combineOps[2].y);
-	// ######### TestBox #########
+	scene = opUMat(scene, obj);
+	// ######### Play Block #########
 
 	// ######### Infinite Water #########
 	obj.dist = distBuffer[3];
@@ -798,13 +798,13 @@ rmPixel mapMat()
 	scene = opUMat(scene, obj);
 	// ######### rmBox #########
 
-	// ######### rmSphereOnion #########
+	// ######### Smile #########
 	obj.dist = distBuffer[5];
 	obj.colour = _rm_colours[5];
 	obj.reflInfo = _reflInfo[5];
 	obj.refractInfo = _refractInfo[5];
 	scene = opSmoothSubMat(obj, scene, _combineOps[5].y);
-	// ######### rmSphereOnion #########
+	// ######### Smile #########
 
 	// ######### rmSphere #########
 	obj.dist = distBuffer[6];

@@ -295,32 +295,32 @@ public class RMPrimitive : RMObj
     //    }
     //}
 
-    public List<Alteration> Alterations
-    {
-        get
-        {
-            return _alterations;
-        }
-        set
-        {
-            _alterations = value;
-        }
-    }
+    //public List<Alteration> Alterations
+    //{
+    //    get
+    //    {
+    //        return _alterations;
+    //    }
+    //    set
+    //    {
+    //        _alterations = value;
+    //    }
+    //}
 
-    public Vector4 TEST_A
-    {
-        get
-        {
-            return _alterations[0].info;
-        }
-        set
-        {
-            Alteration zero = _alterations[0];
-            zero.info = value;
-        }
-    }
+    //public Vector4 TEST_A
+    //{
+    //    get
+    //    {
+    //        return _alterations[0].info;
+    //    }
+    //    set
+    //    {
+    //        Alteration zero = _alterations[0];
+    //        zero.info = value;
+    //    }
+    //}
 
-    public Vector4 Test2;
+    //public Vector4 Test2;
 
     //private void Awake()
     //{

@@ -321,10 +321,12 @@ void opTwist(inout float3 pos, float k)
 void opCheapBend(inout float3 pos, float k)
 {
     //const float k = 0.2; // or some other amount
-    float c = cos(k * pos.z);
-    float s = sin(k * pos.z);
+    float c = cos(k * pos.x);
+    float s = sin(k * pos.x);
+    //float c = cos(k * pos.z);
+    //float s = sin(k * pos.z);
     float2x2 m = float2x2(c, -s, s, c);
     //pos = float3(m * pos.xy, pos.z);
-   // pos = float3(mul(pos.xy, m), pos.z);
-    pos = float3(pos.x, mul(pos.yz, m));
+    pos = float3(mul(pos.xy, m), pos.z);
+    //pos = float3(pos.x, mul(pos.yz, m));  // Bend Around X-axis.
 }
