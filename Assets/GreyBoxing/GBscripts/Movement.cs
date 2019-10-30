@@ -8,7 +8,7 @@ public class Movement : MonoBehaviour
     static JumpState _jumpState = new JumpState();
     static MoveControllerState _moveControllerState = new MoveControllerState();
     static PushPullState _pushPullState = new PushPullState();
-
+    
     private IPlayerState _currentState = MoveKeyboardState;
     private IPlayerState _newState = null;
 

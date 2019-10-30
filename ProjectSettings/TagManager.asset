@@ -8,6 +8,8 @@ TagManager:
   - RM_CSG
   - ground
   - Interactable
+  - Brother
+  - Sister
   layers:
   - Default
   - TransparentFX
