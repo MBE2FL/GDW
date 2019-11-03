@@ -4,6 +4,14 @@ using UnityEngine;
 
 public class crouch : MonoBehaviour
 {
+    public BoxCollider collider1;
+    public BoxCollider collider2;
+    public GameObject brother;
+
+    public Vector3 pos1;
+    public Vector3 pos2;
+
+    private bool activate = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -13,6 +21,18 @@ public class crouch : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if(activate && Input.GetKey(KeyCode.E))
+        {
+            brother.gameObject.transform.position = pos1;
+        }
     }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.gameObject.tag == "Brother")
+            activate = true;
+        else
+            activate = false;
+    }
+
 }
