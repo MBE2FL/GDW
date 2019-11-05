@@ -189,6 +189,8 @@ public class RayMarcher : SceneViewFilter
     private Vector4[] combineOpsCSGs = new Vector4[16];
     //private float[] csgNodesPerRoot = new float[16];
 
+    private Vector4[] _boundGeoInfo = new Vector4[32];
+
 
     RMObj[] objects;
     List<RMObj> objs = new List<RMObj>();
@@ -221,7 +223,8 @@ public class RayMarcher : SceneViewFilter
             Graphics.Blit(source, destination); // Do Nothing
             return;
         }
-
+        EffectMaterial.EnableKeyword("BOUND_DEBUG");  // TO-DO Perform this only when debug is enabled.
+        //EffectMaterial.shaderKeywords = new string[1] { "BOUNDING_SPHERE_DEBUG" };
         //Matrix4x4 torusMat = Matrix4x4.TRS(
         //                                    Vector3.right * Mathf.Sin(Time.time) * 5.0f,
         //                                    Quaternion.identity,
@@ -336,7 +339,7 @@ public class RayMarcher : SceneViewFilter
                 renderCSG(csg, ref primIndex, ref csgIndex, ref altIndex);
             }
         }
-
+        
         if (primIndex > 0)
         {
             EffectMaterial.SetMatrixArray("_invModelMats", invModelMats);
@@ -348,6 +351,8 @@ public class RayMarcher : SceneViewFilter
 
             EffectMaterial.SetVectorArray("_bufferedCSGs", bufferedCSGs);
             EffectMaterial.SetVectorArray("_combineOpsCSGs", combineOpsCSGs);
+
+            EffectMaterial.SetVectorArray("_boundGeoInfo", _boundGeoInfo);
         }
 
 
@@ -396,6 +401,8 @@ public class RayMarcher : SceneViewFilter
         //    ++altIndex;
         //}
 
+        _boundGeoInfo[primIndex] = rmPrim.BoundGeoInfo;
+
         ++primIndex;
     }
 
@@ -412,6 +419,7 @@ public class RayMarcher : SceneViewFilter
             // Buffer this CSG.
             bufferedCSGs[csgIndex] = new Vector4(primIndex - 1, primIndex, -1, -1);
             combineOpsCSGs[csgIndex] = csg.CombineOp;
+            _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
             ++csgIndex;
             return;
         }
@@ -427,6 +435,7 @@ public class RayMarcher : SceneViewFilter
             // Buffer this CSG.
             bufferedCSGs[csgIndex] = new Vector4(primIndex, -1, -1, csgIndex - 1);
             combineOpsCSGs[csgIndex] = csg.CombineOp;
+            _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
             ++csgIndex;
             return;
         }
@@ -442,6 +451,7 @@ public class RayMarcher : SceneViewFilter
             // Buffer this CSG.
             bufferedCSGs[csgIndex] = new Vector4(-1, primIndex, csgIndex - 1, -1);
             combineOpsCSGs[csgIndex] = csg.CombineOp;
+            _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
             ++csgIndex;
             return;
         }
@@ -461,6 +471,7 @@ public class RayMarcher : SceneViewFilter
             // Buffer this CSG.
             bufferedCSGs[csgIndex] = tempCSG;
             combineOpsCSGs[csgIndex] = csg.CombineOp;
+            _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
             ++csgIndex;
             return;
         }
@@ -476,7 +487,13 @@ public class RayMarcher : SceneViewFilter
     /// </summary>
     static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNum)
     {
-        RenderTexture.active = dest;
+        //RenderTexture.active = dest;
+
+        RenderTexture distanceMap = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.RFloat);
+        //RenderTexture sceneTex = new RenderTexture(source);
+        RenderTexture sceneTex = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+        RenderBuffer[] buffers = new RenderBuffer[2] { sceneTex.colorBuffer, distanceMap.colorBuffer };
+        Graphics.SetRenderTarget(buffers, dest.depthBuffer);
 
 
         fxMaterial.SetTexture("_MainTex", source);
@@ -502,6 +519,15 @@ public class RayMarcher : SceneViewFilter
 
         GL.End();
         GL.PopMatrix();
+
+
+        //Graphics.Blit(distanceMap, dest);
+        Graphics.Blit(sceneTex, dest);
+
+        //sceneTex.Release();
+        //distanceMap.Release();
+        RenderTexture.ReleaseTemporary(sceneTex);
+        RenderTexture.ReleaseTemporary(distanceMap);
     }
 
 
@@ -572,7 +598,7 @@ public class RayMarcher : SceneViewFilter
 public class RayMarcherEditor : Editor
 {
 
-
+    private bool _boundDebug = false;
 
     private void OnEnable()
     {
@@ -596,6 +622,16 @@ public class RayMarcherEditor : Editor
             //rayMarcher.EffectMaterial.shader = rayMarcher.EffectShader;
             rayMarcher.EffectMaterial = new Material(rayMarcher.EffectShader);
             rayMarcher.EffectMaterial.hideFlags = HideFlags.HideAndDontSave;
+        }
+
+        if (GUILayout.Button("Bound Debug"))
+        {
+            _boundDebug = !_boundDebug;
+
+            if (_boundDebug)
+                rayMarcher.EffectMaterial.EnableKeyword("BOUND_DEBUG");
+            else
+                rayMarcher.EffectMaterial.DisableKeyword("BOUND_DEBUG");
         }
     }
 }

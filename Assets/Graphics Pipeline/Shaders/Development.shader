@@ -1,4 +1,4 @@
-﻿Shader "MyPipeline/RayMarchTest" //<Insert Shader Name>
+Shader "MyPipeline/Development"
 {
     Properties
     {
@@ -14,7 +14,7 @@
             #pragma fragment frag
 			#include "UnityCG.cginc"
 			#include "PrimitiveFunctions.hlsl"
-			#include "RayMarchTest.hlsl" //<Insert Include>
+			#include "Development.hlsl"
 
             ENDHLSL
         }

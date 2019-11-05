@@ -48,6 +48,10 @@ public class ShaderBuilder : MonoBehaviour
         foreach (string line in File.ReadAllLines(_templateHLSLPath))
         {
             // Replace insert statement.
+            if (line.Contains("//<Insert Cheap Map Here>"))
+            {
+                buildCheapMap(ref file);
+            }
             if (line.Contains("//<Insert Map Here>"))
             {
                 buildMap(ref file);
@@ -58,7 +62,7 @@ public class ShaderBuilder : MonoBehaviour
             }
             else if (line.Contains("//<Insert Reflection Here>"))
             {
-                parseReflection(ref file);
+                //parseReflection(ref file);
             }
             // Copy line from template.
             else
@@ -107,6 +111,61 @@ public class ShaderBuilder : MonoBehaviour
         AssetDatabase.Refresh();
         //AssetDatabase.ImportAsset("Assets/Graphics Pipeline/Shaders/Resources/" + _name + ".shader");
 #endif
+    }
+
+    public void buildCheapMap(ref StringBuilder map)
+    {
+        map.AppendLine("\tfloat scene = _maxDrawDist;");
+        map.AppendLine();
+        map.AppendLine("\tfloat4 pos = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\tfloat4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\tfloat radius = 0.0;");
+        map.AppendLine();
+        map.AppendLine("\tfloat obj;");
+        map.AppendLine();
+
+        uint primIndex = 0;
+        uint csgIndex = 0;
+
+        List<RMObj> objs = _rayMarcher.RenderList;
+
+        RMPrimitive prim;
+        CSG csg;
+        foreach (RMObj obj in objs)
+        {
+            // Primitive
+            if (obj.IsPrim)
+            {
+                prim = obj as RMPrimitive;
+
+                // Skip any primitives belonging to a csg, as they will be rendered recursively by thier respective csgs.
+                if (prim.CSGNode)
+                    continue;
+
+                //parseCheapObj(ref map, prim, ref primIndex, ref csgIndex);
+            }
+            // CSG
+            else
+            {
+                csg = obj as CSG;
+
+                // Skip any non-root CSGs, as they will be rendered recursively by thier parents.
+                // Skip any CSGs which don't have two nodes.
+                if (!csg.IsRoot || !csg.IsValid)
+                    continue;
+
+                //parseCheapObj(ref map, csg, ref primIndex, ref csgIndex);
+
+                //determineCombineOp(ref map, null, csg, csgIndex - 1);
+            }
+
+            map.AppendLine("\t// ######### " + obj.gameObject.name + " #########");
+            parseCheapObj(ref map, obj, ref primIndex, ref csgIndex);
+            map.AppendLine("\t// ######### " + obj.gameObject.name + " #########");
+            map.AppendLine();
+        }
+
+        map.AppendLine("\treturn scene;");
     }
 
     private void buildMap(ref StringBuilder map)
@@ -222,6 +281,154 @@ public class ShaderBuilder : MonoBehaviour
     //    }
     //}
     #endregion Old
+
+
+
+    private void parseCheapObj(ref StringBuilder cheapMap, RMObj obj, ref uint primIndex, ref uint csgIndex)
+    {
+        if (!obj.Static)
+        {
+            // Determine position and geometric information
+            cheapMap.AppendLine("\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
+            cheapMap.AppendLine("\tgeoInfo = _boundGeoInfo[" + primIndex + "];");
+
+
+            cheapMap.Append("\tobj = ");
+
+            // Determine primitive type
+            switch (obj.BoundShape)
+            {
+                case BoundingShapes.Sphere:
+                    cheapMap.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                    break;
+                case BoundingShapes.Box:
+                    cheapMap.AppendLine("sdBox(pos.xyz, geoInfo.xyz);");
+                    break;
+                default:
+                    Debug.LogError("Obj's bound shape, in cheap map, could not be parsed.");
+                    break;
+            }
+
+            cheapMap.AppendLine();
+
+            // Determine combining operation
+            determineCheapCombineOp(ref cheapMap, obj, primIndex);
+
+
+            if (obj.IsPrim)
+                ++primIndex;
+            else
+                parseCheapCSG(ref cheapMap, obj as CSG, ref primIndex, ref csgIndex);
+        }
+        else
+        {
+            Matrix4x4 mat;
+            Vector4 info;
+
+            // Determine position and geometric information
+            mat = obj.transform.localToWorldMatrix.inverse;
+            cheapMap.AppendLine("\tpos = mul(float4x4(" + mat.m00 + ", " + mat.m01 + ", " + mat.m02 + ", " + mat.m03 + ", "
+                                               + mat.m10 + ", " + mat.m11 + ", " + mat.m12 + ", " + mat.m13 + ", "
+                                               + mat.m20 + ", " + mat.m21 + ", " + mat.m22 + ", " + mat.m23 + ", "
+                                               + mat.m30 + ", " + mat.m31 + ", " + mat.m32 + ", " + mat.m33 + "), float4(p, 1.0));");
+
+            info = obj.BoundGeoInfo;
+            cheapMap.AppendLine("\tgeoInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
+
+            // Determine primitive type
+            switch (obj.BoundShape)
+            {
+                case BoundingShapes.Sphere:
+                    cheapMap.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                    break;
+                case BoundingShapes.Box:
+                    cheapMap.AppendLine("sdBox(pos.xyz, geoInfo.xyz);");
+                    break;
+                default:
+                    Debug.LogError("Obj's bound shape, in cheap map, could not be parsed.");
+                    break;
+            }
+
+
+            cheapMap.AppendLine();
+
+            // Determine combining operation
+            determineCheapCombineOp(ref cheapMap, obj, primIndex);
+
+            //map.AppendLine();
+            ++primIndex;
+        }
+    }
+
+    private void parseCheapCSG(ref StringBuilder cheapMap, CSG csg, ref uint primIndex, ref uint csgIndex)
+    {
+        // Base case: Both nodes are primitives.
+        if (csg.AllPrimNodes)
+        {
+            ++primIndex;
+            ++primIndex;
+            ++csgIndex;
+            return;
+        }
+        // Only first node is a primitive.
+        else if (csg.IsFirstPrim)
+        {
+            ++primIndex;
+            ++csgIndex;
+            return;
+        }
+        // Only second node is a primitive.
+        else if (csg.IsSecondPrim)
+        {
+            ++primIndex;
+            ++csgIndex;
+            return;
+        }
+        // Both nodes are CSGs.
+        else
+        {
+            // Recurse through first node.
+            parseCheapCSG(ref cheapMap, csg.FirstNode as CSG, ref primIndex, ref csgIndex);
+
+            // Recurse through second node.
+            parseCheapCSG(ref cheapMap, csg.SecondNode as CSG, ref primIndex, ref csgIndex);
+
+            // Parse this CSG.
+            cheapMap.AppendLine();
+            ++csgIndex;
+            return;
+        }
+    }
+
+    private void determineCheapCombineOp(ref StringBuilder cheapMap, RMObj obj, uint index)
+    {
+        CombineOpsTypes combineOpType = obj.CombineOpType;
+        string combineOps = "_combineOps" + "[" + index + "].y);";
+
+        if (!obj.IsPrim)
+            combineOps = "_combineOpsCSGs" + "[" + index + "].w);";
+
+        switch (combineOpType)
+        {
+            case CombineOpsTypes.Union:
+                cheapMap.AppendLine("\tscene = opU(scene, obj);");
+                break;
+            case CombineOpsTypes.SmoothUnion:
+                cheapMap.AppendLine("\tscene = opSmoothUnion(scene, obj, " + combineOps);
+                break;
+            case CombineOpsTypes.SmoothSubtraction:
+                cheapMap.AppendLine("\tscene = opSmoothUnion(scene, obj, " + combineOps);
+                break;
+            case CombineOpsTypes.SmoothIntersection:
+                cheapMap.AppendLine("\tscene = opSmoothUnion(scene, obj, " + combineOps);
+                break;
+            default:
+                cheapMap.AppendLine("\tscene = opU(scene, obj);");
+                break;
+        }
+    }
+
+
 
     private void parsePrimitive(ref StringBuilder map, RMPrimitive prim, ref uint primIndex, ref uint altIndex, bool csgNodeTwo = false)
     {
@@ -624,6 +831,9 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
+
+
+
     private void parseReflection(ref StringBuilder file)
     {
         file.AppendLine("\t\t// Distance field reflection.");
@@ -679,6 +889,9 @@ public class ShaderBuilder : MonoBehaviour
         file.AppendLine("\t\t// Skybox reflection.");
         file.AppendLine("\t\t//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;");
     }
+
+
+
 
 
     // ********* Material parsing *********
@@ -970,12 +1183,16 @@ public class ShaderBuilder : MonoBehaviour
     }
 
 
+
+
     [MenuItem("Shader Builder/Build Command _F6")]
     static void BuildCommand()
     {
-        Camera.main.GetComponent<ShaderBuilder>().build();
+        //Camera.main.GetComponent<ShaderBuilder>().build();
     }
 }
+
+
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(ShaderBuilder))]

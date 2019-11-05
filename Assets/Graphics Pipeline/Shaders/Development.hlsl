@@ -1,4 +1,4 @@
-﻿//float4x4 unity_ObjectToWorld;
+//float4x4 unity_ObjectToWorld;
 //float4x4 unity_MatrixVP;
 //float4x4 UNITY_MATRIX_MVP;
 
@@ -631,6 +631,103 @@ rmPixel opSmoothIntMat(rmPixel d1, rmPixel d2, float k)
 
 float cheapMap(float3 p)
 {
+	float scene = _maxDrawDist;
+
+	float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+	float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+	float radius = 0.0;
+
+	float obj;
+
+	// ######### Ground #########
+	pos = mul(_invModelMats[0], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[0];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+
+	scene = opU(scene, obj);
+	// ######### Ground #########
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[1], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[1];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[2], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[2];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[3], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[3];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object (1) #########
+	pos = mul(_invModelMats[4], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[4];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (1) #########
+
+	// ######### New Game Object (2) #########
+	pos = mul(_invModelMats[5], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[5];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (2) #########
+
+	// ######### New Game Object (3) #########
+	pos = mul(_invModelMats[6], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[6];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (3) #########
+
+	// ######### New Game Object (4) #########
+	pos = mul(_invModelMats[7], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[7];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (4) #########
+
+	// ######### New Game Object (5) #########
+	pos = mul(_invModelMats[8], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[8];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (5) #########
+
+	// ######### New Game Object (6) #########
+	pos = mul(_invModelMats[9], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[9];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (6) #########
+
+	// ######### New Game Object (7) #########
+	pos = mul(_invModelMats[10], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[10];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[10].y);
+	// ######### New Game Object (7) #########
+
+	return scene;
     //<Insert Cheap Map Here>
 }
 
@@ -641,12 +738,239 @@ float cheapMap(float3 p)
 /// Return.y: Colour of closest object (0 - 1).
 float map(float3 p)
 {
-    //<Insert Map Here>
+	float scene = _maxDrawDist;
+
+	float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+	float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+	float obj;
+	float obj2;
+
+	float csg;
+	float storedCSGs[MAX_CSG_CHILDREN];
+
+	float3 cell = float3(0.0, 0.0, 0.0);
+
+	// ######### Ground #########
+	pos = mul(_invModelMats[0], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[0];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[0] = obj;
+
+	scene = opU(scene, obj);
+	// ######### Ground #########
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[1], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[1];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[1] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[2], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[2];
+	obj = sdTorus(pos.xyz, geoInfo.xy);
+	distBuffer[2] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[3], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[3];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[3] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object (1) #########
+	pos = mul(_invModelMats[4], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[4];
+	obj = sdEllipsoid(pos.xyz, geoInfo.xyz);
+	distBuffer[4] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (1) #########
+
+	// ######### New Game Object (2) #########
+	pos = mul(_invModelMats[5], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[5];
+	obj = sdTorus(pos.xyz, geoInfo.xy);
+	distBuffer[5] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (2) #########
+
+	// ######### New Game Object (3) #########
+	pos = mul(_invModelMats[6], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[6];
+	obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
+	distBuffer[6] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (3) #########
+
+	// ######### New Game Object (4) #########
+	pos = mul(_invModelMats[7], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[7];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[7] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (4) #########
+
+	// ######### New Game Object (5) #########
+	pos = mul(_invModelMats[8], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[8];
+	obj = sdRoundedCylinder(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z);
+	distBuffer[8] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (5) #########
+
+	// ######### New Game Object (6) #########
+	pos = mul(_invModelMats[9], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[9];
+	obj = sdBox(pos.xyz, geoInfo.xyz);
+	distBuffer[9] = obj;
+
+	scene = opU(scene, obj);
+	// ######### New Game Object (6) #########
+
+	// ######### New Game Object (7) #########
+	pos = mul(_invModelMats[10], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[10];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[10] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[10].y);
+	// ######### New Game Object (7) #########
+
+	return scene;
 }
 
 rmPixel mapMat()
 {
-    //<Insert MapMat Here>
+	rmPixel scene;
+	scene.dist = _maxDrawDist;
+	scene.colour = float4(0.0, 0.0, 0.0, 0.0);
+	scene.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	scene.refractInfo = float2(0.0, 1.0);
+	scene.texID = 0;
+
+	rmPixel obj;
+	obj.colour = float4(0.0, 0.0, 0.0, 0.0);
+	obj.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	obj.refractInfo = float2(0.0, 1.0);
+	obj.texID = 0;
+
+	rmPixel obj2;
+	obj2.colour = float4(0.0, 0.0, 0.0, 0.0);
+	obj2.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	obj2.refractInfo = float2(0.0, 1.0);
+	obj2.texID = 0;
+
+	rmPixel csg;
+	csg.colour = float4(0.0, 0.0, 0.0, 0.0);
+	csg.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	csg.refractInfo = float2(0.0, 1.0);
+	csg.texID = 0;
+	rmPixel storedCSGs[MAX_CSG_CHILDREN];
+
+	float reflWeight;
+	// ######### Ground #########
+	obj.dist = distBuffer[0];
+	obj.colour = _rm_colours[0];
+	obj.reflInfo = _reflInfo[0];
+	obj.refractInfo = _refractInfo[0];
+	scene = opUMat(scene, obj);
+	// ######### Ground #########
+
+	// ######### New Game Object #########
+	obj.dist = distBuffer[1];
+	obj.colour = _rm_colours[1];
+	obj.reflInfo = _reflInfo[1];
+	obj.refractInfo = _refractInfo[1];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object #########
+	obj.dist = distBuffer[2];
+	obj.colour = _rm_colours[2];
+	obj.reflInfo = _reflInfo[2];
+	obj.refractInfo = _refractInfo[2];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object #########
+	obj.dist = distBuffer[3];
+	obj.colour = _rm_colours[3];
+	obj.reflInfo = _reflInfo[3];
+	obj.refractInfo = _refractInfo[3];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object #########
+
+	// ######### New Game Object (1) #########
+	obj.dist = distBuffer[4];
+	obj.colour = _rm_colours[4];
+	obj.reflInfo = _reflInfo[4];
+	obj.refractInfo = _refractInfo[4];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object (1) #########
+
+	// ######### New Game Object (2) #########
+	obj.dist = distBuffer[5];
+	obj.colour = _rm_colours[5];
+	obj.reflInfo = _reflInfo[5];
+	obj.refractInfo = _refractInfo[5];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object (2) #########
+
+	// ######### New Game Object (3) #########
+	obj.dist = distBuffer[6];
+	obj.colour = _rm_colours[6];
+	obj.reflInfo = _reflInfo[6];
+	obj.refractInfo = _refractInfo[6];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object (3) #########
+
+	// ######### New Game Object (4) #########
+	obj.dist = distBuffer[7];
+	obj.colour = _rm_colours[7];
+	obj.reflInfo = _reflInfo[7];
+	obj.refractInfo = _refractInfo[7];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object (4) #########
+
+	// ######### New Game Object (5) #########
+	obj.dist = distBuffer[8];
+	obj.colour = _rm_colours[8];
+	obj.reflInfo = _reflInfo[8];
+	obj.refractInfo = _refractInfo[8];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object (5) #########
+
+	// ######### New Game Object (6) #########
+	obj.dist = distBuffer[9];
+	obj.colour = _rm_colours[9];
+	obj.reflInfo = _reflInfo[9];
+	obj.refractInfo = _refractInfo[9];
+	scene = opUMat(scene, obj);
+	// ######### New Game Object (6) #########
+
+	// ######### New Game Object (7) #########
+	obj.dist = distBuffer[10];
+	obj.colour = _rm_colours[10];
+	obj.reflInfo = _reflInfo[10];
+	obj.refractInfo = _refractInfo[10];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[10].y);
+	// ######### New Game Object (7) #########
+
+	return scene;
 }
 /// ######### Signed Distance Functions #########
 
@@ -1414,7 +1738,6 @@ float4 frag(VertexOutput input) : SV_Target
         // Perform reflection
         reflection(add, rayOrigin, rayDir, p, normal, distField, ratio);
 
-        //<Insert Reflection Here>
     }
 
     //add = float4(tex2D(_performanceRamp, float2(distField.dist, 0.0)).xyz, 1.0);
