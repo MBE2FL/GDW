@@ -7,7 +7,7 @@ float _totalTime;
 
 // Matrices
 float4x4 _FrustumCornersES;
-float4x4 _CameraInvMatrix;
+float4x4 _CameraInvViewMatrix;
 
 // Vectors
 float4 _MainTex_TexelSize;
@@ -1358,7 +1358,7 @@ VertexOutput vert(VertexInput input)
     output.ray /= abs(output.ray.z);
 
     // Transform the ray from eyespace to worldspace
-    output.ray = mul(_CameraInvMatrix, float4(output.ray.xyz, 0.0)).xyz;
+    output.ray = mul(_CameraInvViewMatrix, float4(output.ray.xyz, 0.0)).xyz;
 
     return output;
 }
