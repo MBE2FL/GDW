@@ -7,7 +7,8 @@ public enum ShaderKeywords
     BOUND_DEBUG
 }
 
-public class RayMarchShader : MonoBehaviour
+[CreateAssetMenu(fileName = "New Ray March Shader", menuName = "Ray March Shader")]
+public class RayMarchShader : ScriptableObject
 {
     private List<ShaderKeywords> _keywords = new List<ShaderKeywords>();// The material keywords to disable for this shader.
     private Shader _effectShader = null;
@@ -135,6 +136,8 @@ public class RayMarchShader : MonoBehaviour
     private Color _fogColour = Color.grey;
 
     // TO-DO delete unsued hidden shaders
+
+    #region Getters and Setters
     public Shader EffectShader
     {
         get
@@ -474,11 +477,12 @@ public class RayMarchShader : MonoBehaviour
             _fogColour = value;
         }
     }
+    #endregion Getters and Setters
 
 
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         if (Application.isPlaying)
         {

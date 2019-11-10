@@ -123,6 +123,7 @@ public class RayMarcher : SceneViewFilter
     [SerializeField]
     private Color _fogColour = Color.grey;
 
+
     public Shader EffectShader
     {
         get
@@ -238,15 +239,25 @@ public class RayMarcher : SceneViewFilter
 
             objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
         }
+
+
+        RayMarchShader[] allShaders = GetComponents<RayMarchShader>();
+        _shaders = new List<RayMarchShader>(allShaders);
     }
 
 
     public void addShader()
     {
-        RayMarchShader shader = gameObject.AddComponent<RayMarchShader>();
-        shader.hideFlags = HideFlags.HideInInspector;
+        //RayMarchShader shader = gameObject.AddComponent<RayMarchShader>();
+        //shader.hideFlags = HideFlags.HideInInspector;
+        //shader.ShaderName = "New Shader";
+        //_shaders.Add(shader);
+
+        RayMarchShader shader = ScriptableObject.CreateInstance<RayMarchShader>();
         shader.ShaderName = "New Shader";
         _shaders.Add(shader);
+
+        ShaderEditorWindow.rebuildNames();
     }
 
     public void removeShader(RayMarchShader shader)
@@ -259,6 +270,8 @@ public class RayMarcher : SceneViewFilter
         }
 
         _shaders.RemoveAt(_shaders.Count - 1);
+
+        ShaderEditorWindow.rebuildNames();
     }
 
     public void removeShader(int index)
@@ -270,13 +283,27 @@ public class RayMarcher : SceneViewFilter
         }
 
         _shaders.RemoveAt(_shaders.Count - 1);
+
+        ShaderEditorWindow.rebuildNames();
     }
 
     public void moveUp(RayMarchShader shader)
     {
         int index = _shaders.IndexOf(shader);
         RayMarchShader temp = _shaders[index];
-        
+
+        ShaderEditorWindow.rebuildNames();
+    }
+
+    public void unHide()
+    {
+        RayMarchShader[] shaders = GetComponents<RayMarchShader>();
+        Component[] allComps = GetComponents<Component>();
+
+        foreach(RayMarchShader shader in shaders)
+        {
+            shader.hideFlags = HideFlags.None;
+        }
     }
 
 
@@ -456,73 +483,78 @@ public class RayMarcherEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        //base.OnInspectorGUI();
+        base.OnInspectorGUI();
 
-        var rayMarcher = target as RayMarcher;
+        //var rayMarcher = target as RayMarcher;
 
-        serializedObject.Update();
+        //serializedObject.Update();
 
-        GUIContent label = new GUIContent("Shaders", "");
-        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+        //if (GUILayout.Button("Unhide all shaders"))
+        //{
+        //    rayMarcher.unHide();
+        //}
 
-        shaders = rayMarcher.Shaders;
-        for (int i = 0; i < shaders.Count; ++i)
-        {
-            EditorGUILayout.Space();
-            EditorGUILayout.Space();
-            //string textBuffer = shaders[i].ShaderName;
-            //shaders[i].ShaderName = EditorGUILayout.TextField(textBuffer);
-            shaders[i].ShaderName = EditorGUILayout.TextField(shaders[i].ShaderName);
+        //GUIContent label = new GUIContent("Shaders", "");
+        //EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Move Up"))
-            {
-                //rayMarcher.moveUp(i);
-                break;
-            }
+        //shaders = rayMarcher.Shaders;
+        //for (int i = 0; i < shaders.Count; ++i)
+        //{
+        //    EditorGUILayout.Space();
+        //    EditorGUILayout.Space();
+        //    //string textBuffer = shaders[i].ShaderName;
+        //    //shaders[i].ShaderName = EditorGUILayout.TextField(textBuffer);
+        //    shaders[i].ShaderName = EditorGUILayout.TextField(shaders[i].ShaderName);
 
-            if (GUILayout.Button("Move Down"))
-            {
-                break;
-            }
+        //    GUILayout.BeginHorizontal();
+        //    if (GUILayout.Button("Move Up"))
+        //    {
+        //        //rayMarcher.moveUp(i);
+        //        break;
+        //    }
 
-            if (GUILayout.Button("Remove Shader"))
-            {
-                rayMarcher.removeShader(i);
-                break;
-            }
-            GUILayout.EndHorizontal();
-        }
+        //    if (GUILayout.Button("Move Down"))
+        //    {
+        //        break;
+        //    }
 
-        EditorGUILayout.Space();
-        EditorGUILayout.Space();
-        if (GUILayout.Button("Add Shader"))
-        {
-            rayMarcher.addShader();
-        }
+        //    if (GUILayout.Button("Remove Shader"))
+        //    {
+        //        rayMarcher.removeShader(i);
+        //        break;
+        //    }
+        //    GUILayout.EndHorizontal();
+        //}
 
-
-
-        if (GUILayout.Button("Shader Editor"))
-        {
-            //rayMarcher.ShowShaderWindow = !rayMarcher.ShowShaderWindow;
-            ShaderEditorWindow.Init();
-        }
+        //EditorGUILayout.Space();
+        //EditorGUILayout.Space();
+        //if (GUILayout.Button("Add Shader"))
+        //{
+        //    rayMarcher.addShader();
+        //}
 
 
 
-        serializedObject.ApplyModifiedProperties();
+        //if (GUILayout.Button("Shader Editor"))
+        //{
+        //    //rayMarcher.ShowShaderWindow = !rayMarcher.ShowShaderWindow;
+        //    ShaderEditorWindow.Init();
+        //}
 
 
-        if (GUILayout.Button("Bound Debug"))
-        {
-            _boundDebug = !_boundDebug;
 
-            if (_boundDebug)
-                rayMarcher.EffectMaterial.EnableKeyword("BOUND_DEBUG");
-            else
-                rayMarcher.EffectMaterial.DisableKeyword("BOUND_DEBUG");
-        }
+        //serializedObject.ApplyModifiedProperties();
+
+
+        //if (GUILayout.Button("Bound Debug"))
+        //{
+        //    _boundDebug = !_boundDebug;
+
+        //    if (_boundDebug)
+        //        rayMarcher.EffectMaterial.EnableKeyword("BOUND_DEBUG");
+        //    else
+        //        rayMarcher.EffectMaterial.DisableKeyword("BOUND_DEBUG");
+        //}
     }
 }
 
@@ -537,6 +569,10 @@ public class ShaderEditorWindow : EditorWindow
     static RayMarcher _rayMarcher;
     static List<RayMarchShader> _shaders;
 
+    static List<string> _toolbarNames = new List<string>();
+    static int _toolbarSelected = 0;
+    Vector2 scrollPos;
+
 
     // Add menu named "Shader Editor" to the Window menu
     [MenuItem("Window/Shader Editor")]
@@ -550,15 +586,26 @@ public class ShaderEditorWindow : EditorWindow
         _rayMarcher = _camera.GetComponent<RayMarcher>();
     }
 
+    public static void rebuildNames()
+    {
+        _toolbarNames.Clear();
+
+        _shaders = _rayMarcher.Shaders;
+
+        foreach (RayMarchShader shader in _shaders)
+        {
+            _toolbarNames.Add(shader.ShaderName);
+        }
+    }
+
     void OnGUI()
     {
-        GUILayout.Label("Base Settings", EditorStyles.boldLabel);
-        myString = EditorGUILayout.TextField("Text Field", myString);
+        GUILayout.BeginHorizontal();
+        _toolbarSelected = GUILayout.Toolbar(_toolbarSelected, _toolbarNames.ToArray());
+        GUILayout.EndHorizontal();
 
-        groupEnabled = EditorGUILayout.BeginToggleGroup("Optional Settings", groupEnabled);
-        myBool = EditorGUILayout.Toggle("Toggle", myBool);
-        myFloat = EditorGUILayout.Slider("Slider", myFloat, -3, 3);
-        EditorGUILayout.EndToggleGroup();
+
+        scrollPos = GUILayout.BeginScrollView(scrollPos);
 
 
         GUIContent label = new GUIContent();
@@ -566,6 +613,11 @@ public class ShaderEditorWindow : EditorWindow
         _shaders = _rayMarcher.Shaders;
         foreach (RayMarchShader shader in _shaders)
         {
+            // ######### General Variables #########
+            label.text = "General Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
             label.text = "Shader Name";
             shader.ShaderName = EditorGUILayout.TextField(label, shader.ShaderName);
 
@@ -577,6 +629,10 @@ public class ShaderEditorWindow : EditorWindow
             label.tooltip = "The maximum distance each pixel can travel.";
             shader.MaxDrawDist = EditorGUILayout.FloatField(label, shader.MaxDrawDist);
 
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            // ######### Light Variables #########
             label.text = "Light Settings";
             label.tooltip = "";
             EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
@@ -621,6 +677,8 @@ public class ShaderEditorWindow : EditorWindow
             label.tooltip = "Directional light representing the sun.";
             shader.sunLight = EditorGUILayout.ObjectField(label, shader.sunLight, typeof(Transform), true) as Transform;
 
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
 
             // ######### Shadow Variables #########
             label.text = "Shadow Settings";
@@ -639,6 +697,8 @@ public class ShaderEditorWindow : EditorWindow
             label.tooltip = "How strong the shadows appear.";
             shader.ShadowIntensity = EditorGUILayout.FloatField(label, shader.ShadowIntensity);
 
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
 
             // ######### Reflection Variables #########
             label.text = "Reflection Settings";
@@ -661,7 +721,8 @@ public class ShaderEditorWindow : EditorWindow
             label.tooltip = "";
             shader.SkyBox = EditorGUILayout.ObjectField(label, shader.SkyBox, typeof(Texture), true) as Texture;
 
-
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
 
             // ######### Ambient Occlusion Variables #########
             label.text = "Ambient Occlusion Settings";
@@ -680,7 +741,8 @@ public class ShaderEditorWindow : EditorWindow
             label.tooltip = "The intensity of the AO effect.";
             shader.AOItensity = EditorGUILayout.FloatField(label, shader.AOItensity);
 
-
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
 
             // ######### Vignette Variables #########
             label.text = "Vignette Settings";
@@ -691,18 +753,28 @@ public class ShaderEditorWindow : EditorWindow
             label.tooltip = "";
             shader.VignetteIntesnity = EditorGUILayout.FloatField(label, shader.VignetteIntesnity);
 
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
 
-    [Header("Fog")]
-    [SerializeField]
-    [Range(0.0f, 0.04f)]
-    private float _fogExtinction = 0.0f;
-    [SerializeField]
-    [Range(0.0f, 0.04f)]
-    private float _fogInscattering = 0.0f;
-    [SerializeField]
-    private Color _fogColour = Color.grey;
+            // ######### Fog Variables #########
+            label.text = "Fog Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
-}
+            label.text = "Fog Extinction";
+            label.tooltip = "TO-DO";
+            shader.FogExtinction = EditorGUILayout.FloatField(label, shader.FogExtinction);
+
+            label.text = "Fog Inscattering";
+            label.tooltip = "TO-DO";
+            shader.FogInscattering = EditorGUILayout.FloatField(label, shader.FogInscattering);
+
+            label.text = "Fog Colour";
+            label.tooltip = "";
+            shader.FogColour = EditorGUILayout.ColorField(label, shader.FogColour);
+
+            GUILayout.EndScrollView();
+        }
     }
 }
 #endif
