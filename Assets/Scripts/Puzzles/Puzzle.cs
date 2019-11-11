@@ -49,8 +49,14 @@ public class Puzzle : Subject, IObserver
         obj.GetComponent<Renderer>().material.SetColor("Color", Color.red);
 
         Rigidbody rb = obj.GetComponent<Rigidbody>();
-        rb.useGravity = false;
+        //rb.useGravity = false;
         rb.isKinematic = true;
+
+        Animator animator = obj.GetComponent<Animator>();
+        if (animator)
+        {
+            animator.SetTrigger("Rotate");
+        }
 
         checkCompleted();
     }
