@@ -10,6 +10,7 @@ TagManager:
   - Interactable
   - Brother
   - Sister
+  - DropZone
   layers:
   - Default
   - TransparentFX
