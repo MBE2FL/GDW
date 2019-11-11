@@ -5,7 +5,6 @@ using UnityEngine;
 public class crouch : MonoBehaviour
 {
     public BoxCollider collider1;
-    public BoxCollider collider2;
     public GameObject brother;
 
     public Vector3 pos1;
