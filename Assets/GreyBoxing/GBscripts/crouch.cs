@@ -8,7 +8,6 @@ public class crouch : MonoBehaviour
     public GameObject brother;
 
     public Vector3 pos1;
-    public Vector3 pos2;
 
     private bool activate = false;
     // Start is called before the first frame update
