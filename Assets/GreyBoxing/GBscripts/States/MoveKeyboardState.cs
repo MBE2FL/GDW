@@ -90,6 +90,20 @@ public class MoveKeyboardState : IPlayerState
             }
         }
 
+        Vector3 localVel = _transform.InverseTransformDirection(_rb.velocity);
+        if (_movement.Angle > 0)
+        {
+            localVel.x = Mathf.Clamp(localVel.x, -15.0f, 15.0f);
+            localVel.z = Mathf.Clamp(localVel.z, -15.0f, 15.0f);
+        }
+        else
+        {
+            localVel.x = Mathf.Clamp(localVel.x, -8.0f, 8.0f);
+            localVel.z = Mathf.Clamp(localVel.z, -8.0f, 8.0f);
+        }
+        _rb.velocity = _transform.TransformDirection(localVel);
+
+
         _movement.Angle = 0.0f;
     }
 }

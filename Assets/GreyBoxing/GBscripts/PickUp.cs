@@ -32,7 +32,7 @@ public class PickUp : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.DrawRay(transform.position, transform.forward * 100.0f, Color.white);
+        Debug.DrawRay(transform.position, transform.forward * 1.0f, Color.white);
 
         if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject)
         {
@@ -46,7 +46,13 @@ public class PickUp : MonoBehaviour
         {
             interactingObject.transform.SetParent(transform);
             interObjPos = interactingObject.transform.position;
-            interactingObject.transform.position = new Vector3(interObjPos.x,(transform.position.y), transform.position.z + 0.6f);
+            //interactingObject.transform.position = new Vector3(interObjPos.x,transform.position.y, transform.position.z + 0.6f);
+
+            interactingObject.transform.localPosition = new Vector3(0.0f, 0.0f, 2.0f);
+
+            //Vector3 relativePos = transform.TransformPoint(new Vector3(0.0f, 0.0f, 1.0f));
+            //interactingObject.transform.position = relativePos;
+
             interRB.isKinematic = true;
             holdingObject = true;
             Physics.IgnoreLayerCollision(9, 11, true);
