@@ -54,6 +54,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
         {
             // Activate portal;
             Debug.Log("All puzzles completed!");
+            GetComponent<PortalManager>().activatePortals();
         }
     }
 }
