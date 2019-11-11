@@ -25,11 +25,15 @@ public class crouch : MonoBehaviour
         }
     }
 
-    private void OnTriggerStay(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag == "Brother")
             activate = true;
-        else
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.tag == "Brother")
             activate = false;
     }
 
