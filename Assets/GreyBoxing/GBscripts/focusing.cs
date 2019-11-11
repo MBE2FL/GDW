@@ -22,11 +22,15 @@ public class focusing : MonoBehaviour
             camera.GetComponent<cameraMovement>().enabled = true;
     }
 
-    private void OnCollisionStay(Collision collision)
+    private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Sister")
             activate = true;
-        else
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.tag == "Sister")
             activate = false;
     }
 }
