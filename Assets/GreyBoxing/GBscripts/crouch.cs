@@ -5,11 +5,9 @@ using UnityEngine;
 public class crouch : MonoBehaviour
 {
     public BoxCollider collider1;
-    public BoxCollider collider2;
     public GameObject brother;
 
     public Vector3 pos1;
-    public Vector3 pos2;
 
     private bool activate = false;
     // Start is called before the first frame update
@@ -27,11 +25,15 @@ public class crouch : MonoBehaviour
         }
     }
 
-    private void OnTriggerStay(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag == "Brother")
             activate = true;
-        else
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.tag == "Brother")
             activate = false;
     }
 

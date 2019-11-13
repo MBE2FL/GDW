@@ -16,7 +16,8 @@ public class PickUp : MonoBehaviour
     {
         rayPos = new Vector3(transform.position.x, transform.position.y - 0.6f, transform.position.z);
         RaycastHit ray;
-        if (Physics.Raycast(rayPos, transform.TransformDirection(Vector3.forward), out ray, 1f, 1 << 9))
+        
+        if (Physics.Raycast(rayPos, transform.forward, out ray, 1f, 1 << 9))
         {
             interactingObject = ray.transform.gameObject;
             interRB = interactingObject.GetComponent<Rigidbody>();
@@ -31,20 +32,30 @@ public class PickUp : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Debug.DrawRay(transform.position, transform.forward * 1.0f, Color.white);
+
         if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject)
         {
             interactingObject.transform.SetParent(null);
             interRB.isKinematic = false;
             interactingObject = null;
             holdingObject = false;
+            Physics.IgnoreLayerCollision(9, 11, false);
         }
         else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
         {
             interactingObject.transform.SetParent(transform);
             interObjPos = interactingObject.transform.position;
-            interactingObject.transform.position = new Vector3(interObjPos.x,(transform.position.y * 1.25f), transform.position.z + 0.6f);
+            //interactingObject.transform.position = new Vector3(interObjPos.x,transform.position.y, transform.position.z + 0.6f);
+
+            interactingObject.transform.localPosition = new Vector3(0.0f, 0.0f, 2.0f);
+
+            //Vector3 relativePos = transform.TransformPoint(new Vector3(0.0f, 0.0f, 1.0f));
+            //interactingObject.transform.position = relativePos;
+
             interRB.isKinematic = true;
             holdingObject = true;
+            Physics.IgnoreLayerCollision(9, 11, true);
         }
     }
 }
