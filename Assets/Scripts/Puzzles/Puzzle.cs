@@ -18,7 +18,7 @@ public class Puzzle : Subject, IObserver
     void Start()
     {
         // Load reward
-        _reward = Resources.Load("Prefabs/Puzzles/Reward") as GameObject;
+        _reward = Resources.Load("Prefabs/Puzzles/key Variant") as GameObject;
 
         // Add all puzzle items
         foreach (PuzzleItem objective in _objectives)
