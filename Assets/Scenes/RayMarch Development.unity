@@ -228,6 +228,7 @@ GameObject:
   - component: {fileID: 79027070}
   - component: {fileID: 79027069}
   - component: {fileID: 79027068}
+  - component: {fileID: 79027073}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -247,10 +248,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc499d187aab963478126497aa2ff37d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _path: C:/Users/Max/Desktop/GDW/Assets/Graphics Pipeline/Shaders/
+  _path: D:/User Profiles/100671306/Desktop/GDW/Assets/Graphics Pipeline/Shaders/
   _name: Development
-  _templateHLSLPath: C:/Users/Max/Desktop/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.hlsl
-  _templateShaderPath: C:/Users/Max/Desktop/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.shader
+  _templateHLSLPath: D:/User Profiles/100671306/Desktop/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.hlsl
+  _templateShaderPath: D:/User Profiles/100671306/Desktop/GDW/Assets/Graphics Pipeline/Shaders/RayMarchTemplate.shader
 --- !u!114 &79027069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -263,38 +264,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25ef0e3e60e79274d9f2e0909a807335, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _shaders: []
-  _effectShader: {fileID: 4800000, guid: 89b8ef59748914244b7470326c956d24, type: 3}
-  _colourRamp: {fileID: 2800000, guid: 70b1b6bc55617f74bac81d47b62500e6, type: 3}
-  _performanceRamp: {fileID: 2800000, guid: 243f1b7655336f447be92d1a4f8a4994, type: 3}
-  _wood: {fileID: 2800000, guid: 9e4e7026e14ffbb4198c4e013cb987a3, type: 3}
-  _brick: {fileID: 2800000, guid: be0271be91289464e98e35b11785ae0f, type: 3}
-  _maxSteps: 170
-  _maxDrawDist: 300
-  _specularExp: 160
-  _attenuationConstant: 1.5
-  _attenuationLinear: 0.01
-  _attenuationQuadratic: 0.001
-  _ambientColour: {r: 0.5377358, g: 0.5377358, b: 0.5377358, a: 0}
-  _diffuseColour: {r: 0.509434, g: 0.509434, b: 0.509434, a: 0}
-  _specularColour: {r: 1, g: 1, b: 1, a: 0}
-  _lightConstants: {x: 0.2, y: 0.2, z: 2}
-  _rimLightColour: {r: 0, g: 0, b: 0, a: 0}
-  sunLight: {fileID: 799880576}
-  _penumbraFactor: 21.7
-  _shadowMinDist: 0.1
-  _shadowIntensity: 2.5
-  _reflectionCount: 1
-  _reflectionIntensity: 0.3
-  _envReflIntensity: 0.5
-  _skybox: {fileID: 8900000, guid: 6ebf87d8a2070b749bb2a58dd38570f2, type: 3}
-  _aoMaxSteps: 3
-  _aoStepSize: 0.2
-  _aoIntensity: 0.3
-  _vignetteIntensity: 0
-  _fogExtinction: 0.005
-  _fogInscattering: 0.009
-  _fogColour: {r: 0.32156867, g: 0.58361304, b: 0.7647059, a: 1}
+  _shaders:
+  - {fileID: 79027073}
+  _sunLight: {fileID: 799880576}
 --- !u!81 &79027070
 AudioListener:
   m_ObjectHideFlags: 0
@@ -360,6 +332,31 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 23.234001, y: 0, z: 0}
+--- !u!114 &79027073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 79027067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6912fcd98db997c42b684e93e52e9faa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _settings: {fileID: 11400000, guid: 257a203616b5e4f41acb4b0f96f3412c, type: 2}
+  _renderList:
+  - {fileID: 1978000619}
+  - {fileID: 765748233}
+  - {fileID: 37456814}
+  - {fileID: 347229721}
+  - {fileID: 1686833784}
+  - {fileID: 858877308}
+  - {fileID: 675658831}
+  - {fileID: 1206707400}
+  - {fileID: 1369126686}
+  - {fileID: 396483358}
+  - {fileID: 1897008215}
 --- !u!1 &347229720
 GameObject:
   m_ObjectHideFlags: 0
@@ -1441,22 +1438,22 @@ PrefabInstance:
     - target: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.40821788
+      value: 0.44915214
       objectReference: {fileID: 0}
     - target: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.23456968
+      value: -0.2291357
       objectReference: {fileID: 0}
     - target: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.10938163
+      value: 0.120349936
       objectReference: {fileID: 0}
     - target: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.8754261
+      value: 0.8551462
       objectReference: {fileID: 0}
     - target: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
         type: 3}
@@ -1466,7 +1463,7 @@ PrefabInstance:
     - target: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 50
+      value: 55.42
       objectReference: {fileID: 0}
     - target: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
         type: 3}

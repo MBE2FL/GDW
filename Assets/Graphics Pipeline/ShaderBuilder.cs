@@ -834,61 +834,61 @@ public class ShaderBuilder : MonoBehaviour
 
 
 
-    private void parseReflection(ref StringBuilder file)
-    {
-        file.AppendLine("\t\t// Distance field reflection.");
-        file.AppendLine("\t\tfloat quality;");
-        file.AppendLine("\t\tfloat4 refl = distField.reflInfo;");
-        file.AppendLine("\t\tfloat prevRefl = 0;");
+    //private void parseReflection(ref StringBuilder file)
+    //{
+    //    file.AppendLine("\t\t// Distance field reflection.");
+    //    file.AppendLine("\t\tfloat quality;");
+    //    file.AppendLine("\t\tfloat4 refl = distField.reflInfo;");
+    //    file.AppendLine("\t\tfloat prevRefl = 0;");
 
-        float quality;
-        string reflComp = "";
+    //    float quality;
+    //    string reflComp = "";
 
-        for (uint i = 0; i < _rayMarcher.ReflectionCount; ++i)
-        {
-            quality = (i + 1) * 2;
+    //    for (uint i = 0; i < _rayMarcher.ReflectionCount; ++i)
+    //    {
+    //        quality = (i + 1) * 2;
 
-            switch (i)
-            {
-                case 0:
-                    reflComp = ".x";
-                    quality = 0.5f;
-                    break;
-                case 1:
-                    reflComp = ".y";
-                    quality = 0.25f;
-                    break;
-                case 2:
-                    reflComp = ".z";
-                    quality = 0.125f;
-                    break;
-                default:
-                    Debug.LogError("Shader Parse: Broke Max Reflection Limit!");
-                    break;
-            }
+    //        switch (i)
+    //        {
+    //            case 0:
+    //                reflComp = ".x";
+    //                quality = 0.5f;
+    //                break;
+    //            case 1:
+    //                reflComp = ".y";
+    //                quality = 0.25f;
+    //                break;
+    //            case 2:
+    //                reflComp = ".z";
+    //                quality = 0.125f;
+    //                break;
+    //            default:
+    //                Debug.LogError("Shader Parse: Broke Max Reflection Limit!");
+    //                break;
+    //        }
 
-            file.AppendLine();
-            file.AppendLine("\t\tquality = " + quality + ";");
-            file.AppendLine("\t\trayDir = normalize(reflect(rayDir, normal));");
-            file.AppendLine("\t\trayOrigin = p + (rayDir * 0.01);");
-            if (i > 0)
-            {
-                file.AppendLine("\t\tprevRefl = distField.reflInfo.x;");
-                file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + " * prevRefl) * quality, _maxDrawDist * quality, p, distField);");
-            }
-            else
-                file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + ") * quality, _maxDrawDist * quality, p, distField);");
-            file.AppendLine();
-            file.AppendLine("\t\tif (rayHit)");
-            file.AppendLine("\t\t{");
-            file.AppendLine("\t\t\tnormal = calcNormal(p);");
-            file.AppendLine("\t\t\tadd += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;");
-            file.AppendLine("\t\t}");
-        }
+    //        file.AppendLine();
+    //        file.AppendLine("\t\tquality = " + quality + ";");
+    //        file.AppendLine("\t\trayDir = normalize(reflect(rayDir, normal));");
+    //        file.AppendLine("\t\trayOrigin = p + (rayDir * 0.01);");
+    //        if (i > 0)
+    //        {
+    //            file.AppendLine("\t\tprevRefl = distField.reflInfo.x;");
+    //            file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + " * prevRefl) * quality, _maxDrawDist * quality, p, distField);");
+    //        }
+    //        else
+    //            file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + ") * quality, _maxDrawDist * quality, p, distField);");
+    //        file.AppendLine();
+    //        file.AppendLine("\t\tif (rayHit)");
+    //        file.AppendLine("\t\t{");
+    //        file.AppendLine("\t\t\tnormal = calcNormal(p);");
+    //        file.AppendLine("\t\t\tadd += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;");
+    //        file.AppendLine("\t\t}");
+    //    }
 
-        file.AppendLine("\t\t// Skybox reflection.");
-        file.AppendLine("\t\t//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;");
-    }
+    //    file.AppendLine("\t\t// Skybox reflection.");
+    //    file.AppendLine("\t\t//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;");
+    //}
 
 
 

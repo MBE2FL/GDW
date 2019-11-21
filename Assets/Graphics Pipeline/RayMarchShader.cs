@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class RayMarchShader
+[ExecuteInEditMode]
+public class RayMarchShader : MonoBehaviour
 {
+    [SerializeField]
     RayMarchShaderSettings _settings;
-    List<RMObj> _renderList;
+    [SerializeField]
+    List<RMObj> _renderList = new List<RMObj>();
+    private RMObj[] objects;                                // The array of objects to render.
 
 
     private Matrix4x4[] _invModelMats = new Matrix4x4[32];   // The inverse transformation matrices of every object.
@@ -62,6 +66,14 @@ public class RayMarchShader
     }
 
 
+    //public RayMarchShader()
+    //{
+    //    // TO-DO load saved render list
+
+    //    _renderList = new List<RMObj>();
+    //}
+
+
     //void Awake()
     //{
         //if (Application.isPlaying)
@@ -74,7 +86,7 @@ public class RayMarchShader
     //}
 
 
-    public void render(Material material, Matrix4x4 frustomCorners, Matrix4x4 cameraInvViewMatrix, Vector3 camPos)
+    public void render(Material material, Matrix4x4 frustomCorners, Matrix4x4 cameraInvViewMatrix, Vector3 camPos, Transform sunLight)
     {
        // Enable this shader's defines
        foreach (ShaderKeywords keyword in _settings.Keywords)
@@ -83,7 +95,7 @@ public class RayMarchShader
        }
 
        material.SetMatrix("_FrustumCornersES", frustomCorners);
-       material.SetMatrix("_CameraInvViewMatrix", cameraInvViewMatrix);
+       material.SetMatrix("_CameraInvMatrix", cameraInvViewMatrix);
        material.SetVector("_CameraPos", camPos);
        //material.SetMatrix("_TorusMat_InvModel", torusMat.inverse);
        material.SetTexture("_colourRamp", _settings.ColourRamp);
@@ -95,8 +107,8 @@ public class RayMarchShader
        material.SetFloat("_attenuationConstant", _settings.AttenuationConstant);
        material.SetFloat("_attenuationLinear", _settings.AttenuationLinear);
        material.SetFloat("_attenuationQuadratic", _settings.AttenuationQuadratic);
-       material.SetVector("_LightDir", _settings.SunLight ? _settings.SunLight.forward : Vector3.down);
-       material.SetVector("_lightPos", _settings.SunLight ? _settings.SunLight.position : Vector3.zero);
+       material.SetVector("_LightDir", sunLight ? sunLight.forward : Vector3.down);
+       material.SetVector("_lightPos", sunLight ? sunLight.position : Vector3.zero);
        material.SetColor("_ambientColour", _settings.AmbientColour);
        material.SetColor("_diffuseColour", _settings.DiffuseColour);
        material.SetColor("_specularColour", _settings.SpecualarColour);
@@ -199,10 +211,10 @@ public class RayMarchShader
 
 
        // Disable this shader's defines
-       foreach (ShaderKeywords keyword in _settings.Keywords)
-       {
-           material.DisableKeyword(keyword.ToString());
-       }
+       //foreach (ShaderKeywords keyword in _settings.Keywords)
+       //{
+       //    material.DisableKeyword(keyword.ToString());
+       //}
     }
 
 

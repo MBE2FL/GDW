@@ -258,20 +258,33 @@ public class RMObjEditor : Editor
 
         serializedObject.Update();
 
-        List<RayMarchShader> shaders = _rayMarcher.Shaders;
-        _shaderNames = new string[shaders.Count];
-        for (int i = 0; i < shaders.Count; ++i)
-        {
-            _shaderNames[i] = shaders[i].ShaderName;
-        }
-
         GUIContent label = new GUIContent("Shader Options", "All ray marching shaders you can add this object to.");
-        _selectedShaderIndex = EditorGUILayout.Popup(label, _selectedShaderIndex, _shaderNames);
 
-        if (GUILayout.Button("Add To Shader"))
+        // Retrieve all the ray march shaders, and display them as options to be added to.
+        List<RayMarchShader> shaders = _rayMarcher.Shaders;
+
+        if (shaders.Count > 0)
         {
-            shaders[_selectedShaderIndex].RenderList.Add(rmObj);
+            // Retrieve all the shaders' names.
+            _shaderNames = new string[shaders.Count];
+            for (int i = 0; i < shaders.Count; ++i)
+            {
+                _shaderNames[i] = shaders[i].ShaderName;
+            }
+
+            // Display them.
+            _selectedShaderIndex = EditorGUILayout.Popup(label, _selectedShaderIndex, _shaderNames);
+
+            if (GUILayout.Button("Add To Shader"))
+            {
+                shaders[_selectedShaderIndex].RenderList.Add(rmObj);
+            }
         }
+        else
+        {
+            _selectedShaderIndex = EditorGUILayout.Popup(label, _selectedShaderIndex, _shaderNames);
+        }
+
 
         label.text = "Draw Order";
         label.tooltip = "The order in which this object will be placed in the shader.";

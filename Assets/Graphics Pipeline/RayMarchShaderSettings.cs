@@ -10,15 +10,14 @@ public enum ShaderKeywords
 [CreateAssetMenu(fileName = "New Ray March Shader", menuName = "Ray March Shader")]
 public class RayMarchShaderSettings : ScriptableObject
 {
+    [SerializeField]
     private List<ShaderKeywords> _keywords = new List<ShaderKeywords>();// The material keywords to disable for this shader.
+    [SerializeField]
     private Shader _effectShader = null;
     [SerializeField]
     private string _shaderName;
 
 
-    private RMObj[] objects;                                // The array of objects to render.
-    [SerializeField]
-    private List<RMObj> _renderList = new List<RMObj>();    // The list of objects to render.
 
     [SerializeField]
     private Texture2D _colourRamp = null;
@@ -153,14 +152,6 @@ public class RayMarchShaderSettings : ScriptableObject
         }
     }
 
-    public List<RMObj> RenderList
-    {
-        get
-        {
-            return _renderList;
-        }
-    }
-
     public Texture2D ColourRamp
     {
         get
@@ -281,11 +272,11 @@ public class RayMarchShaderSettings : ScriptableObject
     {
         get
         {
-            return _ambientColour;
+            return _diffuseColour;
         }
         set
         {
-            _ambientColour = value;
+            _diffuseColour = value;
         }
     }
 
