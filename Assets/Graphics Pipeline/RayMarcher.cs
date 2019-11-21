@@ -9,7 +9,6 @@ using UnityEditor;
 [RequireComponent(typeof(Camera))]
 [AddComponentMenu("Ray Marching/RayMarcher")]
 [DisallowMultipleComponent]
-
 public class RayMarcher : SceneViewFilter
 {
     [SerializeField]
@@ -122,6 +121,7 @@ public class RayMarcher : SceneViewFilter
     private float _fogInscattering = 0.0f;
     [SerializeField]
     private Color _fogColour = Color.grey;
+
 
 
     public Shader EffectShader
@@ -241,8 +241,9 @@ public class RayMarcher : SceneViewFilter
         }
 
 
-        RayMarchShader[] allShaders = GetComponents<RayMarchShader>();
-        _shaders = new List<RayMarchShader>(allShaders);
+        //RayMarchShader[] allShaders = GetComponents<RayMarchShader>();
+        //RayMarchShader[] allShaders = (RayMarchShader[])AssetDatabase.LoadAllAssetsAtPath("Assets/Graphics Pipeline/Shader Objects/TestOne");
+        //_shaders = new List<RayMarchShader>(allShaders);
     }
 
 
@@ -253,57 +254,65 @@ public class RayMarcher : SceneViewFilter
         //shader.ShaderName = "New Shader";
         //_shaders.Add(shader);
 
-        RayMarchShader shader = ScriptableObject.CreateInstance<RayMarchShader>();
-        shader.ShaderName = "New Shader";
-        _shaders.Add(shader);
+        // RayMarchShader shader = ScriptableObject.CreateInstance<RayMarchShader>();
+        // shader.ShaderName = "New Shader";
+        // _shaders.Add(shader);
 
-        ShaderEditorWindow.rebuildNames();
+        // ShaderEditorWindow.rebuildNames();
+
+        RayMarchShader shader = new RayMarchShader();
+        _shaders.Add(shader);
     }
 
     public void removeShader(RayMarchShader shader)
     {
 
-        if (_shaders.Count > 0)
-        {
-            int index = _shaders.IndexOf(shader);
-            _shaders[index] = _shaders[_shaders.Count - 1];
-        }
+        // if (_shaders.Count > 0)
+        // {
+        //     int index = _shaders.IndexOf(shader);
+        //     _shaders[index] = _shaders[_shaders.Count - 1];
+        // }
 
-        _shaders.RemoveAt(_shaders.Count - 1);
+        // _shaders.RemoveAt(_shaders.Count - 1);
 
-        ShaderEditorWindow.rebuildNames();
+        // ShaderEditorWindow.rebuildNames();
     }
 
     public void removeShader(int index)
     {
 
-        if (_shaders.Count > 0)
-        {
-            _shaders[index] = _shaders[_shaders.Count - 1];
-        }
+        // if (_shaders.Count > 0)
+        // {
+        //     _shaders[index] = _shaders[_shaders.Count - 1];
+        // }
 
-        _shaders.RemoveAt(_shaders.Count - 1);
+        // _shaders.RemoveAt(_shaders.Count - 1);
 
-        ShaderEditorWindow.rebuildNames();
+        // ShaderEditorWindow.rebuildNames();
+    }
+
+    public void removeAllShaders()
+    {
+        _shaders.Clear();
     }
 
     public void moveUp(RayMarchShader shader)
     {
-        int index = _shaders.IndexOf(shader);
-        RayMarchShader temp = _shaders[index];
+        // int index = _shaders.IndexOf(shader);
+        // RayMarchShader temp = _shaders[index];
 
-        ShaderEditorWindow.rebuildNames();
+        // ShaderEditorWindow.rebuildNames();
     }
 
     public void unHide()
     {
-        RayMarchShader[] shaders = GetComponents<RayMarchShader>();
-        Component[] allComps = GetComponents<Component>();
+        // RayMarchShader[] shaders = GetComponents<RayMarchShader>();
+        // Component[] allComps = GetComponents<Component>();
 
-        foreach(RayMarchShader shader in shaders)
-        {
-            shader.hideFlags = HideFlags.None;
-        }
+        // foreach(RayMarchShader shader in shaders)
+        // {
+        //     shader.hideFlags = HideFlags.None;
+        // }
     }
 
 
@@ -472,8 +481,10 @@ public class RayMarcherEditor : Editor
 {
 
     private bool _boundDebug = false;
-    private List<RayMarchShader> shaders;
 
+    private List<RayMarchShader> shaders;
+    private List<RMObj> _renderList;
+    private bool _renderListFoldout = false;
     private SerializedProperty _shaders;
 
     private void OnEnable()
@@ -483,55 +494,63 @@ public class RayMarcherEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
+        //base.OnInspectorGUI();
 
-        //var rayMarcher = target as RayMarcher;
+        var rayMarcher = target as RayMarcher;
 
-        //serializedObject.Update();
+        serializedObject.Update();
 
-        //if (GUILayout.Button("Unhide all shaders"))
-        //{
-        //    rayMarcher.unHide();
-        //}
 
-        //GUIContent label = new GUIContent("Shaders", "");
-        //EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+        GUIContent label = new GUIContent("Shaders", "");
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
-        //shaders = rayMarcher.Shaders;
-        //for (int i = 0; i < shaders.Count; ++i)
-        //{
-        //    EditorGUILayout.Space();
-        //    EditorGUILayout.Space();
-        //    //string textBuffer = shaders[i].ShaderName;
-        //    //shaders[i].ShaderName = EditorGUILayout.TextField(textBuffer);
-        //    shaders[i].ShaderName = EditorGUILayout.TextField(shaders[i].ShaderName);
+        if (GUILayout.Button("Remove All Shaders"))
+        {
+            rayMarcher.removeAllShaders();
+        }
 
-        //    GUILayout.BeginHorizontal();
-        //    if (GUILayout.Button("Move Up"))
-        //    {
-        //        //rayMarcher.moveUp(i);
-        //        break;
-        //    }
+        shaders = rayMarcher.Shaders;
+        for (int i = 0; i < shaders.Count; ++i)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            //string textBuffer = shaders[i].ShaderName;
+            //shaders[i].ShaderName = EditorGUILayout.TextField(textBuffer);
+            //shaders[i].ShaderName = EditorGUILayout.TextField(shaders[i].ShaderName);
 
-        //    if (GUILayout.Button("Move Down"))
-        //    {
-        //        break;
-        //    }
+            //EditorGUILayout.TextField(shaders[i].ShaderName);
+            label.text = "Settings";
+            label.tooltip = "";
+            shaders[i].Settings = EditorGUILayout.ObjectField(label, shaders[i].Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
 
-        //    if (GUILayout.Button("Remove Shader"))
-        //    {
-        //        rayMarcher.removeShader(i);
-        //        break;
-        //    }
-        //    GUILayout.EndHorizontal();
-        //}
+            label.text = "Render List";
+            _renderListFoldout = EditorGUILayout.Foldout(_renderListFoldout, "Render List");
+            if (_renderListFoldout)
+            {
+                _renderList = shaders[i].RenderList;
+                foreach (RMObj obj in _renderList)
+                {
+                    EditorGUILayout.TextField(obj.name);
+                }
+            }
 
-        //EditorGUILayout.Space();
-        //EditorGUILayout.Space();
-        //if (GUILayout.Button("Add Shader"))
-        //{
-        //    rayMarcher.addShader();
-        //}
+           GUILayout.BeginHorizontal();
+           if (GUILayout.Button("Remove Shader"))
+           {
+               rayMarcher.removeShader(i);
+               break;
+           }
+           GUILayout.EndHorizontal();
+        }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
+        if (GUILayout.Button("Add Shader"))
+        {
+           rayMarcher.addShader();
+        }
+
+
 
 
 
@@ -543,7 +562,7 @@ public class RayMarcherEditor : Editor
 
 
 
-        //serializedObject.ApplyModifiedProperties();
+        serializedObject.ApplyModifiedProperties();
 
 
         //if (GUILayout.Button("Bound Debug"))
@@ -559,7 +578,7 @@ public class RayMarcherEditor : Editor
 }
 
 
-public class ShaderEditorWindow : EditorWindow
+/* public class ShaderEditorWindow : EditorWindow
 {
     string myString = "Hello World";
     bool groupEnabled;
@@ -776,5 +795,5 @@ public class ShaderEditorWindow : EditorWindow
             GUILayout.EndScrollView();
         }
     }
-}
+} */
 #endif

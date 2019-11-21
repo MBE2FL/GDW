@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68fc6a48569501646a8f1b291b6f4773, type: 3}
+  m_Name: TestOne
+  m_EditorClassIdentifier: 
+  _shaderName: Howdy
+  _renderList: []
+  _colourRamp: {fileID: 0}
+  _performanceRamp: {fileID: 0}
+  _wood: {fileID: 0}
+  _brick: {fileID: 0}
+  _maxSteps: 100
+  _maxDrawDist: 64
+  _specularExp: 160
+  _attenuationConstant: 1.5
+  _attenuationLinear: 0.01
+  _attenuationQuadratic: 0.001
+  _ambientColour: {r: 137, g: 137, b: 137, a: 0}
+  _diffuseColour: {r: 130, g: 130, b: 130, a: 0}
+  _specularColour: {r: 255, g: 255, b: 255, a: 0}
+  _lightConstants: {x: 0.2, y: 0.2, z: 2}
+  _rimLightColour: {r: 255, g: 0, b: 219, a: 0}
+  sunLight: {fileID: 4234675503541659248, guid: a977217edf6623d48b39bd841adccbd0,
+    type: 3}
+  _penumbraFactor: 15
+  _shadowMinDist: 0.01
+  _shadowIntensity: 1
+  _reflectionCount: 0
+  _reflectionIntensity: 0
+  _envReflIntensity: 0
+  _skybox: {fileID: 0}
+  _aoMaxSteps: 3
+  _aoStepSize: 0.2
+  _aoIntensity: 0.3
+  _vignetteIntensity: 0
+  _fogExtinction: 0
+  _fogInscattering: 0
+  _fogColour: {r: 0.5, g: 0.5, b: 0.5, a: 1}

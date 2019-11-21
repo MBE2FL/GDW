@@ -223,6 +223,10 @@ public class RMObjEditor : Editor
     private SerializedProperty _displaceFormula;
     private SerializedProperty _boundShape;
     private SerializedProperty _boundGeoInfo;
+    private RayMarcher _rayMarcher;
+
+    private int _selectedShaderIndex = 0;
+    private string[] _shaderNames;
 
     protected virtual void OnEnable()
     {
@@ -242,15 +246,35 @@ public class RMObjEditor : Editor
 
         _boundShape = serializedObject.FindProperty("_boundShape");
         _boundGeoInfo = serializedObject.FindProperty("_boundGeoInfo");
+
+        _rayMarcher = Camera.main.GetComponent<RayMarcher>();
     }
 
     public override void OnInspectorGUI()
     {
         //base.OnInspectorGUI();
 
+        RMObj rmObj = target as RMObj;
+
         serializedObject.Update();
 
-        GUIContent label = new GUIContent("Draw Order", "The order in which this object will be placed in the shader.");
+        List<RayMarchShader> shaders = _rayMarcher.Shaders;
+        _shaderNames = new string[shaders.Count];
+        for (int i = 0; i < shaders.Count; ++i)
+        {
+            _shaderNames[i] = shaders[i].ShaderName;
+        }
+
+        GUIContent label = new GUIContent("Shader Options", "All ray marching shaders you can add this object to.");
+        _selectedShaderIndex = EditorGUILayout.Popup(label, _selectedShaderIndex, _shaderNames);
+
+        if (GUILayout.Button("Add To Shader"))
+        {
+            shaders[_selectedShaderIndex].RenderList.Add(rmObj);
+        }
+
+        label.text = "Draw Order";
+        label.tooltip = "The order in which this object will be placed in the shader.";
         EditorGUILayout.PropertyField(_drawOrder, label);
 
         label.text = "Static";
