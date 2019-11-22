@@ -15,13 +15,34 @@ public class ShaderBuilder : MonoBehaviour
     [SerializeField]
     private string _path;
     [SerializeField]
-    private string _name = "Unamed Parsed Shader";
-    [SerializeField]
     private string _templateHLSLPath;
     [SerializeField]
     private string _templateShaderPath;
     [HideInInspector]
     private RayMarcher _rayMarcher;
+    [SerializeField]
+    private RayMarchShader _currentShader;
+
+
+    public RayMarcher GetRayMarcher
+    {
+        get
+        {
+            return _rayMarcher;
+        }
+    }
+
+    public RayMarchShader CurrentShader
+    {
+        get
+        {
+            return _currentShader;
+        }
+        set
+        {
+            _currentShader = value;
+        }
+    }
 
 
     private void Awake()
@@ -44,6 +65,7 @@ public class ShaderBuilder : MonoBehaviour
 
         StringBuilder file = new StringBuilder();
 
+        string shaderName = _currentShader.ShaderName;
 
         foreach (string line in File.ReadAllLines(_templateHLSLPath))
         {
@@ -73,7 +95,7 @@ public class ShaderBuilder : MonoBehaviour
 
 
         // Write new shader.
-        using (StreamWriter shader = new StreamWriter(File.Create(_path + "/" + _name + ".hlsl")))
+        using (StreamWriter shader = new StreamWriter(File.Create(_path + "/" + shaderName + ".hlsl")))
         {
             shader.Write(file.ToString());
         }
@@ -86,11 +108,11 @@ public class ShaderBuilder : MonoBehaviour
             // Replace insert statements.
             if (line.Contains("//<Insert Shader Name>"))
             {
-                file.AppendLine("Shader \"MyPipeline/" + _name + "\"");
+                file.AppendLine("Shader \"MyPipeline/" + shaderName + "\"");
             }
             else if (line.Contains("//<Insert Include>"))
             {
-                file.AppendLine("\t\t\t#include \"" + _name + ".hlsl\"");
+                file.AppendLine("\t\t\t#include \"" + shaderName + ".hlsl\"");
             }
             // Copy line from template.
             else
@@ -101,7 +123,7 @@ public class ShaderBuilder : MonoBehaviour
 
 
         // Write new shader.
-        using (StreamWriter shader = new StreamWriter(File.Create(_path + "/" + _name + ".shader")))
+        using (StreamWriter shader = new StreamWriter(File.Create(_path + "/" + shaderName + ".shader")))
         {
             shader.Write(file.ToString());
         }
@@ -127,7 +149,7 @@ public class ShaderBuilder : MonoBehaviour
         uint primIndex = 0;
         uint csgIndex = 0;
 
-        List<RMObj> objs = _rayMarcher.RenderList;
+        List<RMObj> objs = _currentShader.RenderList;
 
         RMPrimitive prim;
         CSG csg;
@@ -197,7 +219,7 @@ public class ShaderBuilder : MonoBehaviour
 
         //objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
 
-        List<RMObj> objs = _rayMarcher.RenderList;
+        List<RMObj> objs = _currentShader.RenderList;
 
         RMPrimitive prim;
         CSG csg;
@@ -834,61 +856,61 @@ public class ShaderBuilder : MonoBehaviour
 
 
 
-    //private void parseReflection(ref StringBuilder file)
-    //{
-    //    file.AppendLine("\t\t// Distance field reflection.");
-    //    file.AppendLine("\t\tfloat quality;");
-    //    file.AppendLine("\t\tfloat4 refl = distField.reflInfo;");
-    //    file.AppendLine("\t\tfloat prevRefl = 0;");
+    private void parseReflection(ref StringBuilder file)
+    {
+        file.AppendLine("\t\t// Distance field reflection.");
+        file.AppendLine("\t\tfloat quality;");
+        file.AppendLine("\t\tfloat4 refl = distField.reflInfo;");
+        file.AppendLine("\t\tfloat prevRefl = 0;");
 
-    //    float quality;
-    //    string reflComp = "";
+        float quality;
+        string reflComp = "";
 
-    //    for (uint i = 0; i < _rayMarcher.ReflectionCount; ++i)
-    //    {
-    //        quality = (i + 1) * 2;
+        for (uint i = 0; i < _currentShader.Settings.ReflectionCount; ++i)
+        {
+            quality = (i + 1) * 2;
 
-    //        switch (i)
-    //        {
-    //            case 0:
-    //                reflComp = ".x";
-    //                quality = 0.5f;
-    //                break;
-    //            case 1:
-    //                reflComp = ".y";
-    //                quality = 0.25f;
-    //                break;
-    //            case 2:
-    //                reflComp = ".z";
-    //                quality = 0.125f;
-    //                break;
-    //            default:
-    //                Debug.LogError("Shader Parse: Broke Max Reflection Limit!");
-    //                break;
-    //        }
+            switch (i)
+            {
+                case 0:
+                    reflComp = ".x";
+                    quality = 0.5f;
+                    break;
+                case 1:
+                    reflComp = ".y";
+                    quality = 0.25f;
+                    break;
+                case 2:
+                    reflComp = ".z";
+                    quality = 0.125f;
+                    break;
+                default:
+                    Debug.LogError("Shader Parse: Broke Max Reflection Limit!");
+                    break;
+            }
 
-    //        file.AppendLine();
-    //        file.AppendLine("\t\tquality = " + quality + ";");
-    //        file.AppendLine("\t\trayDir = normalize(reflect(rayDir, normal));");
-    //        file.AppendLine("\t\trayOrigin = p + (rayDir * 0.01);");
-    //        if (i > 0)
-    //        {
-    //            file.AppendLine("\t\tprevRefl = distField.reflInfo.x;");
-    //            file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + " * prevRefl) * quality, _maxDrawDist * quality, p, distField);");
-    //        }
-    //        else
-    //            file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + ") * quality, _maxDrawDist * quality, p, distField);");
-    //        file.AppendLine();
-    //        file.AppendLine("\t\tif (rayHit)");
-    //        file.AppendLine("\t\t{");
-    //        file.AppendLine("\t\t\tnormal = calcNormal(p);");
-    //        file.AppendLine("\t\t\tadd += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;");
-    //        file.AppendLine("\t\t}");
-    //    }
+            file.AppendLine();
+            file.AppendLine("\t\tquality = " + quality + ";");
+            file.AppendLine("\t\trayDir = normalize(reflect(rayDir, normal));");
+            file.AppendLine("\t\trayOrigin = p + (rayDir * 0.01);");
+            if (i > 0)
+            {
+                file.AppendLine("\t\tprevRefl = distField.reflInfo.x;");
+                file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + " * prevRefl) * quality, _maxDrawDist * quality, p, distField);");
+            }
+            else
+                file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + ") * quality, _maxDrawDist * quality, p, distField);");
+            file.AppendLine();
+            file.AppendLine("\t\tif (rayHit)");
+            file.AppendLine("\t\t{");
+            file.AppendLine("\t\t\tnormal = calcNormal(p);");
+            file.AppendLine("\t\t\tadd += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;");
+            file.AppendLine("\t\t}");
+        }
 
-    //    file.AppendLine("\t\t// Skybox reflection.");
-    //    file.AppendLine("\t\t//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;");
-    //}
+        file.AppendLine("\t\t// Skybox reflection.");
+        file.AppendLine("\t\t//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;");
+    }
 
 
 
@@ -929,7 +951,7 @@ public class ShaderBuilder : MonoBehaviour
         uint csgIndex = 0;
         
 
-        List<RMObj> objs = _rayMarcher.RenderList;
+        List<RMObj> objs = _currentShader.RenderList;
 
 
         RMPrimitive prim;
@@ -1199,17 +1221,21 @@ public class ShaderBuilder : MonoBehaviour
 public class ShaderBuilderEditor : Editor
 {
     SerializedProperty _path;
-    SerializedProperty _name;
     SerializedProperty _templateHLSLPath;
     SerializedProperty _templateShaderPath;
+    List<RayMarchShader> _shaders = new List<RayMarchShader>();
+    SerializedProperty _currentShader;
+    int _selectedShaderIndex = 0;
+    string[] _shaderNames;
+
 
 
     private void OnEnable()
     {
         _path = serializedObject.FindProperty("_path");
-        _name = serializedObject.FindProperty("_name");
         _templateHLSLPath = serializedObject.FindProperty("_templateHLSLPath");
         _templateShaderPath = serializedObject.FindProperty("_templateShaderPath");
+        _currentShader = serializedObject.FindProperty("_currentShader");
     }
 
     public override void OnInspectorGUI()
@@ -1221,14 +1247,26 @@ public class ShaderBuilderEditor : Editor
         serializedObject.Update();
 
         EditorGUILayout.PropertyField(_path);
-        EditorGUILayout.PropertyField(_name);
         EditorGUILayout.PropertyField(_templateHLSLPath);
         EditorGUILayout.PropertyField(_templateShaderPath);
+
+        // Select a shader to build.
+        _shaders = shaderBuilder.GetRayMarcher.Shaders;
+        _shaderNames = new string[_shaders.Count];
+
+        for (int i = 0; i < _shaders.Count; ++i)
+        {
+            _shaderNames[i] = _shaders[i].ShaderName;
+        }
+
+        _selectedShaderIndex = EditorGUILayout.Popup(_selectedShaderIndex, _shaderNames);
+
 
         serializedObject.ApplyModifiedProperties();
 
         if (GUILayout.Button("Build"))
         {
+            shaderBuilder.CurrentShader = _shaders[_selectedShaderIndex];
             shaderBuilder.build();
         }
     }

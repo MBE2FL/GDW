@@ -85,6 +85,15 @@ public class RayMarchShader : MonoBehaviour
         //}
     //}
 
+    public void disableKeywords(Material material)
+    {
+        // Disable this shader's defines
+        foreach (ShaderKeywords keyword in _settings.Keywords)
+        {
+            material.DisableKeyword(keyword.ToString());
+        }
+    }
+
 
     public void render(Material material, Matrix4x4 frustomCorners, Matrix4x4 cameraInvViewMatrix, Vector3 camPos, Transform sunLight)
     {
@@ -95,13 +104,13 @@ public class RayMarchShader : MonoBehaviour
        }
 
        material.SetMatrix("_FrustumCornersES", frustomCorners);
-       material.SetMatrix("_CameraInvMatrix", cameraInvViewMatrix);
+       material.SetMatrix("_CameraInvViewMatrix", cameraInvViewMatrix);
        material.SetVector("_CameraPos", camPos);
        //material.SetMatrix("_TorusMat_InvModel", torusMat.inverse);
-       material.SetTexture("_colourRamp", _settings.ColourRamp);
-       material.SetTexture("_performanceRamp", _settings.PerformanceRamp);
-       material.SetTexture("_wood", _settings.Wood);
-       material.SetTexture("_brick", _settings.Brick);
+       //material.SetTexture("_colourRamp", _settings.ColourRamp);
+       //material.SetTexture("_performanceRamp", _settings.PerformanceRamp);
+       //material.SetTexture("_wood", _settings.Wood);
+       //material.SetTexture("_brick", _settings.Brick);
 
        material.SetFloat("_specularExp", _settings.SpecularExp);
        material.SetFloat("_attenuationConstant", _settings.AttenuationConstant);
@@ -208,13 +217,6 @@ public class RayMarchShader : MonoBehaviour
 
            material.SetVectorArray("_boundGeoInfo", _boundGeoInfo);
        }
-
-
-       // Disable this shader's defines
-       //foreach (ShaderKeywords keyword in _settings.Keywords)
-       //{
-       //    material.DisableKeyword(keyword.ToString());
-       //}
     }
 
 

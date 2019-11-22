@@ -118,6 +118,12 @@ struct VertexOutput
     float3 ray : TEXCOORD1;
 };
 
+struct PixelOutput
+{
+    float4 sceneCol : SV_Target0;
+    float distMap : SV_Target1;
+};
+
 struct rmPixel
 {
     float dist;
@@ -1364,7 +1370,7 @@ VertexOutput vert(VertexInput input)
 }
 
 // Fragment program
-float4 frag(VertexOutput input) : SV_Target
+PixelOutput frag(VertexOutput input) : SV_Target
 {
     // Ray direction
     float3 rayDir = normalize(input.ray);
@@ -1476,5 +1482,9 @@ float4 frag(VertexOutput input) : SV_Target
     //col.rgb = float3(distField.totalDist / _maxDrawDist, 0.0, 0.0);
     //col.rgb = float3(fogAmount, 0.0, 0.0);
 
-    return col;
+    PixelOutput output;
+    output.sceneCol = col;
+    output.distMap = distField.totalDist / _maxDrawDist;
+
+    return output;
 }

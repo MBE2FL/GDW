@@ -7,7 +7,7 @@ float _totalTime;
 
 // Matrices
 float4x4 _FrustumCornersES;
-float4x4 _CameraInvMatrix;
+float4x4 _CameraInvViewMatrix;
 
 // Vectors
 float4 _MainTex_TexelSize;
@@ -1688,7 +1688,7 @@ VertexOutput vert(VertexInput input)
     output.ray /= abs(output.ray.z);
 
     // Transform the ray from eyespace to worldspace
-    output.ray = mul(_CameraInvMatrix, float4(output.ray.xyz, 0.0)).xyz;
+    output.ray = mul(_CameraInvViewMatrix, float4(output.ray.xyz, 0.0)).xyz;
 
     return output;
 }
@@ -1812,7 +1812,8 @@ PixelOutput frag(VertexOutput input)
 
     PixelOutput output;
     output.sceneCol = col;
-    output.distMap = distField.totalDist / _maxDrawDist;
+    output.distMap = distField.totalDist;
+    //output.sceneCol = float4(output.distMap, 0.0, 0.0, 1.0);
 
     return output;
 }

@@ -9,7 +9,8 @@ Shader "MyPipeline/Development"
         Pass
         {
             HLSLPROGRAM
-			#pragma multi_compile_local __ BOUND_DEBUG
+			#pragma multi_compile_local __ BOUND_DEBUG USE_DEPTH_TEX USE_DIST_TEX
+            #pragma enable_d3d11_debug_symbols
             #pragma vertex vert
             #pragma fragment frag
 			#include "UnityCG.cginc"

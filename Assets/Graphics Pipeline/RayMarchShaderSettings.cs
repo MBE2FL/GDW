@@ -4,7 +4,9 @@ using UnityEngine;
 
 public enum ShaderKeywords
 {
-    BOUND_DEBUG
+    BOUND_DEBUG,
+    USE_DEPTH_TEX,
+    USE_DIST_TEX
 }
 
 [CreateAssetMenu(fileName = "New Ray March Shader", menuName = "Ray March Shader")]

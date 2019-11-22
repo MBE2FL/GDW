@@ -23,7 +23,9 @@ public class RayMarcher : SceneViewFilter
 
     private Material _effectMaterial;
     private Camera _currentCamera;
-    
+    public Texture2D any;
+    [SerializeField]
+    private RenderTexture _distTex;
 
 
     public Material EffectMaterial
@@ -95,6 +97,7 @@ public class RayMarcher : SceneViewFilter
     private void Start()
     {
         _shaders = new List<RayMarchShader>(GetComponents<RayMarchShader>());
+        _distTex = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
     }
 
 
@@ -186,14 +189,22 @@ public class RayMarcher : SceneViewFilter
         Matrix4x4 cameraInvViewMatrix = CurrentCamera.cameraToWorldMatrix;
         Vector3 camPos = CurrentCamera.transform.position;
 
-
-        // Render all shaders.
-        foreach (RayMarchShader shader in _shaders)
+        if (_distTex)
         {
+            _distTex.Release();
+            _distTex = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.RFloat);
+        }
+        // Render all shaders.
+        RayMarchShader shader;
+        for (int i = 0; i < _shaders.Count; ++i)
+        {
+            shader = _shaders[i];
             _effectMaterial.shader = shader.EffectShader;
             shader.render(_effectMaterial, frustomCorners, cameraInvViewMatrix, camPos, _sunLight);
 
-            CustomGraphicsBlit(source, destination, EffectMaterial, 0);
+            CustomGraphicsBlit(source, destination, _effectMaterial, 0, i == (_shaders.Count - 1), ref _distTex, any);
+
+            shader.disableKeywords(EffectMaterial);
         }
         
 
@@ -211,18 +222,26 @@ public class RayMarcher : SceneViewFilter
     /// Bottom Right vertex:    z=2, u=1, v=1
     /// Bottom Left vertex:     z=3, u=1, v=0
     /// </summary>
-    static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNum)
+    static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNum, bool finalPass, ref RenderTexture distTex, Texture2D any)
     {
         //RenderTexture.active = dest;
 
         RenderTexture distanceMap = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.RFloat);
-        //RenderTexture sceneTex = new RenderTexture(source);
         RenderTexture sceneTex = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
-        RenderBuffer[] buffers = new RenderBuffer[2] { sceneTex.colorBuffer, distanceMap.colorBuffer };
+        //RenderBuffer[] buffers = new RenderBuffer[2] { sceneTex.colorBuffer, distanceMap.colorBuffer };
+        RenderBuffer[] buffers = new RenderBuffer[2] { sceneTex.colorBuffer, distTex.colorBuffer };
         Graphics.SetRenderTarget(buffers, dest.depthBuffer);
 
 
         fxMaterial.SetTexture("_MainTex", source);
+
+        if (fxMaterial.IsKeywordEnabled("USE_DIST_TEX"))
+        {
+            fxMaterial.SetTexture("_distTex", distTex);
+            fxMaterial.SetTexture("_distTex", any);
+        }
+
+
 
         GL.PushMatrix();
         GL.LoadOrtho();
@@ -248,12 +267,28 @@ public class RayMarcher : SceneViewFilter
 
 
         //Graphics.Blit(distanceMap, dest);
-        Graphics.Blit(sceneTex, dest);
+
+        if (finalPass)
+        {
+            Graphics.Blit(sceneTex, dest);
+            Graphics.Blit(distanceMap, distTex);
+        }
+        else
+        {
+            Graphics.Blit(sceneTex, source);
+            Graphics.Blit(distanceMap, distTex);
+        }
+
+        //if (distTex)
+        //{
+        //    distTex.Release();
+        //    distTex = new RenderTexture(distanceMap);
+        //}
 
         //sceneTex.Release();
         //distanceMap.Release();
         RenderTexture.ReleaseTemporary(sceneTex);
-        RenderTexture.ReleaseTemporary(distanceMap);
+        //RenderTexture.ReleaseTemporary(distanceMap);
     }
 
 
@@ -331,11 +366,15 @@ public class RayMarcherEditor : Editor
     private bool _renderListFoldout = false;
     private SerializedProperty _shaders;
     private SerializedProperty _sunLight;
+    private SerializedProperty _distTex;
+    private SerializedProperty _any;
 
     private void OnEnable()
     {
         _shaders = serializedObject.FindProperty("_shaders");
         _sunLight = serializedObject.FindProperty("_sunLight");
+        _distTex = serializedObject.FindProperty("_distTex");
+        _any = serializedObject.FindProperty("any");
     }
 
     public override void OnInspectorGUI()
@@ -346,6 +385,8 @@ public class RayMarcherEditor : Editor
 
         serializedObject.Update();
 
+        EditorGUILayout.PropertyField(_distTex);
+        EditorGUILayout.PropertyField(_any);
         EditorGUILayout.PropertyField(_sunLight);
 
 
