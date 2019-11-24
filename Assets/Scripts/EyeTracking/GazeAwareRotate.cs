@@ -7,9 +7,17 @@ public class GazeAwareRotate : MonoBehaviour
 {
     // Start is called before the first frame update
     private GazeAware gazeAware;
+
+    Shader normalShader;
+    Shader glowShader;
+    MeshRenderer meshRenderer;
     void Start()
     {
         gazeAware = GetComponent<GazeAware>();
+        normalShader = Shader.Find("Lightweight Render Pipeline/Lit");
+        glowShader = Shader.Find("Shader Graphs/Glow PBR shader");
+        meshRenderer = GetComponent<MeshRenderer>();
+        meshRenderer.material.shader = normalShader;
     }
 
     // Update is called once per frame
@@ -17,7 +25,10 @@ public class GazeAwareRotate : MonoBehaviour
     {
         if(gazeAware.HasGazeFocus)
         {
-            transform.Rotate(transform.forward);
+            //transform.Rotate(transform.forward);
+            meshRenderer.material.shader = glowShader;
+            return;
         }
+        //meshRenderer.material.shader = normalShader;
     }
 }
