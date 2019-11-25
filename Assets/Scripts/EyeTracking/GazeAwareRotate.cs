@@ -14,8 +14,8 @@ public class GazeAwareRotate : MonoBehaviour
     void Start()
     {
         gazeAware = GetComponent<GazeAware>();
-        normalShader = Shader.Find("Lightweight Render Pipeline/Lit");
-        glowShader = Shader.Find("Shader Graphs/Glow PBR shader");
+        normalShader = Shader.Find("HDRP/Lit");
+        glowShader = Shader.Find("Shader Graphs/HDR Shader Graph");
         meshRenderer = GetComponent<MeshRenderer>();
         meshRenderer.material.shader = normalShader;
     }
