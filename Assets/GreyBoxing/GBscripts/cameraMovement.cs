@@ -23,13 +23,14 @@ public class cameraMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        // Move with controller
         if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
         {
             ControllerPosX += Input.GetAxis("HorizontalC");
             ControllerPosY += Input.GetAxis("VerticalC");
             transform.position = (player.transform.position + Quaternion.Euler(ControllerPosY, ControllerPosX, 0) * posOffset);
         }
+        // Move with mouse
         else
         {
             mousePosX += Input.GetAxis("HorizontalC");
@@ -37,12 +38,14 @@ public class cameraMovement : MonoBehaviour
             transform.position =(player.transform.position + Quaternion.Euler(mousePosY, mousePosX, 0) * posOffset);
         }
 
+        // Switch to brother
         if (Input.GetKeyDown(KeyCode.L) && player.tag == "Sister")
         {
             player.GetComponent<Movement>().enabled = false;
             player = brother;
             player.GetComponent<Movement>().enabled = true;
         }
+        // Switch to sister
         else if (Input.GetKeyDown(KeyCode.L) && player.tag == "Brother")
         {
             player.GetComponent<Movement>().enabled = false;
@@ -50,6 +53,7 @@ public class cameraMovement : MonoBehaviour
             player.GetComponent<Movement>().enabled = true;
         }
 
+        // Rotate this camera to face the player.
         transform.LookAt(player.transform.position);
         //transform.position = Vector3.Lerp(transform.position, player.transform.position + Quaternion.Euler(mousePosY, mousePosX, 0) * posOffset, 0.01f);
     }

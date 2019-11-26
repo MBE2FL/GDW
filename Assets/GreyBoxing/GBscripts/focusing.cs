@@ -4,41 +4,80 @@ using UnityEngine;
 
 public class focusing : MonoBehaviour
 {
-    public Camera camera;
-    private Vector3 currentCameraPos;
-    private Quaternion currentCameraAngle;
-    public Vector3 cameraPosition;
-    public Vector3 cameraAngle;
+    [SerializeField]
+    private Camera _camera;
+    [SerializeField]
+    private Vector3 _targetPos;
+    [SerializeField]
+    private Vector3 _targetAngle;
     private Vector3 velocity = Vector3.zero;
-    private bool activate = false;
+    private bool _focusAvaliable = false;
 
-    // Update is called once per frame
-    void Update()
+    private Transform _camTrans;
+    private IEnumerator _focusOnTarget;
+    private bool _focusing = false;
+    private Vector3 _savedCamPos;
+    private Quaternion _savedCamRot;
+
+    private void Awake()
     {
-        currentCameraPos = camera.transform.position;
-        currentCameraAngle = camera.transform.rotation;
+        _camTrans = _camera.transform;
 
-        if (activate && Input.GetKey(KeyCode.E))
-        {
-            camera.GetComponent<cameraMovement>().enabled = false;
-            camera.transform.position = Vector3.SmoothDamp(currentCameraPos, cameraPosition, ref velocity, 0.75f);
-            camera.transform.rotation = Quaternion.Slerp(currentCameraAngle, Quaternion.Euler(cameraAngle), 0.05f);
-        }
-        else
-            camera.GetComponent<cameraMovement>().enabled = true;
-        
-
+        _focusOnTarget = Focus();
+        StartCoroutine(_focusOnTarget);
     }
+
 
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Sister" || collision.gameObject.tag == "Brother")
-            activate = true;
+            _focusAvaliable = true;
     }
 
     private void OnCollisionExit(Collision collision)
     {
         if (collision.gameObject.tag == "Sister" || collision.gameObject.tag == "Brother")
-            activate = false;
+            _focusAvaliable = false;
+    }
+
+    IEnumerator Focus()
+    {
+        while (true)
+        {
+            // Store the unfocused position and rotation of this camera.
+            _savedCamPos = _camTrans.position;
+            _savedCamRot = _camTrans.rotation;
+
+            // Smoothly move this camera to focus on the target.
+            while (_focusAvaliable && Input.GetKey(KeyCode.E))
+            {
+                _focusing = true;
+                _camera.GetComponent<cameraMovement>().enabled = false;
+                _camera.transform.position = Vector3.SmoothDamp(_camTrans.position, _targetPos, ref velocity, 0.75f);
+                _camera.transform.rotation = Quaternion.Slerp(_camTrans.rotation, Quaternion.Euler(_targetAngle), 0.05f);
+
+                yield return null;
+            }
+            
+            // Smoothly move this camera to focusing on the player.
+            while (_focusing)
+            {
+                _camera.transform.position = Vector3.SmoothDamp(_camTrans.position, _savedCamPos, ref velocity, 0.75f);
+                _camera.transform.rotation = Quaternion.Slerp(_camTrans.rotation, _savedCamRot, 0.05f);
+
+                if (((_savedCamPos - _camTrans.position).sqrMagnitude < 0.0001f) &&
+                    (Quaternion.Dot(_savedCamRot, _camTrans.rotation) >= 1.0f))
+                {
+                    _camera.transform.position = _savedCamPos;
+                    _camera.transform.rotation = _savedCamRot;
+                    _focusing = false;
+                    _camera.GetComponent<cameraMovement>().enabled = true;
+                }
+
+                yield return null;
+            }
+
+            yield return null;
+        }
     }
 }
