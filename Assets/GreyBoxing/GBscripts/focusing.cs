@@ -62,8 +62,8 @@ public class focusing : MonoBehaviour
             // Smoothly move this camera to focusing on the player.
             while (_focusing)
             {
-                _camera.transform.position = Vector3.SmoothDamp(_camTrans.position, _savedCamPos, ref velocity, 0.75f);
-                _camera.transform.rotation = Quaternion.Slerp(_camTrans.rotation, _savedCamRot, 0.05f);
+                _camera.transform.position = Vector3.SmoothDamp(_camTrans.position, _savedCamPos, ref velocity, 0.25f);
+                _camera.transform.rotation = Quaternion.Slerp(_camTrans.rotation, _savedCamRot, 0.2f);
 
                 if (((_savedCamPos - _camTrans.position).sqrMagnitude < 0.0001f) &&
                     (Quaternion.Dot(_savedCamRot, _camTrans.rotation) >= 1.0f))
