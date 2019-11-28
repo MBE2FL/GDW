@@ -4,11 +4,13 @@ using UnityEngine;
 
 public class PortalTexture : MonoBehaviour
 {
+    // First portal's stuff
     [SerializeField]
     private Camera _camera2;
     [SerializeField]
     private Material _portal2Mat;
 
+    // Second portal's stuff
     [SerializeField]
     private Camera _camera1;
     [SerializeField]
@@ -26,6 +28,7 @@ public class PortalTexture : MonoBehaviour
 
 
 
+
         if (_camera1.targetTexture)
             _camera1.targetTexture.Release();
 
@@ -33,10 +36,4 @@ public class PortalTexture : MonoBehaviour
         _camera1.targetTexture = new RenderTexture(Screen.width, Screen.height, 24);
         _portal1Mat.mainTexture = _camera1.targetTexture;
     }
-
-    // Update is called once per frame
-    //void Update()
-    //{
-        
-    //}
 }

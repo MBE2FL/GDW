@@ -2,7 +2,11 @@
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
+        _MainTex ("Main Tex", 2D) = "white" {}
+		_dissolveNoiseTex("Dissolve Noise Tex", 2D) = "black" {}
+        _dissolveAmount("Dissolve Amount", Range(0, 1)) = 0
+        _dissolveEdgeColour("Dissolve Edge Colour", Color) = (1.0, 1.0, 1.0, 1.0)
+        _dissolveEdgeAmount("Dissolve Edge Amount", Range(0, 1)) = 0
     }
     SubShader
     {
@@ -44,6 +48,10 @@
 
             sampler2D _MainTex;
 			float _totalTime;
+			sampler2D _dissolveNoiseTex;
+			float _dissolveAmount;
+            float4 _dissolveEdgeColour;
+            float _dissolveEdgeAmount;
 
             float4 frag (VertexOutput input) : SV_Target
             {
@@ -61,6 +69,10 @@
 				float4 col = tex2D(_MainTex, float2(input.screenPos.x + displaceX,
 									input.screenPos.y + displaceY
 									));
+
+				float dissolveAmount = tex2D(_dissolveNoiseTex, input.uv).r;
+                clip(dissolveAmount - _dissolveAmount);
+                col.rgb += _dissolveEdgeColour.rgb * step(dissolveAmount - _dissolveAmount, _dissolveEdgeAmount) * sign(_dissolveAmount);
 
 				//col.rgb = abs(sin(input.uv.yyy * frac(_totalTime)));
 				//col.rgb = sin(input.uv.x * (sin(_Time.y) * 0.8 + 0.2) * 100.0);
