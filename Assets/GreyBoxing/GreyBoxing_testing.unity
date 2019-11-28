@@ -8123,6 +8123,7 @@ GameObject:
   - component: {fileID: 1126751910}
   - component: {fileID: 1126751912}
   - component: {fileID: 1126751911}
+  - component: {fileID: 1126751913}
   m_Layer: 11
   m_Name: bother
   m_TagString: Brother
@@ -8138,7 +8139,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1126751904}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 89.8, y: 10.6, z: 94.5}
+  m_LocalPosition: {x: 89.8, y: 11.222, z: 94.5}
   m_LocalScale: {x: 0.50179356, y: 0.5556177, z: 0.6001999}
   m_Children: []
   m_Father: {fileID: 0}
@@ -8263,6 +8264,19 @@ MonoBehaviour:
   _minDist: 1.3
   _maxDist: 2
   holdingObject: 0
+--- !u!65 &1126751913
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1126751904}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.21956457, y: 0.30724123, z: 0.32616216}
+  m_Center: {x: -0.0023642608, y: -0.913266, z: 0.044610612}
 --- !u!1 &1165624549
 GameObject:
   m_ObjectHideFlags: 0
