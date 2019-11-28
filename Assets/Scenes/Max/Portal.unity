@@ -1240,6 +1240,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _camera2: {fileID: 1007891171}
   _portal2Mat: {fileID: 2100000, guid: 70ef4c9bfbdebca4bb87527e8b22ae62, type: 2}
+  _portalDissolve: {fileID: 2100000, guid: 8993146fee9c08b45a1cc5958b67450d, type: 2}
   _camera1: {fileID: 15002495}
   _portal1Mat: {fileID: 2100000, guid: 532b9090b6fb64a4bb43d8ecb9a18bc2, type: 2}
 --- !u!4 &748099552

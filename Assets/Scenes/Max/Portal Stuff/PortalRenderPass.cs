@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PortalRenderPass : MonoBehaviour
+public class PortalRenderPass
 {
     // Start is called before the first frame update
     void Start()

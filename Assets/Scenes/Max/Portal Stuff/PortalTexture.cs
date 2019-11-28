@@ -9,6 +9,8 @@ public class PortalTexture : MonoBehaviour
     private Camera _camera2;
     [SerializeField]
     private Material _portal2Mat;
+    [SerializeField]
+    private Material _portalDissolve;
 
     // Second portal's stuff
     [SerializeField]
@@ -25,6 +27,7 @@ public class PortalTexture : MonoBehaviour
         // TO-DO Make this dynamic. Will only work on initial game start.
         _camera2.targetTexture = new RenderTexture(Screen.width, Screen.height, 24);
         _portal2Mat.mainTexture = _camera2.targetTexture;
+        _portalDissolve.SetTexture("_MainImage", _camera2.targetTexture);
 
 
 
