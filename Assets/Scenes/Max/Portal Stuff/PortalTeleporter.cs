@@ -19,6 +19,8 @@ public class PortalTeleporter : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        gameObject.GetComponent<Renderer>().material.SetFloat("_totalTime", Time.time);
+
         if (_playerInPortal)
         {
             //Vector3 toPlayer = (_player.position - transform.position).normalized;
