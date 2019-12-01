@@ -17,7 +17,7 @@ public class JumpState : IPlayerState
         _moveable = moveable;
 
 
-        _rb.AddForce(new Vector3(0, 200, 0));
+        _rb.AddForce(new Vector3(0, 250, 0));
     }
 
     public IPlayerState input()
