@@ -114,7 +114,7 @@ public class MoveKeyboardState : IPlayerState
         {
             localVel.x = Mathf.Clamp(localVel.x, -15.0f, 15.0f);
             localVel.z = Mathf.Clamp(localVel.z, -15.0f, 15.0f);
-            Debug.Log("Ramp");
+            //Debug.Log("Ramp");
         }
         else
         {
