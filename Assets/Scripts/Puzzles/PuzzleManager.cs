@@ -1,13 +1,30 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class PuzzleManager : MonoBehaviour, IObserver
 {
+    private const string DLL_NAME = "PluginDev";
     [SerializeField]
     List<Puzzle> _puzzles = new List<Puzzle>();
     int _currPuzzles = 0;
     bool _allPuzzlesCompleted = false;
+
+    [DllImport(DLL_NAME)]
+    private static extern void logCurrPuzzles(string filePath, int currPuzzles);
+    [DllImport(DLL_NAME)]
+    private static extern int load(string filePath);
+
+    void LogCurrPuzzles()
+    {
+        logCurrPuzzles("CurrentPuzzles.txt", _currPuzzles);
+    }
+
+    int Load()
+    {
+        return load("CurrentPuzzles.txt");
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -15,7 +32,10 @@ public class PuzzleManager : MonoBehaviour, IObserver
         foreach (Puzzle puzzle in _puzzles)
         {
             puzzle.addObserver(this);
+
+            _currPuzzles = Load();
         }
+        
     }
 
     // Update is called once per frame
@@ -43,7 +63,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
     {
         ++_currPuzzles;
 
-
+        LogCurrPuzzles();
 
         checkCompleted();
     }
