@@ -35,7 +35,7 @@ public class cameraMovement : MonoBehaviour
         {
             mousePosX += Input.GetAxis("HorizontalC");
             mousePosY += Input.GetAxis("VerticalC");
-            transform.position =(player.transform.position + Quaternion.Euler(mousePosY, mousePosX, 0) * posOffset);
+            transform.position =(player.transform.position + Quaternion.Euler(-mousePosY, mousePosX, 0) * posOffset);
         }
 
         // Switch to brother
