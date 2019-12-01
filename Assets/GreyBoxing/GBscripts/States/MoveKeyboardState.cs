@@ -114,13 +114,13 @@ public class MoveKeyboardState : IPlayerState
         {
             localVel.x = Mathf.Clamp(localVel.x, -15.0f, 15.0f);
             localVel.z = Mathf.Clamp(localVel.z, -15.0f, 15.0f);
-            Debug.Log("Ramp");
+            //Debug.Log("Ramp");
         }
         else
         {
             localVel.x = Mathf.Clamp(localVel.x, -8.0f, 8.0f);
             localVel.z = Mathf.Clamp(localVel.z, -8.0f, 8.0f);
-            Debug.Log("Non-Ramp");
+            //Debug.Log("Non-Ramp");
         }
 
         _rb.velocity = _transform.TransformDirection(localVel);
