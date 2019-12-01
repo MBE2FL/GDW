@@ -1,0 +1,9 @@
+﻿  FileManager.cpp
+  Wrapper.cpp
+     Creating library C:\Users\acdc1\Documents\GDW Repo\GDW\PluginDLL\x64\Release\PluginDev.lib and object C:\Users\acdc1\Documents\GDW Repo\GDW\PluginDLL\x64\Release\PluginDev.exp
+  Generating code
+  135 of 140 functions (96.4%) were compiled, the rest were copied from previous compilation.
+    5 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  PluginDev.vcxproj -> C:\Users\acdc1\Documents\GDW Repo\GDW\PluginDLL\x64\Release\PluginDev.dll

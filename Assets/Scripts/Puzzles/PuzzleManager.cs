@@ -5,16 +5,17 @@ using UnityEngine;
 
 public class PuzzleManager : MonoBehaviour, IObserver
 {
-    private const string DLL_NAME = "PluginDev";
+    private const string DLL_NAME = "EditorPlugin";
     [SerializeField]
     List<Puzzle> _puzzles = new List<Puzzle>();
     int _currPuzzles = 0;
     bool _allPuzzlesCompleted = false;
 
     [DllImport(DLL_NAME)]
-    private static extern void logCurrPuzzles(string filePath, int currPuzzles);
-    [DllImport(DLL_NAME)]
     private static extern int load(string filePath);
+    [DllImport(DLL_NAME)]
+    private static extern void logCurrPuzzles(string filePath, int currPuzzles);
+    
 
     void LogCurrPuzzles()
     {
@@ -41,7 +42,12 @@ public class PuzzleManager : MonoBehaviour, IObserver
     // Update is called once per frame
     void Update()
     {
-        
+        if (_currPuzzles == _puzzles.Count)
+        {
+            // Activate portal;
+            Debug.Log("All puzzles completed!");
+            GetComponent<PortalManager>().activatePortals();
+        }
     }
 
 
@@ -64,6 +70,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
         ++_currPuzzles;
 
         LogCurrPuzzles();
+        Debug.Log("puzzles completed!");
 
         checkCompleted();
     }
