@@ -130,15 +130,15 @@ public class Movement : MonoBehaviour
             _currentState.fixedUpdate();
     }
 
-    private void OnCollisionStay(Collision collision)
+    private void OnTriggerStay(Collider collision)
     {
-        if (collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
+        //if (collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
             onGround = true;
     }
 
-    private void OnCollisionExit(Collision collision)
+    private void OnTriggerExit(Collider collision)
     {
-        if(collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
+        //if(collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
         onGround = false;
 
     }

@@ -52,6 +52,8 @@ public class focusing : MonoBehaviour
             while (_focusAvaliable && Input.GetKey(KeyCode.E))
             {
                 _focusing = true;
+                _camera.GetComponent<cameraMovement>().sister.GetComponent<Movement>().enabled = false;
+                _camera.GetComponent<cameraMovement>().brother.GetComponent<Movement>().enabled = false;
                 _camera.GetComponent<cameraMovement>().enabled = false;
                 _camera.transform.position = Vector3.SmoothDamp(_camTrans.position, _targetPos, ref velocity, 0.75f);
                 _camera.transform.rotation = Quaternion.Slerp(_camTrans.rotation, Quaternion.Euler(_targetAngle), 0.05f);
@@ -72,6 +74,8 @@ public class focusing : MonoBehaviour
                     _camera.transform.rotation = _savedCamRot;
                     _focusing = false;
                     _camera.GetComponent<cameraMovement>().enabled = true;
+                    _camera.GetComponent<cameraMovement>().sister.GetComponent<Movement>().enabled = true;
+                    _camera.GetComponent<cameraMovement>().brother.GetComponent<Movement>().enabled = true;
                 }
 
                 yield return null;

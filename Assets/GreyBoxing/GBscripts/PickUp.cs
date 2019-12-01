@@ -29,6 +29,15 @@ public class PickUp : MonoBehaviour
             return true;
     }
 
+    Vector3 keepScale(Transform denominator)
+    {
+        Vector3 temp = new Vector3(1, 1, 1);
+        temp.x /= denominator.localScale.x;
+        temp.y /= denominator.localScale.y;
+        temp.z /= denominator.localScale.z;
+        return temp;
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -44,7 +53,8 @@ public class PickUp : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
         {
-            interactingObject.transform.SetParent(transform);
+            interactingObject.transform.SetParent(transform, true);
+            interactingObject.transform.localScale = keepScale(transform);
             interObjPos = interactingObject.transform.position;
             //interactingObject.transform.position = new Vector3(interObjPos.x,transform.position.y, transform.position.z + 0.6f);
 

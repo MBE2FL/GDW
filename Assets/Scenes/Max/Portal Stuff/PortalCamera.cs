@@ -7,11 +7,15 @@ public class PortalCamera : MonoBehaviour
     private Transform _playerCamera;
     public Transform _portal;
     public Transform _otherPortal;
+    private Matrix4x4 _originalPerspective;
+    private Camera _portalCam;
 
     // Start is called before the first frame update
     void Start()
     {
         _playerCamera = Camera.main.GetComponent<Transform>();
+        _portalCam = GetComponent<Camera>();
+        _originalPerspective = _portalCam.projectionMatrix;
     }
 
     // Update is called once per frame
@@ -31,5 +35,12 @@ public class PortalCamera : MonoBehaviour
         Quaternion portalRotDiff = Quaternion.AngleAxis(angularDiffBetweenPortalRots, Vector3.up);
         Vector3 newCamDir = portalRotDiff * _playerCamera.forward;
         transform.rotation = Quaternion.LookRotation(newCamDir, Vector3.up);
+
+
+
+        //Matrix4x4 p = _originalPerspective;
+        //p.m01 += Mathf.Sin(Time.time * 1.2F) * 0.1F;
+        //p.m10 += Mathf.Sin(Time.time * 1.5F) * 0.1F;
+        //_portalCam.projectionMatrix = p;
     }
 }

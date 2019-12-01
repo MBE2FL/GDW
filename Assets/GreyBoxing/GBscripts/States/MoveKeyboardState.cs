@@ -12,6 +12,9 @@ public class MoveKeyboardState : IPlayerState
     //Vector3 _force;
     Transform camTransform;
 
+    Vector3 _force;
+    float _speed = 0.0f;
+
     public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
     {
         _movement = movement;
@@ -49,6 +52,8 @@ public class MoveKeyboardState : IPlayerState
         //_force *= 2.0f;
         //_rb.AddForce(_force);
         //Debug.Log(_force);
+        _force = Vector3.zero;
+        _speed = 0.0f;
 
         _movement.rampDetection();
 
@@ -62,45 +67,62 @@ public class MoveKeyboardState : IPlayerState
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
 
                 // Increase forward speed while moving up ramps.
-                if (_movement.Angle > 0)
-                    _rb.AddForce((_transform.forward * 8) * 1.8f * 2.0f);
-                else
-                    _rb.AddForce(_transform.forward * 8 * 2.0f);
+                //if (_movement.Angle > 5.0f)
+                    //_rb.AddForce((_transform.forward * 8) * 1.8f * 2.0f);
+                //else
+                    //_rb.AddForce(_transform.forward * 8 * 2.0f);
+
+                _force += _transform.forward;
             }
 
             // Move backward
             if (Input.GetKey(KeyCode.S))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-                _rb.AddForce(_transform.forward * -8 * 2.0f);
+                //_rb.AddForce(_transform.forward * -8 * 2.0f);
+                _force -= _transform.forward;
             }
 
             // Move left
             if (Input.GetKey(KeyCode.A))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-                _rb.AddForce(_transform.right * -8 * 2.0f);
+                //_rb.AddForce(_transform.right * -8 * 2.0f);
+                _force -= _transform.right;
             }
 
             // Move right
             if (Input.GetKey(KeyCode.D))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-                _rb.AddForce(_transform.right * 8 * 2.0f);
+                //_rb.AddForce(_transform.right * 8 * 2.0f);
+                _force += _transform.right;
             }
+
+            if (_movement.Angle > 5.0f)
+                _speed = 8 * 1.8f * 2.0f;
+            else
+                _speed = 8.0f * 2.0f;
+
+            _force.Normalize();
+
+            _rb.AddForce(_force * _speed);
         }
 
         Vector3 localVel = _transform.InverseTransformDirection(_rb.velocity);
-        if (_movement.Angle > 0)
+        if (_movement.Angle > 5.0f)
         {
             localVel.x = Mathf.Clamp(localVel.x, -15.0f, 15.0f);
             localVel.z = Mathf.Clamp(localVel.z, -15.0f, 15.0f);
+            //Debug.Log("Ramp");
         }
         else
         {
             localVel.x = Mathf.Clamp(localVel.x, -8.0f, 8.0f);
             localVel.z = Mathf.Clamp(localVel.z, -8.0f, 8.0f);
+            //Debug.Log("Non-Ramp");
         }
+
         _rb.velocity = _transform.TransformDirection(localVel);
 
 
