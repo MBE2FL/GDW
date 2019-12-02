@@ -98,7 +98,7 @@ public class Movement : MonoBehaviour
 
     public void rampDetection()
     {
-        rayPos = new Vector3(transform.position.x, transform.position.y - 0.8f, transform.position.z);
+        rayPos = new Vector3(transform.position.x, transform.position.y - 0.7f, transform.position.z);
         otherNormal = transform.TransformDirection(Vector3.forward);
         RaycastHit ray;
         if (Physics.Raycast(rayPos, transform.TransformDirection(Vector3.forward), out ray, 0.5f, 1 << 8))
