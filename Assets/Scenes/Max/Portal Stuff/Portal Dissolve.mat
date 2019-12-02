@@ -121,6 +121,7 @@ Material:
     - Vector1_3B01C0C6: 5
     - Vector1_44B00319: 15
     - Vector1_5307FC5A: 30
+    - Vector1_598D0F18: -1
     - Vector1_69B3DF8D: 0.04
     - Vector1_8877029A: 0.01
     - Vector1_B5D304D9: 20
@@ -246,6 +247,7 @@ Material:
     - _ZTestModeDistortion: 8
     - _ZTestTransparent: 4
     - _ZWrite: 1
+    - _dissolveAmount: -1
     m_Colors:
     - Color_4780AB05: {r: 0, g: 0.76052475, b: 1, a: 0}
     - Color_BFDCA345: {r: 7.849056, g: 0, b: 0.1681942, a: 0}

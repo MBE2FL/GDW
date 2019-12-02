@@ -533,7 +533,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7105794}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 5e58ee232e13672469caaf02b3d39714, type: 2}
   m_CullingMode: 0
@@ -10917,6 +10917,31 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
+--- !u!1 &192568014 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8038824489241520691, guid: fd8cc6835bea6b24eb954a2ab35f2989,
+    type: 3}
+  m_PrefabInstance: {fileID: 2076909038}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &192568018
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 192568014}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: be913a293f1230b4f80673a00d33219c, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1001 &195576299
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17353,6 +17378,7 @@ MonoBehaviour:
   _portals:
   - {fileID: 602790007}
   - {fileID: 292990093}
+  _turnOnPortals: 0
 --- !u!4 &480558112 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2321494497818179780, guid: 376c2d561fddfa341b52b38bf5252c05,
@@ -27820,6 +27846,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8038824489241520691, guid: fd8cc6835bea6b24eb954a2ab35f2989,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fd8cc6835bea6b24eb954a2ab35f2989, type: 3}
 --- !u!4 &758092579 stripped
@@ -29358,6 +29389,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d4eb597fd1f294b48adb0974344964a6, type: 3}
+--- !u!1 &848888590 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8038824489241520691, guid: fd8cc6835bea6b24eb954a2ab35f2989,
+    type: 3}
+  m_PrefabInstance: {fileID: 756889880}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &848888594
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 848888590}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: be913a293f1230b4f80673a00d33219c, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1001 &849711797
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -67654,7 +67710,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1979286869
 Transform:
   m_ObjectHideFlags: 0
@@ -67750,7 +67806,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1979286868}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 5e58ee232e13672469caaf02b3d39714, type: 2}
   m_CullingMode: 0
@@ -69652,6 +69708,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: portal w_particles
       objectReference: {fileID: 0}
+    - target: {fileID: 3693048587857256938, guid: fd8cc6835bea6b24eb954a2ab35f2989,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 367889749558137849, guid: fd8cc6835bea6b24eb954a2ab35f2989,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -69705,6 +69766,11 @@ PrefabInstance:
     - target: {fileID: 367889749558137849, guid: fd8cc6835bea6b24eb954a2ab35f2989,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8038824489241520691, guid: fd8cc6835bea6b24eb954a2ab35f2989,
+        type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
