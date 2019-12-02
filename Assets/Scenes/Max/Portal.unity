@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 15002495}
   - component: {fileID: 15002494}
   - component: {fileID: 15002497}
+  - component: {fileID: 15002498}
   m_Layer: 0
   m_Name: Portal 1 Camera
   m_TagString: Untagged
@@ -309,6 +310,41 @@ MonoBehaviour:
       enableFptlForForwardOpaque: 0
       enableBigTilePrepass: 0
       isFptlEnabled: 0
+--- !u!114 &15002498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 15002493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a65b09ced0eacd845b356b54b9587111, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _portalCam: {fileID: 15002495}
+  _portalRenderPlane: {fileID: 1660916794}
+  _front: {x: 0, y: 0, z: 0}
+  _clipPlaneWorldSpace: {x: 0, y: 0, z: 0, w: 0}
+  _clipPlaneCameraSpace: {x: 0, y: 0, z: 0, w: 0}
+  _nearClipOffset: {x: 1.1, y: 0, z: 0}
+  _originalProjection:
+    e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
 --- !u!1 &66244137
 GameObject:
   m_ObjectHideFlags: 0
@@ -1662,6 +1698,7 @@ GameObject:
   - component: {fileID: 1007891171}
   - component: {fileID: 1007891170}
   - component: {fileID: 1007891173}
+  - component: {fileID: 1007891174}
   m_Layer: 0
   m_Name: Portal 2 Camera
   m_TagString: Untagged
@@ -1839,6 +1876,41 @@ MonoBehaviour:
       enableFptlForForwardOpaque: 0
       enableBigTilePrepass: 0
       isFptlEnabled: 0
+--- !u!114 &1007891174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007891169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a65b09ced0eacd845b356b54b9587111, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _portalCam: {fileID: 1007891171}
+  _portalRenderPlane: {fileID: 848699439}
+  _front: {x: 0, y: 0, z: 0}
+  _clipPlaneWorldSpace: {x: 0, y: 0, z: 0, w: 0}
+  _clipPlaneCameraSpace: {x: 0, y: 0, z: 0, w: 0}
+  _nearClipOffset: {x: -1.1, y: 0, z: 0}
+  _originalProjection:
+    e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
 --- !u!1 &1073495965
 GameObject:
   m_ObjectHideFlags: 0

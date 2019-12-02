@@ -117,9 +117,13 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
+    - Vector1_1B7B695F: 5
+    - Vector1_3B01C0C6: 5
+    - Vector1_44B00319: 15
     - Vector1_5307FC5A: 30
     - Vector1_69B3DF8D: 0.04
     - Vector1_8877029A: 0.01
+    - Vector1_B5D304D9: 20
     - Vector1_D81659AE: 50
     - _AORemapMax: 1
     - _AORemapMin: 0
@@ -261,3 +265,4 @@ Material:
     - _UVDetailsMappingMask: {r: 1, g: 0, b: 0, a: 0}
     - _UVMappingMask: {r: 1, g: 0, b: 0, a: 0}
     - _UVMappingMaskEmissive: {r: 1, g: 0, b: 0, a: 0}
+    - _waveFreq: {r: 0.5, g: 0.8, b: 0, a: 0}
