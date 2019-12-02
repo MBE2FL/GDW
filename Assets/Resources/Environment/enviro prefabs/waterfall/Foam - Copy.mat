@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Shader Graphs_Waterfall shader
+  m_Name: Foam - Copy
   m_Shader: {fileID: -6465566751694194690, guid: 1046bba8fb2457342869d2b6b3bb9d01,
     type: 3}
   m_ShaderKeywords: 
@@ -23,13 +23,13 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Floats:
-    - Vector1_2A521257: 12
-    - Vector1_35C20BC2: 3.28
+    - Vector1_2A521257: 10
+    - Vector1_35C20BC2: 2.7
     - Vector1_3B2AF381: 6
-    - Vector1_6318561E: 5.33
-    - Vector1_824CE620: 0
-    - Vector1_9C94DEAE: -0.2
+    - Vector1_6318561E: 0.8
+    - Vector1_824CE620: 0.4
+    - Vector1_9C94DEAE: 0.02
     - Vector1_AE54D63F: 3
     m_Colors:
-    - Color_C29D622A: {r: 0.6747429, g: 2.0717552, b: 2.6008267, a: 0.48235294}
+    - Color_C29D622A: {r: 2.731139, g: 8.3572855, b: 10.432951, a: 0.48235294}
     - Vector2_EB0F38FC: {r: 0, g: 0.4, b: 0, a: 0}
