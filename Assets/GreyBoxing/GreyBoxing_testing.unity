@@ -42324,6 +42324,8 @@ GameObject:
   - component: {fileID: 1235691815}
   - component: {fileID: 1235691810}
   - component: {fileID: 1235691816}
+  - component: {fileID: 1235691817}
+  - component: {fileID: 1235691811}
   m_Layer: 9
   m_Name: Item Two
   m_TagString: Interactable
@@ -42361,6 +42363,18 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &1235691811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235691808}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27902dc39d1a36d43851c82e9597fd3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!65 &1235691812
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -42451,6 +42465,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &1235691817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235691808}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d87d489c55fc504987b709bbe1e4ec5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1237351465 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8907164100490537301, guid: 1c5b27d31081b354d9319a09636cecb7,
@@ -51961,6 +51987,8 @@ GameObject:
   - component: {fileID: 1446041961}
   - component: {fileID: 1446041956}
   - component: {fileID: 1446041962}
+  - component: {fileID: 1446041963}
+  - component: {fileID: 1446041957}
   m_Layer: 9
   m_Name: Item One
   m_TagString: Interactable
@@ -51998,6 +52026,18 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &1446041957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446041954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27902dc39d1a36d43851c82e9597fd3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!65 &1446041958
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -52088,6 +52128,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &1446041963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446041954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d87d489c55fc504987b709bbe1e4ec5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1449827106
 GameObject:
   m_ObjectHideFlags: 0
@@ -53794,6 +53846,8 @@ GameObject:
   - component: {fileID: 1492803554}
   - component: {fileID: 1492803560}
   - component: {fileID: 1492803561}
+  - component: {fileID: 1492803562}
+  - component: {fileID: 1492803559}
   m_Layer: 9
   m_Name: Item One
   m_TagString: Interactable
@@ -53886,6 +53940,18 @@ Transform:
   m_Father: {fileID: 2026771894}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1492803559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492803553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27902dc39d1a36d43851c82e9597fd3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!54 &1492803560
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -53921,6 +53987,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &1492803562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492803553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d87d489c55fc504987b709bbe1e4ec5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1493084645
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -55309,6 +55387,8 @@ GameObject:
   - component: {fileID: 1554280034}
   - component: {fileID: 1554280029}
   - component: {fileID: 1554280035}
+  - component: {fileID: 1554280036}
+  - component: {fileID: 1554280030}
   m_Layer: 9
   m_Name: Item Three
   m_TagString: Interactable
@@ -55346,6 +55426,18 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &1554280030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554280027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d87d489c55fc504987b709bbe1e4ec5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!65 &1554280031
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -55436,6 +55528,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &1554280036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554280027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27902dc39d1a36d43851c82e9597fd3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1556047117 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2469193197111279349, guid: 5bfe9e68864dfc94fba3d879debe0041,
