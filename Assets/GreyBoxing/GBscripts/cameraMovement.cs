@@ -9,7 +9,7 @@ public class cameraMovement : MonoBehaviour
     public GameObject brother;
     private GameObject player;
     public bool isSister = true;
-    public Vector3 posOffset = new Vector3(0,2,-4);
+    public Vector3 posOffset = new Vector3(6,40,-4);
     public Quaternion rotOffset;
     private float mousePosX = 0.0f;
     private float mousePosY = 0.0f;
@@ -35,7 +35,7 @@ public class cameraMovement : MonoBehaviour
         {
             mousePosX += Input.GetAxis("HorizontalC");
             mousePosY += Input.GetAxis("VerticalC");
-            transform.position =(player.transform.position + Quaternion.Euler(-mousePosY, mousePosX, 0) * posOffset);
+            transform.position =(player.transform.position + Quaternion.Euler(-mousePosY, mousePosX, 0) * posOffset/*new Vector3(1,4,1)*/);
         }
 
         // Switch to brother
@@ -54,7 +54,7 @@ public class cameraMovement : MonoBehaviour
         }
 
         // Rotate this camera to face the player.
-        transform.LookAt(player.transform.position);
+        transform.LookAt(player.transform.position + new Vector3(0,1.8f,0));
         //transform.position = Vector3.Lerp(transform.position, player.transform.position + Quaternion.Euler(mousePosY, mousePosX, 0) * posOffset, 0.01f);
     }
 

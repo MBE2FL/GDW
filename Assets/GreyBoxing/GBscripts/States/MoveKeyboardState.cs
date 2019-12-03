@@ -60,6 +60,9 @@ public class MoveKeyboardState : IPlayerState
         // Move only while on ground.
         if (_movement.OnGround)
         {
+            _rb.drag = 4;
+
+
             // Move forward
             if (Input.GetKey(KeyCode.W))
             {
@@ -68,9 +71,9 @@ public class MoveKeyboardState : IPlayerState
 
                 // Increase forward speed while moving up ramps.
                 //if (_movement.Angle > 5.0f)
-                    //_rb.AddForce((_transform.forward * 8) * 1.8f * 2.0f);
+                //_rb.AddForce((_transform.forward * 8) * 1.8f * 2.0f);
                 //else
-                    //_rb.AddForce(_transform.forward * 8 * 2.0f);
+                //_rb.AddForce(_transform.forward * 8 * 2.0f);
 
                 _force += _transform.forward;
             }
@@ -102,30 +105,35 @@ public class MoveKeyboardState : IPlayerState
             if (_movement.Angle > 5.0f)
                 _speed = 8 * 1.8f * 2.0f;
             else
-                _speed = 8.0f * 2.0f;
+                _speed = 8.0f * 4.0f;
 
             _force.Normalize();
 
             _rb.AddForce(_force * _speed);
-        }
 
-        Vector3 localVel = _transform.InverseTransformDirection(_rb.velocity);
-        if (_movement.Angle > 5.0f)
-        {
-            localVel.x = Mathf.Clamp(localVel.x, -15.0f, 15.0f);
-            localVel.z = Mathf.Clamp(localVel.z, -15.0f, 15.0f);
-            //Debug.Log("Ramp");
+
+            Vector3 localVel = _transform.InverseTransformDirection(_rb.velocity);
+            if (_movement.Angle > 5.0f)
+            {
+                localVel.x = Mathf.Clamp(localVel.x, -15.0f, 15.0f);
+                localVel.z = Mathf.Clamp(localVel.z, -15.0f, 15.0f);
+                //Debug.Log("Ramp");
+            }
+            else
+            {
+                localVel.x = Mathf.Clamp(localVel.x, -8.0f, 8.0f);
+                localVel.z = Mathf.Clamp(localVel.z, -8.0f, 8.0f);
+                //Debug.Log("Non-Ramp");
+            }
+
+            _rb.velocity = _transform.TransformDirection(localVel);
+
+
+            _movement.Angle = 0.0f;
         }
         else
         {
-            localVel.x = Mathf.Clamp(localVel.x, -8.0f, 8.0f);
-            localVel.z = Mathf.Clamp(localVel.z, -8.0f, 8.0f);
-            //Debug.Log("Non-Ramp");
+            _rb.drag = 0;
         }
-
-        _rb.velocity = _transform.TransformDirection(localVel);
-
-
-        _movement.Angle = 0.0f;
     }
 }
