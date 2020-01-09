@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: pond water
+  m_Shader: {fileID: -6465566751694194690, guid: 0c22f7e8ef637ec4982c4638945fb777,
+    type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap:
+    MotionVector: User
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Floats:
+    - Vector1_242F6049: 0
+    - Vector1_543D3742: 2
+    - Vector1_6E83254F: 10
+    - Vector1_B741CDAF: 0.1
+    - Vector1_CA107411: 0
+    - Vector1_CFFC6F2B: 1.3
+    m_Colors:
+    - Color_D281B0EF: {r: 0.1702112, g: 0.5242505, b: 0.6502068, a: 0.48235294}
+    - Color_E76DC744: {r: 0, g: 4.2722507, b: 15.999998, a: 0}
+    - Vector2_69CF5100: {r: 0, g: 0, b: 0, a: 0}

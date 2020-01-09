@@ -1,0 +1,121 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/RayMarchEssentialFunctions.hlsl"
+
+struct ColliderInfo
+{
+    float3 pos;
+    float4 geoInfo;
+    int colliding;
+};
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+//RWTexture2D<float4> Result;
+RWStructuredBuffer<ColliderInfo> _colliderInfo;
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+float4x4 _invModelMats[MAX_RM_OBJS];
+int _primitiveTypes[MAX_RM_OBJS];
+float2 _combineOps[MAX_RM_OBJS];
+float4 _primitiveGeoInfo[MAX_RM_OBJS];
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    ColliderInfo currInfo;
+    ColliderInfo otherInfo;
+    
+    float3 rayOrigin;
+    float3 rayDir;
+    float dist;
+    
+    // Main directions to start off with
+    float3 up = float3(0.0, 1.0, 0.0);
+    float3 down = float3(0.0, -1.0, 0.0);
+    float3 left = float3(-1.0, 0.0, 0.0);
+    float3 right = float3(1.0, 0.0, 0.0);
+    float3 forward = float3(0.0, 0.0, 1.0);
+    float3 backward = float3(0.0, 0.0, -1.0);
+    
+
+    currInfo = _colliderInfo[id.x];
+    otherInfo = _colliderInfo[1];
+        
+    rayOrigin = currInfo.pos;
+    //rayDir = normalize(otherInfo.pos - currInfo.pos);
+        
+    dist = map(rayOrigin);
+    dist = map(up);
+    dist = map(down);
+    dist = map(left);
+    dist = map(right);
+    dist = map(forward);
+    dist = map(backward);
+        
+    currInfo.geoInfo.w = dist;
+        
+    if (dist <= currInfo.geoInfo.x)
+    {
+        currInfo.colliding = 1;
+        otherInfo.colliding = 1;
+        
+        currInfo.pos += float3(0.0, currInfo.geoInfo.x - dist, 0.0);
+    }
+
+    
+    if (id.x == 0)
+        _colliderInfo[0] = currInfo;
+    //_colliderInfo[1] = otherInfo;
+    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+    //Result[id.xy] = float4(1.0, 0.0, 0.0, 1.0);
+}
+
+
+
+float map(float3 p)
+{
+    float scene = _maxDrawDist;
+    scene = 300.0;
+
+    float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+    float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+    float obj;
+    float obj2;
+
+    float csg;
+    float storedCSGs[MAX_CSG_CHILDREN];
+
+    float3 cell = float3(0.0, 0.0, 0.0);
+
+	// ######### RM Cube #########
+    pos = mul(_invModelMats[1], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[1];
+    obj = sdBox(pos.xyz, geoInfo.xyz);
+
+    scene = opU(scene, obj);
+	// ######### RM Cube #########
+
+	//// ######### Sub Sphere #########
+ //   pos = mul(_invModelMats[1], float4(p, 1.0));
+ //   geoInfo = _primitiveGeoInfo[1];
+ //   obj = sdSphere(pos.xyz, geoInfo.x);
+
+ //   scene = opSmoothSub(obj, scene, _combineOps[1].y);
+	//// ######### Sub Sphere #########
+
+	// ######### RM Sphere #########
+    //pos = mul(_invModelMats[2], float4(p, 1.0));
+    //geoInfo = _primitiveGeoInfo[2];
+    //obj = sdSphere(pos.xyz, geoInfo.x);
+
+    //scene = opU(scene, obj);
+	// ######### RM Sphere #########
+
+    return scene;
+}
