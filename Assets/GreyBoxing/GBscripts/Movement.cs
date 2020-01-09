@@ -12,7 +12,6 @@ public class Movement : MonoBehaviour
     private IPlayerState _currentState = MoveKeyboardState;
     private IPlayerState _newState = null;
 
-    // Update is called once per frame
     public Rigidbody rb;
     CursorLockMode cursorLock;
     Vector3 rayPos;

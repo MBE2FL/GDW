@@ -34,6 +34,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
         {
             puzzle.addObserver(this);
 
+            //loads number of puzzles currently completed from the dll
             _currPuzzles = Load();
         }
         

@@ -9,7 +9,6 @@ public class MoveKeyboardState : IPlayerState
     Transform _transform;
     Moveable _moveable;
     float _mousePosX;
-    //Vector3 _force;
     Transform camTransform;
 
     Vector3 _force;
@@ -49,9 +48,6 @@ public class MoveKeyboardState : IPlayerState
 
     public void fixedUpdate()
     {
-        //_force *= 2.0f;
-        //_rb.AddForce(_force);
-        //Debug.Log(_force);
         _force = Vector3.zero;
         _speed = 0.0f;
 
@@ -66,14 +62,7 @@ public class MoveKeyboardState : IPlayerState
             // Move forward
             if (Input.GetKey(KeyCode.W))
             {
-                //_transform.rotation = Quaternion.Euler(0, _mousePosX, 0);
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-
-                // Increase forward speed while moving up ramps.
-                //if (_movement.Angle > 5.0f)
-                //_rb.AddForce((_transform.forward * 8) * 1.8f * 2.0f);
-                //else
-                //_rb.AddForce(_transform.forward * 8 * 2.0f);
 
                 _force += _transform.forward;
             }
@@ -82,7 +71,6 @@ public class MoveKeyboardState : IPlayerState
             if (Input.GetKey(KeyCode.S))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-                //_rb.AddForce(_transform.forward * -8 * 2.0f);
                 _force -= _transform.forward;
             }
 
@@ -90,7 +78,6 @@ public class MoveKeyboardState : IPlayerState
             if (Input.GetKey(KeyCode.A))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-                //_rb.AddForce(_transform.right * -8 * 2.0f);
                 _force -= _transform.right;
             }
 
@@ -98,7 +85,6 @@ public class MoveKeyboardState : IPlayerState
             if (Input.GetKey(KeyCode.D))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-                //_rb.AddForce(_transform.right * 8 * 2.0f);
                 _force += _transform.right;
             }
 
@@ -117,13 +103,11 @@ public class MoveKeyboardState : IPlayerState
             {
                 localVel.x = Mathf.Clamp(localVel.x, -15.0f, 15.0f);
                 localVel.z = Mathf.Clamp(localVel.z, -15.0f, 15.0f);
-                //Debug.Log("Ramp");
             }
             else
             {
                 localVel.x = Mathf.Clamp(localVel.x, -8.0f, 8.0f);
                 localVel.z = Mathf.Clamp(localVel.z, -8.0f, 8.0f);
-                //Debug.Log("Non-Ramp");
             }
 
             _rb.velocity = _transform.TransformDirection(localVel);
