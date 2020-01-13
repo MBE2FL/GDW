@@ -14,7 +14,7 @@ public class PickUp : MonoBehaviour
 
     bool objectDetection()
     {
-        rayPos = new Vector3(transform.position.x, transform.position.y + 0.5f, transform.position.z + 0.5f);
+        rayPos = new Vector3(transform.position.x, transform.position.y + 0.2f, transform.position.z + 0.5f);
         RaycastHit ray;
         
         if (Physics.Raycast(rayPos, transform.forward, out ray, 1f, 1 << 9))
@@ -58,7 +58,7 @@ public class PickUp : MonoBehaviour
             interObjPos = interactingObject.transform.position;
             //interactingObject.transform.position = new Vector3(interObjPos.x,transform.position.y, transform.position.z + 0.6f);
 
-            interactingObject.transform.localPosition = new Vector3(0.0f, 4.0f, 3.0f);
+            interactingObject.transform.localPosition = new Vector3(0.0f, 4.0f, 4.0f);
 
             //Vector3 relativePos = transform.TransformPoint(new Vector3(0.0f, 0.0f, 1.0f));
             //interactingObject.transform.position = relativePos;

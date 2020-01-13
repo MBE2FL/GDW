@@ -3,7 +3,13 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - DropZone
+  - ground
+  - Interactable
+  - Brother
+  - Sister
+  - RM_Primitive
   layers:
   - Default
   - TransparentFX
@@ -14,7 +20,7 @@ TagManager:
   - 
   - 
   - PostProcessing
-  - 
+  - pickUp
   - 
   - 
   - 

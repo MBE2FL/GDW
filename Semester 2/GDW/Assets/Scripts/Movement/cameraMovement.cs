@@ -35,12 +35,13 @@ public class cameraMovement : MonoBehaviour
         {
             mousePosX += Input.GetAxis("HorizontalC");
             mousePosY += Input.GetAxis("VerticalC");
-            transform.position =(player.transform.position + Quaternion.Euler(-mousePosY, mousePosX, 0) * posOffset/*new Vector3(1,4,1)*/);
+            transform.position =(player.transform.position + Quaternion.Euler(-mousePosY, mousePosX, 0) * posOffset);
         }
 
         // Switch to brother
         if (Input.GetKeyDown(KeyCode.L) && player.tag == "Sister")
         {
+            Debug.Log("yeeee");
             player.GetComponent<Movement>().enabled = false;
             player = brother;
             player.GetComponent<Movement>().enabled = true;
