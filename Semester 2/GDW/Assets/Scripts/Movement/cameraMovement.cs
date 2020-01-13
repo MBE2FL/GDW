@@ -41,7 +41,6 @@ public class cameraMovement : MonoBehaviour
         // Switch to brother
         if (Input.GetKeyDown(KeyCode.L) && player.tag == "Sister")
         {
-            Debug.Log("yeeee");
             player.GetComponent<Movement>().enabled = false;
             player = brother;
             player.GetComponent<Movement>().enabled = true;

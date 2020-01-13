@@ -14,9 +14,8 @@ public class PickUp : MonoBehaviour
 
     bool objectDetection()
     {
-        rayPos = new Vector3(transform.position.x, transform.position.y + 0.2f, transform.position.z + 0.5f);
+        rayPos = new Vector3(transform.position.x, transform.position.y, transform.position.z);
         RaycastHit ray;
-        
         if (Physics.Raycast(rayPos, transform.forward, out ray, 1f, 1 << 9))
         {
             interactingObject = ray.transform.gameObject;
@@ -43,10 +42,12 @@ public class PickUp : MonoBehaviour
     {
         Debug.DrawRay(transform.position, transform.forward * 1.0f, Color.white);
 
-        if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject)
+        if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject || Input.GetKeyDown(KeyCode.R) && holdingObject)
         {
             interactingObject.transform.SetParent(null);
             interRB.isKinematic = false;
+            if (Input.GetKeyDown(KeyCode.R))
+                interRB.AddForce(transform.forward * 500);
             interactingObject = null;
             holdingObject = false;
             Physics.IgnoreLayerCollision(9, 11, false);
@@ -54,7 +55,7 @@ public class PickUp : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
         {
             interactingObject.transform.SetParent(transform, true);
-            interactingObject.transform.localScale = keepScale(transform);
+           // interactingObject.transform.localScale = keepScale(transform);
             interObjPos = interactingObject.transform.position;
             //interactingObject.transform.position = new Vector3(interObjPos.x,transform.position.y, transform.position.z + 0.6f);
 
