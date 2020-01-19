@@ -1,0 +1,82 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/RayMarchEssentialFunctions.hlsl"
+
+RWStructuredBuffer<float> _voxels;
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+float4x4 _invModelMats[MAX_RM_OBJS];
+int _primitiveTypes[MAX_RM_OBJS];
+float2 _combineOps[MAX_RM_OBJS];
+float4 _primitiveGeoInfo[MAX_RM_OBJS];
+
+int width, height, length = 32;
+
+[numthreads(32,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float3 rayOrigin = 0;
+    
+    //Fill voxels with values. Im using perlin noise but any method to create voxels will work.
+    for (int y = 0; y < height; y++)
+    {
+        for (int z = 0; z < length; z++)
+        {
+            float fx = id.x / (width - 1.0f);
+            float fy = y / (height - 1.0f);
+            float fz = z / (length - 1.0f);
+
+            int index = id.x + y * width + z * width * height;
+
+            _voxels[index] = map(rayOrigin);
+
+        }
+    }
+}
+
+
+float map(float3 p)
+{
+    float scene = _maxDrawDist;
+    scene = 300.0;
+
+    float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+    float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+    float obj;
+    float obj2;
+
+    float csg;
+    float storedCSGs[MAX_CSG_CHILDREN];
+
+    float3 cell = float3(0.0, 0.0, 0.0);
+
+	// ######### RM Cube #########
+    pos = mul(_invModelMats[1], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[1];
+    obj = sdBox(pos.xyz, geoInfo.xyz);
+
+    scene = opU(scene, obj);
+	// ######### RM Cube #########
+
+	// ######### Sub Sphere #########
+    pos = mul(_invModelMats[1], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[1];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothSub(obj, scene, _combineOps[1].y);
+	// ######### Sub Sphere #########
+
+	// ######### RM Sphere #########
+    pos = mul(_invModelMats[2], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[2];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opU(scene, obj);
+	// ######### RM Sphere #########
+
+    return scene;
+}
