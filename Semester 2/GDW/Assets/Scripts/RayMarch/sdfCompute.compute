@@ -13,14 +13,15 @@ int _primitiveTypes[MAX_RM_OBJS];
 float2 _combineOps[MAX_RM_OBJS];
 float4 _primitiveGeoInfo[MAX_RM_OBJS];
 
-int width, height, length = 32;
+//int width = 32, height = 32, length = 32;
 
 [numthreads(32,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     float3 rayOrigin = 0;
+	int width = 32, height = 32, length = 32;
     
-    //Fill voxels with values. Im using perlin noise but any method to create voxels will work.
+    // Fill voxels with values.
     for (int y = 0; y < height; y++)
     {
         for (int z = 0; z < length; z++)
@@ -28,11 +29,16 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             float fx = id.x / (width - 1.0f);
             float fy = y / (height - 1.0f);
             float fz = z / (length - 1.0f);
+            
+			rayOrigin = float3(id.x, y, z);
+			//rayOrigin = float3(fx, fy, fz);
 
             int index = id.x + y * width + z * width * height;
 
             _voxels[index] = map(rayOrigin);
-
+            
+            //if (abs(_voxels[index]) < 1.0)
+            //    _voxels[index] = 0.0;
         }
     }
 }
@@ -55,28 +61,28 @@ float map(float3 p)
     float3 cell = float3(0.0, 0.0, 0.0);
 
 	// ######### RM Cube #########
-    pos = mul(_invModelMats[1], float4(p, 1.0));
-    geoInfo = _primitiveGeoInfo[1];
+    pos = mul(_invModelMats[2], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[2];
     obj = sdBox(pos.xyz, geoInfo.xyz);
 
     scene = opU(scene, obj);
 	// ######### RM Cube #########
 
-	// ######### Sub Sphere #########
-    pos = mul(_invModelMats[1], float4(p, 1.0));
-    geoInfo = _primitiveGeoInfo[1];
-    obj = sdSphere(pos.xyz, geoInfo.x);
+	//// ######### Sub Sphere #########
+ //   pos = mul(_invModelMats[1], float4(p, 1.0));
+ //   geoInfo = _primitiveGeoInfo[1];
+ //   obj = sdSphere(pos.xyz, geoInfo.x);
 
-    scene = opSmoothSub(obj, scene, _combineOps[1].y);
-	// ######### Sub Sphere #########
+ //   scene = opSmoothSub(obj, scene, _combineOps[1].y);
+	//// ######### Sub Sphere #########
 
-	// ######### RM Sphere #########
-    pos = mul(_invModelMats[2], float4(p, 1.0));
-    geoInfo = _primitiveGeoInfo[2];
-    obj = sdSphere(pos.xyz, geoInfo.x);
+	//// ######### RM Sphere #########
+ //   pos = mul(_invModelMats[1], float4(p, 1.0));
+ //   geoInfo = _primitiveGeoInfo[1];
+ //   obj = sdSphere(pos.xyz, geoInfo.x);
 
-    scene = opU(scene, obj);
-	// ######### RM Sphere #########
+ //   scene = opU(scene, obj);
+	//// ######### RM Sphere #########
 
     return scene;
 }

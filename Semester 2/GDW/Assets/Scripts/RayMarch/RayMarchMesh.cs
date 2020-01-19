@@ -159,14 +159,14 @@ public class RayMarchMesh : MonoBehaviour
             go.AddComponent<MeshRenderer>();
             go.GetComponent<Renderer>().material = m_material;
             go.GetComponent<MeshFilter>().mesh = mesh;
-            go.transform.localPosition = new Vector3(-width / 2, -height / 2, -length / 2);
+            //go.transform.localPosition = new Vector3(-width / 2, -height / 2, -length / 2);
+            //go.transform.localPosition = new Vector3(0.0f, 4.0f, 0.0f);
 
             meshes.Add(go);
-
-
-
-            buffer.Release();
         }
+
+
+        buffer.Release();
     }
 
         // Update is called once per frame
