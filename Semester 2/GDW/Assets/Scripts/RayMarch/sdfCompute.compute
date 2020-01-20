@@ -30,8 +30,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             float fy = y / (height - 1.0f);
             float fz = z / (length - 1.0f);
             
-			rayOrigin = float3(id.x, y, z);
-			//rayOrigin = float3(fx, fy, fz);
+			//rayOrigin = float3(id.x, y, z);
+			rayOrigin = float3(fx, fy, fz);
 
             int index = id.x + y * width + z * width * height;
 
@@ -68,21 +68,21 @@ float map(float3 p)
     scene = opU(scene, obj);
 	// ######### RM Cube #########
 
-	//// ######### Sub Sphere #########
- //   pos = mul(_invModelMats[1], float4(p, 1.0));
- //   geoInfo = _primitiveGeoInfo[1];
- //   obj = sdSphere(pos.xyz, geoInfo.x);
+	// ######### Sub Sphere #########
+    pos = mul(_invModelMats[0], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[0];
+    obj = sdSphere(pos.xyz, geoInfo.x);
 
- //   scene = opSmoothSub(obj, scene, _combineOps[1].y);
-	//// ######### Sub Sphere #########
+    scene = opSmoothSub(obj, scene, _combineOps[1].y);
+	// ######### Sub Sphere #########
 
-	//// ######### RM Sphere #########
- //   pos = mul(_invModelMats[1], float4(p, 1.0));
- //   geoInfo = _primitiveGeoInfo[1];
- //   obj = sdSphere(pos.xyz, geoInfo.x);
+	// ######### RM Sphere #########
+    pos = mul(_invModelMats[1], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[1];
+    obj = sdSphere(pos.xyz, geoInfo.x);
 
- //   scene = opU(scene, obj);
-	//// ######### RM Sphere #########
+    scene = opU(scene, obj);
+	// ######### RM Sphere #########
 
     return scene;
 }
