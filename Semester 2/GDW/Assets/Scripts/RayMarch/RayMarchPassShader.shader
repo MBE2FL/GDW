@@ -846,8 +846,8 @@
         rmPixel distField;
         float4 add = float4(0.0, 0.0, 0.0, 0.0);
         float3 normal = float3(0.0, 0.0, 0.0);
-        //int rayHit = cheapRaymarch(rayOrigin, rayDir, linearEyeDepth, _maxSteps, _maxDrawDist, p, distField);
-        int rayHit = raymarch(rayOrigin, rayDir, linearEyeDepth, _maxSteps, _maxDrawDist, p, distField, 1);
+        int rayHit = cheapRaymarch(rayOrigin, rayDir, linearEyeDepth, _maxSteps, _maxDrawDist, p, distField);
+        rayHit = raymarch(rayOrigin, rayDir, linearEyeDepth, _maxSteps, _maxDrawDist, p, distField, rayHit);
 
         // Perform shading/lighting.
         if (rayHit)
@@ -878,18 +878,17 @@
         //col.rgb = rayDir;
 
 #if BOUND_DEBUG
-        rayDir = normalize(input.ray);
+        rayDir = -viewDirection;
         rayOrigin = _CameraPos.xyz;
         p = 0.0;
         distField.totalDist = 0.0;
 
-        rayHit = cheapRaymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
+        rayHit = cheapRaymarch(rayOrigin, rayDir, linearEyeDepth, _maxSteps, _maxDrawDist, p, distField);
         if (rayHit)
         {
             col.rgb += float3(0.3 * sin(p.x * 4) + 0.2, 0.0, 0.3 * sin(p.z * 4) + 0.2);
         }
 #endif
-
 
 
         // Gamma correction
