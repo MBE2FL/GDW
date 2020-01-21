@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 5022396}
   - component: {fileID: 5022395}
   m_Layer: 8
-  m_Name: brother's pp
+  m_Name: brother's real good pp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -155,7 +155,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: 0fba8ed1e8a19e5479fd35d80ae95572, type: 2}
+  sharedProfile: {fileID: 11400000, guid: 6466271550d415542a1a6104f9bd36f1, type: 2}
 --- !u!65 &5022396
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1441,7 +1441,7 @@ GameObject:
   - component: {fileID: 1399357492}
   - component: {fileID: 1399357491}
   m_Layer: 8
-  m_Name: sister's pp
+  m_Name: sister's real bad pp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1494,7 +1494,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: 183cbd347d25080429f42b520742bbd8, type: 2}
+  sharedProfile: {fileID: 11400000, guid: fa3373828270f494f8585ce219467c1e, type: 2}
 --- !u!4 &1399357493
 Transform:
   m_ObjectHideFlags: 0
