@@ -8,16 +8,19 @@ public class JumpState : IPlayerState
     Rigidbody _rb;
     Transform _transform;
     Moveable _moveable;
+    Animator _animator;
 
-    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animtor)
+    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animator)
     {
         _movement = movement;
         _rb = rb;
         _transform = transform;
         _moveable = moveable;
+        _animator = animator;
 
-
+        //_animator.SetBool("jump", true);
         _rb.AddForce(new Vector3(0, 250, 0));
+        //_animator.SetBool("jump", false);
     }
 
     public IPlayerState input()
