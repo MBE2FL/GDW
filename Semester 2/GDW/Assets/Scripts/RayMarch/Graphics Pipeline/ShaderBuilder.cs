@@ -7,6 +7,20 @@ using UnityEditor;
 using System.IO;
 using System.Text;
 
+
+public enum BuildMode
+{
+    BuildSelected,
+    BuildAll
+}
+
+public enum BuildType
+{
+    Rendering,
+    Collision,
+    MarchingCubes
+}
+
 [ExecuteInEditMode]
 [AddComponentMenu("Ray Marching/Shader Builder")]
 [DisallowMultipleComponent]
@@ -15,13 +29,17 @@ public class ShaderBuilder : MonoBehaviour
     [SerializeField]
     private string _path;
     [SerializeField]
-    private string _templateHLSLPath;
+    private string _shaderTemplatePath;
     [SerializeField]
-    private string _templateShaderPath;
+    Shader shaderTemplate;
     [HideInInspector]
     private RayMarcher _rayMarcher;
     [SerializeField]
     private RayMarchShader _currentShader;
+    [SerializeField]
+    BuildMode _buildMode = BuildMode.BuildSelected;
+    [SerializeField]
+    BuildType _buildType = BuildType.Rendering;
 
 
     public RayMarcher GetRayMarcher
@@ -47,9 +65,9 @@ public class ShaderBuilder : MonoBehaviour
 
     private void Awake()
     {
-        _path = Application.dataPath + "/Graphics Pipeline/Shaders/";
-        _templateHLSLPath = Application.dataPath + "/Graphics Pipeline/Shaders/RayMarchTemplate.hlsl";
-        _templateShaderPath = Application.dataPath + "/Graphics Pipeline/Shaders/RayMarchTemplate.shader";
+        //_path = Application.dataPath + "/Graphics Pipeline/Shaders/";
+        //_shaderTemplatePath = Application.dataPath + "/Graphics Pipeline/Shaders/RayMarchTemplate.shader";
+        _shaderTemplatePath = AssetDatabase.GetAssetPath(shaderTemplate);
     }
 
     // Start is called before the first frame update
@@ -68,52 +86,38 @@ public class ShaderBuilder : MonoBehaviour
 
         string shaderName = _currentShader.ShaderName;
 
-        foreach (string line in File.ReadAllLines(_templateHLSLPath))
+        foreach (string line in File.ReadAllLines(_shaderTemplatePath))
         {
             // Replace insert statement.
-            if (line.Contains("//<Insert Cheap Map Here>"))
+            if (line.Contains("// <Insert Shader Name Here>"))
             {
+                file.AppendLine("Shader \"RayMarch/" + shaderName + "\"");
+            }
+            else if (line.Contains("// <Insert Maps Here>"))
+            {
+                file.AppendLine("\tfloat cheapMap(float3 p)");
+                file.AppendLine("\t{");
                 buildCheapMap(ref file);
-            }
-            if (line.Contains("//<Insert Map Here>"))
-            {
+                file.AppendLine("\t}");
+                file.AppendLine();
+
+
+                file.AppendLine("\tfloat map(float3 p)");
+                file.AppendLine("\t{");
                 buildMap(ref file);
-            }
-            else if (line.Contains("//<Insert MapMat Here>"))
-            {
+                file.AppendLine("\t}");
+                file.AppendLine();
+
+
+                file.AppendLine("\trmPixel mapMat()");
+                file.AppendLine("\t{");
                 buildMapMat(ref file);
+                file.AppendLine("\t}");
+                file.AppendLine();
             }
-            else if (line.Contains("//<Insert Reflection Here>"))
+            else if (line.Contains("// <Insert Reflection Here>"))
             {
                 //parseReflection(ref file);
-            }
-            // Copy line from template.
-            else
-            {
-                file.AppendLine(line);
-            }
-        }
-
-
-        // Write new shader.
-        using (StreamWriter shader = new StreamWriter(File.Create(_path + "/" + shaderName + ".hlsl")))
-        {
-            shader.Write(file.ToString());
-        }
-
-
-        file.Clear();
-
-        foreach (string line in File.ReadAllLines(_templateShaderPath))
-        {
-            // Replace insert statements.
-            if (line.Contains("//<Insert Shader Name>"))
-            {
-                file.AppendLine("Shader \"MyPipeline/" + shaderName + "\"");
-            }
-            else if (line.Contains("//<Insert Include>"))
-            {
-                file.AppendLine("\t\t\t#include \"" + shaderName + ".hlsl\"");
             }
             // Copy line from template.
             else
@@ -130,6 +134,9 @@ public class ShaderBuilder : MonoBehaviour
         }
 
 
+        file.Clear();
+
+
 #if UNITY_EDITOR
         AssetDatabase.Refresh();
         //AssetDatabase.ImportAsset("Assets/Graphics Pipeline/Shaders/Resources/" + _name + ".shader");
@@ -138,13 +145,13 @@ public class ShaderBuilder : MonoBehaviour
 
     public void buildCheapMap(ref StringBuilder map)
     {
-        map.AppendLine("\tfloat scene = _maxDrawDist;");
+        map.AppendLine("\t\tfloat scene = _maxDrawDist;");
         map.AppendLine();
-        map.AppendLine("\tfloat4 pos = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tfloat4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tfloat radius = 0.0;");
+        map.AppendLine("\t\tfloat4 pos = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tfloat4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tfloat radius = 0.0;");
         map.AppendLine();
-        map.AppendLine("\tfloat obj;");
+        map.AppendLine("\t\tfloat obj;");
         map.AppendLine();
 
         uint primIndex = 0;
@@ -182,29 +189,29 @@ public class ShaderBuilder : MonoBehaviour
                 //determineCombineOp(ref map, null, csg, csgIndex - 1);
             }
 
-            map.AppendLine("\t// ######### " + obj.gameObject.name + " #########");
+            map.AppendLine("\t\t// ######### " + obj.gameObject.name + " #########");
             parseCheapObj(ref map, obj, ref primIndex, ref csgIndex);
-            map.AppendLine("\t// ######### " + obj.gameObject.name + " #########");
+            map.AppendLine("\t\t// ######### " + obj.gameObject.name + " #########");
             map.AppendLine();
         }
 
-        map.AppendLine("\treturn scene;");
+        map.AppendLine("\t\treturn scene;");
     }
 
     private void buildMap(ref StringBuilder map)
     {
-        map.AppendLine("\tfloat scene = _maxDrawDist;");
+        map.AppendLine("\t\tfloat scene = _maxDrawDist;");
         map.AppendLine();
-        map.AppendLine("\tfloat4 pos = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tfloat4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tfloat4 pos = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tfloat4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);");
         map.AppendLine();
-        map.AppendLine("\tfloat obj;");
-        map.AppendLine("\tfloat obj2;");
+        map.AppendLine("\t\tfloat obj;");
+        map.AppendLine("\t\tfloat obj2;");
         map.AppendLine();
-        map.AppendLine("\tfloat csg;");
-        map.AppendLine("\tfloat storedCSGs[MAX_CSG_CHILDREN];");
+        map.AppendLine("\t\tfloat csg;");
+        map.AppendLine("\t\tfloat storedCSGs[MAX_CSG_CHILDREN];");
         map.AppendLine();
-        map.AppendLine("\tfloat3 cell = float3(0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tfloat3 cell = float3(0.0, 0.0, 0.0);");
         map.AppendLine();
 
         uint primIndex = 0;
@@ -235,9 +242,9 @@ public class ShaderBuilder : MonoBehaviour
                 if (prim.CSGNode)
                     continue;
 
-                map.AppendLine("\t// ######### " + prim.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + prim.gameObject.name + " #########");
                 parsePrimitive(ref map, prim, ref primIndex, ref altIndex);
-                map.AppendLine("\t// ######### " + prim.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + prim.gameObject.name + " #########");
                 map.AppendLine();
             }
             // CSG
@@ -250,17 +257,17 @@ public class ShaderBuilder : MonoBehaviour
                 if (!csg.IsRoot || !csg.IsValid)
                     continue;
 
-                map.AppendLine("\t// ######### " + csg.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + csg.gameObject.name + " #########");
 
                 parseCSG(ref map, csg, ref primIndex, ref csgIndex, ref altIndex);
 
                 determineCombineOp(ref map, null, csg, csgIndex - 1);
-                map.AppendLine("\t// ######### " + csg.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + csg.gameObject.name + " #########");
                 map.AppendLine();
             }
         }
 
-        map.AppendLine("\treturn scene;");
+        map.AppendLine("\t\treturn scene;");
     }
 
     #region Old
@@ -312,11 +319,11 @@ public class ShaderBuilder : MonoBehaviour
         if (!obj.Static)
         {
             // Determine position and geometric information
-            cheapMap.AppendLine("\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
-            cheapMap.AppendLine("\tgeoInfo = _boundGeoInfo[" + primIndex + "];");
+            cheapMap.AppendLine("\t\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
+            cheapMap.AppendLine("\t\tgeoInfo = _boundGeoInfo[" + primIndex + "];");
 
 
-            cheapMap.Append("\tobj = ");
+            cheapMap.Append("\t\tobj = ");
 
             // Determine primitive type
             switch (obj.BoundShape)
@@ -350,13 +357,13 @@ public class ShaderBuilder : MonoBehaviour
 
             // Determine position and geometric information
             mat = obj.transform.localToWorldMatrix.inverse;
-            cheapMap.AppendLine("\tpos = mul(float4x4(" + mat.m00 + ", " + mat.m01 + ", " + mat.m02 + ", " + mat.m03 + ", "
+            cheapMap.AppendLine("\t\tpos = mul(float4x4(" + mat.m00 + ", " + mat.m01 + ", " + mat.m02 + ", " + mat.m03 + ", "
                                                + mat.m10 + ", " + mat.m11 + ", " + mat.m12 + ", " + mat.m13 + ", "
                                                + mat.m20 + ", " + mat.m21 + ", " + mat.m22 + ", " + mat.m23 + ", "
                                                + mat.m30 + ", " + mat.m31 + ", " + mat.m32 + ", " + mat.m33 + "), float4(p, 1.0));");
 
             info = obj.BoundGeoInfo;
-            cheapMap.AppendLine("\tgeoInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
+            cheapMap.AppendLine("\t\tgeoInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
 
             // Determine primitive type
             switch (obj.BoundShape)
@@ -434,19 +441,19 @@ public class ShaderBuilder : MonoBehaviour
         switch (combineOpType)
         {
             case CombineOpsTypes.Union:
-                cheapMap.AppendLine("\tscene = opU(scene, obj);");
+                cheapMap.AppendLine("\t\tscene = opU(scene, obj);");
                 break;
             case CombineOpsTypes.SmoothUnion:
-                cheapMap.AppendLine("\tscene = opSmoothUnion(scene, obj, " + combineOps);
+                cheapMap.AppendLine("\t\tscene = opSmoothUnion(scene, obj, " + combineOps);
                 break;
             case CombineOpsTypes.SmoothSubtraction:
-                cheapMap.AppendLine("\tscene = opSmoothUnion(scene, obj, " + combineOps);
+                cheapMap.AppendLine("\t\tscene = opSmoothUnion(scene, obj, " + combineOps);
                 break;
             case CombineOpsTypes.SmoothIntersection:
-                cheapMap.AppendLine("\tscene = opSmoothUnion(scene, obj, " + combineOps);
+                cheapMap.AppendLine("\t\tscene = opSmoothUnion(scene, obj, " + combineOps);
                 break;
             default:
-                cheapMap.AppendLine("\tscene = opU(scene, obj);");
+                cheapMap.AppendLine("\t\tscene = opU(scene, obj);");
                 break;
         }
     }
@@ -458,8 +465,8 @@ public class ShaderBuilder : MonoBehaviour
         if (!prim.Static)
         {
             // Determine position and geometric information
-            map.AppendLine("\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
-            map.AppendLine("\tgeoInfo = _primitiveGeoInfo[" + primIndex + "];");
+            map.AppendLine("\t\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
+            map.AppendLine("\t\tgeoInfo = _primitiveGeoInfo[" + primIndex + "];");
 
             parseAlterationTypes(ref map, prim.Alterations, ref altIndex);
 
@@ -467,14 +474,14 @@ public class ShaderBuilder : MonoBehaviour
             if (csgNodeTwo)
                 obj = "obj2";
 
-            map.Append("\t" + obj + " = ");
+            map.Append("\t\t" + obj + " = ");
 
             // Determine primitive type
             parsePrimitiveType(ref map, prim.PrimitiveType);
 
             // Store distance into distance buffer
             parseAlterationTypes(ref map, prim.Alterations, ref altIndex, false);
-            map.AppendLine("\tdistBuffer[" + primIndex + "] = " + obj + ";");
+            map.AppendLine("\t\tdistBuffer[" + primIndex + "] = " + obj + ";");
             map.AppendLine();
 
             // Determine combining operation
@@ -496,26 +503,26 @@ public class ShaderBuilder : MonoBehaviour
             // Determine position and geometric information
             //map.AppendLine("\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
             mat = prim.transform.localToWorldMatrix.inverse;
-            map.AppendLine("\tpos = mul(float4x4(" + mat.m00 + ", " + mat.m01 + ", " + mat.m02 + ", " + mat.m03 + ", "
+            map.AppendLine("\t\tpos = mul(float4x4(" + mat.m00 + ", " + mat.m01 + ", " + mat.m02 + ", " + mat.m03 + ", "
                                                + mat.m10 + ", " + mat.m11 + ", " + mat.m12 + ", " + mat.m13 + ", "
                                                + mat.m20 + ", " + mat.m21 + ", " + mat.m22 + ", " + mat.m23 + ", "
                                                + mat.m30 + ", " + mat.m31 + ", " + mat.m32 + ", " + mat.m33 + "), float4(p, 1.0));");
 
             //map.AppendLine("\tgeoInfo = _primitiveGeoInfo[" + primIndex + "];");
             info = prim.GeoInfo;
-            map.AppendLine("\tgeoInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
+            map.AppendLine("\t\tgeoInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
 
             string obj = "obj";
             if (csgNodeTwo)
                 obj = "obj2";
 
-            map.Append("\t" + obj + " = ");
+            map.Append("\t\t" + obj + " = ");
 
             // Determine primitive type
             parsePrimitiveType(ref map, prim.PrimitiveType);
 
             // Store distance into distance buffer
-            map.AppendLine("\tdistBuffer[" + primIndex + "] = " + obj + ";");
+            map.AppendLine("\t\tdistBuffer[" + primIndex + "] = " + obj + ";");
             map.AppendLine();
 
             // Determine combining operation
@@ -637,37 +644,37 @@ public class ShaderBuilder : MonoBehaviour
                 switch (alt.type)
                 {
                     case AlterationTypes.Elongate1D:
-                        map.AppendLine("\topElongate1D(pos.xyz, _altInfo[" + altIndex + "]);");
+                        map.AppendLine("\t\topElongate1D(pos.xyz, _altInfo[" + altIndex + "]);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Elongate:
                         break;
                     case AlterationTypes.SymX:
-                        map.AppendLine("\topSymX(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        map.AppendLine("\t\topSymX(pos.xyz, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
                     case AlterationTypes.SymXZ:
-                        map.AppendLine("\topSymXZ(pos.xyz, _altInfo[" + altIndex + "].xy);");
+                        map.AppendLine("\t\topSymXZ(pos.xyz, _altInfo[" + altIndex + "].xy);");
                         ++altIndex;
                         break;
                     case AlterationTypes.RepXZ:
-                        map.AppendLine("\topRepXZ(pos.xyz, _altInfo[" + altIndex + "].xz, cell.xz);");
+                        map.AppendLine("\t\topRepXZ(pos.xyz, _altInfo[" + altIndex + "].xz, cell.xz);");
                         ++altIndex;
                         break;
                     case AlterationTypes.RepFinite:
-                        map.AppendLine("\topRepLim(pos.xyz, _altInfo[" + altIndex + "].x, _altInfo[" + altIndex + "].yzw);");
+                        map.AppendLine("\t\topRepLim(pos.xyz, _altInfo[" + altIndex + "].x, _altInfo[" + altIndex + "].yzw);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Twist:
-                        map.AppendLine("\topTwist(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        map.AppendLine("\t\topTwist(pos.xyz, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Bend:
-                        map.AppendLine("\topCheapBend(pos.xyz, _altInfo[" + altIndex + "].x);");
+                        map.AppendLine("\t\topCheapBend(pos.xyz, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Custom:
-                        map.AppendLine("\t" + alt.command);
+                        map.AppendLine("\t\t" + alt.command);
                         ++altIndex;
                         break;
                     default:
@@ -679,15 +686,15 @@ public class ShaderBuilder : MonoBehaviour
                 switch (alt.type)
                 {
                     case AlterationTypes.Round:
-                        map.AppendLine("\topRound(obj, _altInfo[" + altIndex + "].x);");
+                        map.AppendLine("\t\topRound(obj, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Onion:
-                        map.AppendLine("\topOnion(obj, _altInfo[" + altIndex + "].x);");
+                        map.AppendLine("\t\topOnion(obj, _altInfo[" + altIndex + "].x);");
                         ++altIndex;
                         break;
                     case AlterationTypes.Displace:
-                        map.AppendLine("\topDisplace(pos.xyz, obj, _altInfo[" + altIndex + "].xyz);");
+                        map.AppendLine("\t\topDisplace(pos.xyz, obj, _altInfo[" + altIndex + "].xyz);");
                         ++altIndex;
                         break;
                     default:
@@ -709,7 +716,7 @@ public class ShaderBuilder : MonoBehaviour
 
             // Parse this CSG.
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
-            //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
             return;
@@ -724,10 +731,10 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
 
             // Parse this CSG.
-            map.AppendLine("\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
+            map.AppendLine("\t\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
-            //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
             return;
@@ -738,7 +745,7 @@ public class ShaderBuilder : MonoBehaviour
             // Recurse through first node (Must be a csg).
             parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
-            map.AppendLine("\tobj = storedCSGs[" + (csgIndex - 1) + "];");
+            map.AppendLine("\t\tobj = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
 
             // Parse second node.
@@ -746,7 +753,7 @@ public class ShaderBuilder : MonoBehaviour
 
             // Parse this CSG.
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
-            //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
             return;
@@ -762,14 +769,14 @@ public class ShaderBuilder : MonoBehaviour
             // Recurse through second node.
             parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
 
-            map.AppendLine("\tobj = storedCSGs[" + firstNodeIndex + "];");
+            map.AppendLine("\t\tobj = storedCSGs[" + firstNodeIndex + "];");
             map.AppendLine();
-            map.AppendLine("\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
+            map.AppendLine("\t\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
 
             // Parse this CSG.
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
-            //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
             return;
@@ -778,7 +785,7 @@ public class ShaderBuilder : MonoBehaviour
 
     private void determineCSGNodeCombineOp(ref StringBuilder map, CSG csg, uint csgIndex)
     {
-        string result = "\tstoredCSGs[" + csgIndex + "]";
+        string result = "\t\tstoredCSGs[" + csgIndex + "]";
 
         switch (csg.NodeCombineOpType)
         {
@@ -801,7 +808,7 @@ public class ShaderBuilder : MonoBehaviour
                 map.AppendLine(result + " = opSmoothInt(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
                 break;
             case NodeCombineOpsTypes.Lerp:
-                map.AppendLine("\tcsg = lerp(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
+                map.AppendLine("\t\tcsg = lerp(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
                 map.AppendLine(result + " = csg;");
                 break;
             default:
@@ -827,28 +834,28 @@ public class ShaderBuilder : MonoBehaviour
         switch (combineOpType)
         {
             case CombineOpsTypes.Union:
-                map.AppendLine("\tscene = opU(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opU(scene, " + obj + ");");
                 break;
             case CombineOpsTypes.Subtraction:
-                map.AppendLine("\tscene = opS(" + obj + ", scene);");
+                map.AppendLine("\t\tscene = opS(" + obj + ", scene);");
                 break;
             case CombineOpsTypes.Intersection:
-                map.AppendLine("\tscene = opI(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opI(scene, " + obj + ");");
                 break;
             case CombineOpsTypes.SmoothUnion:
-                map.AppendLine("\tscene = opSmoothUnion(scene, " + obj + ", " + combineOps);
+                map.AppendLine("\t\tscene = opSmoothUnion(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.SmoothSubtraction:
-                map.AppendLine("\tscene = opSmoothSub(" + obj + ", scene, " + combineOps);
+                map.AppendLine("\t\tscene = opSmoothSub(" + obj + ", scene, " + combineOps);
                 break;
             case CombineOpsTypes.SmoothIntersection:
-                map.AppendLine("\tscene = opSmoothInt(scene, " + obj + ", " + combineOps);
+                map.AppendLine("\t\tscene = opSmoothInt(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.AbsUnion:
-                map.AppendLine("\tscene = opUAbs(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opUAbs(scene, " + obj + ");");
                 break;
             default:
-                map.AppendLine("\tscene = opU(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opU(scene, " + obj + ");");
                 Debug.LogError("Shader Parse: Unkown Combining Operation!");
                 break;
         }
@@ -859,10 +866,10 @@ public class ShaderBuilder : MonoBehaviour
 
     private void parseReflection(ref StringBuilder file)
     {
-        file.AppendLine("\t\t// Distance field reflection.");
-        file.AppendLine("\t\tfloat quality;");
-        file.AppendLine("\t\tfloat4 refl = distField.reflInfo;");
-        file.AppendLine("\t\tfloat prevRefl = 0;");
+        file.AppendLine("\t\t\t// Distance field reflection.");
+        file.AppendLine("\t\t\tfloat quality;");
+        file.AppendLine("\t\t\tfloat4 refl = distField.reflInfo;");
+        file.AppendLine("\t\t\tfloat prevRefl = 0;");
 
         float quality;
         string reflComp = "";
@@ -891,26 +898,26 @@ public class ShaderBuilder : MonoBehaviour
             }
 
             file.AppendLine();
-            file.AppendLine("\t\tquality = " + quality + ";");
-            file.AppendLine("\t\trayDir = normalize(reflect(rayDir, normal));");
-            file.AppendLine("\t\trayOrigin = p + (rayDir * 0.01);");
+            file.AppendLine("\t\t\tquality = " + quality + ";");
+            file.AppendLine("\t\t\trayDir = normalize(reflect(rayDir, normal));");
+            file.AppendLine("\t\t\trayOrigin = p + (rayDir * 0.01);");
             if (i > 0)
             {
-                file.AppendLine("\t\tprevRefl = distField.reflInfo.x;");
-                file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + " * prevRefl) * quality, _maxDrawDist * quality, p, distField);");
+                file.AppendLine("\t\t\tprevRefl = distField.reflInfo.x;");
+                file.AppendLine("\t\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + " * prevRefl) * quality, _maxDrawDist * quality, p, distField);");
             }
             else
-                file.AppendLine("\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + ") * quality, _maxDrawDist * quality, p, distField);");
+                file.AppendLine("\t\t\trayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl" + reflComp + ") * quality, _maxDrawDist * quality, p, distField);");
             file.AppendLine();
-            file.AppendLine("\t\tif (rayHit)");
-            file.AppendLine("\t\t{");
-            file.AppendLine("\t\t\tnormal = calcNormal(p);");
-            file.AppendLine("\t\t\tadd += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;");
-            file.AppendLine("\t\t}");
+            file.AppendLine("\t\t\tif (rayHit)");
+            file.AppendLine("\t\t\t{");
+            file.AppendLine("\t\t\t\tnormal = calcNormal(p);");
+            file.AppendLine("\t\t\t\tadd += float4(calcLighting(p, normal, distField).rgb, 0.0) * refl.w * ratio.x;//_reflectionIntensity;");
+            file.AppendLine("\t\t\t}");
         }
 
-        file.AppendLine("\t\t// Skybox reflection.");
-        file.AppendLine("\t\t//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;");
+        file.AppendLine("\t\t\t// Skybox reflection.");
+        file.AppendLine("\t\t\t//add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;");
     }
 
 
@@ -920,33 +927,33 @@ public class ShaderBuilder : MonoBehaviour
     // ********* Material parsing *********
     private void buildMapMat(ref StringBuilder map)
     {
-        map.AppendLine("\trmPixel scene;");
-        map.AppendLine("\tscene.dist = _maxDrawDist;");
-        map.AppendLine("\tscene.colour = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tscene.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tscene.refractInfo = float2(0.0, 1.0);");
-        map.AppendLine("\tscene.texID = 0;");
+        map.AppendLine("\t\trmPixel scene;");
+        map.AppendLine("\t\tscene.dist = _maxDrawDist;");
+        map.AppendLine("\t\tscene.colour = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tscene.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tscene.refractInfo = float2(0.0, 1.0);");
+        map.AppendLine("\t\tscene.texID = 0;");
         map.AppendLine();
-        map.AppendLine("\trmPixel obj;");
-        map.AppendLine("\tobj.colour = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tobj.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tobj.refractInfo = float2(0.0, 1.0);");
-        map.AppendLine("\tobj.texID = 0;");
+        map.AppendLine("\t\trmPixel obj;");
+        map.AppendLine("\t\tobj.colour = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tobj.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tobj.refractInfo = float2(0.0, 1.0);");
+        map.AppendLine("\t\tobj.texID = 0;");
         map.AppendLine();
-        map.AppendLine("\trmPixel obj2;");
-        map.AppendLine("\tobj2.colour = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tobj2.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tobj2.refractInfo = float2(0.0, 1.0);");
-        map.AppendLine("\tobj2.texID = 0;");
+        map.AppendLine("\t\trmPixel obj2;");
+        map.AppendLine("\t\tobj2.colour = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tobj2.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tobj2.refractInfo = float2(0.0, 1.0);");
+        map.AppendLine("\t\tobj2.texID = 0;");
         map.AppendLine();
-        map.AppendLine("\trmPixel csg;");
-        map.AppendLine("\tcsg.colour = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tcsg.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
-        map.AppendLine("\tcsg.refractInfo = float2(0.0, 1.0);");
-        map.AppendLine("\tcsg.texID = 0;");
-        map.AppendLine("\trmPixel storedCSGs[MAX_CSG_CHILDREN];");
+        map.AppendLine("\t\trmPixel csg;");
+        map.AppendLine("\t\tcsg.colour = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tcsg.reflInfo = float4(0.0, 0.0, 0.0, 0.0);");
+        map.AppendLine("\t\tcsg.refractInfo = float2(0.0, 1.0);");
+        map.AppendLine("\t\tcsg.texID = 0;");
+        map.AppendLine("\t\trmPixel storedCSGs[MAX_CSG_CHILDREN];");
         map.AppendLine();
-        map.AppendLine("\tfloat reflWeight;");
+        map.AppendLine("\t\tfloat reflWeight;");
 
         uint primIndex = 0;
         uint csgIndex = 0;
@@ -968,9 +975,9 @@ public class ShaderBuilder : MonoBehaviour
                 if (prim.CSGNode)
                     continue;
 
-                map.AppendLine("\t// ######### " + prim.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + prim.gameObject.name + " #########");
                 parsePrimitiveMat(ref map, prim, ref primIndex);
-                map.AppendLine("\t// ######### " + prim.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + prim.gameObject.name + " #########");
                 map.AppendLine();
             }
             // CSG
@@ -983,17 +990,17 @@ public class ShaderBuilder : MonoBehaviour
                 if (!csg.IsRoot || !csg.IsValid)
                     continue;
 
-                map.AppendLine("\t// ######### " + csg.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + csg.gameObject.name + " #########");
 
                 parseCSGMat(ref map, csg, ref primIndex, ref csgIndex);
 
                 determineCombineOpMat(ref map, null, csg, csgIndex - 1);
-                map.AppendLine("\t// ######### " + csg.gameObject.name + " #########");
+                map.AppendLine("\t\t// ######### " + csg.gameObject.name + " #########");
                 map.AppendLine();
             }
         }
 
-        map.AppendLine("\treturn scene;");
+        map.AppendLine("\t\treturn scene;");
     }
 
     private void parsePrimitiveMat(ref StringBuilder map, RMPrimitive prim, ref uint primIndex, bool csgNodeTwo = false)
@@ -1005,10 +1012,10 @@ public class ShaderBuilder : MonoBehaviour
         if (!prim.Static)
         {
             // Retrieve distance and other material information
-            map.AppendLine("\t" + obj + ".dist = distBuffer[" + primIndex + "];");
-            map.AppendLine("\t" + obj + ".colour = _rm_colours[" + primIndex + "];");
-            map.AppendLine("\t" + obj + ".reflInfo = _reflInfo[" + primIndex + "];");
-            map.AppendLine("\t" + obj + ".refractInfo = _refractInfo[" + primIndex + "];");
+            map.AppendLine("\t\t" + obj + ".dist = distBuffer[" + primIndex + "];");
+            map.AppendLine("\t\t" + obj + ".colour = _rm_colours[" + primIndex + "];");
+            map.AppendLine("\t\t" + obj + ".reflInfo = _reflInfo[" + primIndex + "];");
+            map.AppendLine("\t\t" + obj + ".refractInfo = _refractInfo[" + primIndex + "];");
 
             // Determine combining operation
             if (!prim.CSGNode)
@@ -1025,16 +1032,16 @@ public class ShaderBuilder : MonoBehaviour
             Vector4 info;
 
             // Retrieve distance and other material information
-            map.AppendLine("\t" + obj + ".dist = distBuffer[" + primIndex + "];");
+            map.AppendLine("\t\t" + obj + ".dist = distBuffer[" + primIndex + "];");
 
             info = prim.Colour;
-            map.AppendLine("\t" + obj + ".colour = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
+            map.AppendLine("\t\t" + obj + ".colour = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
 
             info = prim.ReflectionInfo;
-            map.AppendLine("\t" + obj + ".reflInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
+            map.AppendLine("\t\t" + obj + ".reflInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
 
             info = prim.RefractionInfo;
-            map.AppendLine("\t" + obj + ".refractInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
+            map.AppendLine("\t\t" + obj + ".refractInfo = float4(" + info.x + ", " + info.y + ", " + info.z + ", " + info.w + ");");
 
             // Determine combining operation
             if (!prim.CSGNode)
@@ -1066,28 +1073,28 @@ public class ShaderBuilder : MonoBehaviour
         switch (combineOpType)
         {
             case CombineOpsTypes.Union:
-                map.AppendLine("\tscene = opUMat(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opUMat(scene, " + obj + ");");
                 break;
             case CombineOpsTypes.Subtraction:
-                map.AppendLine("\tscene = opSMat(" + obj + ", scene);");
+                map.AppendLine("\t\tscene = opSMat(" + obj + ", scene);");
                 break;
             case CombineOpsTypes.Intersection:
-                map.AppendLine("\tscene = opIMat(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opIMat(scene, " + obj + ");");
                 break;
             case CombineOpsTypes.SmoothUnion:
-                map.AppendLine("\tscene = opSmoothUnionMat(scene, " + obj + ", " + combineOps);
+                map.AppendLine("\t\tscene = opSmoothUnionMat(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.SmoothSubtraction:
-                map.AppendLine("\tscene = opSmoothSubMat(" + obj + ", scene, " + combineOps);
+                map.AppendLine("\t\tscene = opSmoothSubMat(" + obj + ", scene, " + combineOps);
                 break;
             case CombineOpsTypes.SmoothIntersection:
-                map.AppendLine("\tscene = opSmoothIntMat(scene, " + obj + ", " + combineOps);
+                map.AppendLine("\t\tscene = opSmoothIntMat(scene, " + obj + ", " + combineOps);
                 break;
             case CombineOpsTypes.AbsUnion:
-                map.AppendLine("\tscene = opUAbsMat(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opUAbsMat(scene, " + obj + ");");
                 break;
             default:
-                map.AppendLine("\tscene = opUMat(scene, " + obj + ");");
+                map.AppendLine("\t\tscene = opUMat(scene, " + obj + ");");
                 Debug.LogError("Shader Parse: Unkown Combining Operation!");
                 break;
         }
@@ -1118,7 +1125,7 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitiveMat(ref map, csg.FirstNode as RMPrimitive, ref primIndex);
 
             // Parse this CSG.
-            map.AppendLine("\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
+            map.AppendLine("\t\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
             determineCSGCombineOpMat(ref map, csg, csgIndex);
             map.AppendLine();
@@ -1131,7 +1138,7 @@ public class ShaderBuilder : MonoBehaviour
             // Recurse through first node (Must be a csg).
             parseCSGMat(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex);
 
-            map.AppendLine("\tobj = storedCSGs[" + (csgIndex - 1) + "];");
+            map.AppendLine("\t\tobj = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
 
             // Parse second node.
@@ -1139,7 +1146,7 @@ public class ShaderBuilder : MonoBehaviour
 
             // Parse this CSG.
             determineCSGCombineOpMat(ref map, csg, csgIndex);
-            //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
             return;
@@ -1155,14 +1162,14 @@ public class ShaderBuilder : MonoBehaviour
             // Recurse through second node.
             parseCSGMat(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex);
 
-            map.AppendLine("\tobj = storedCSGs[" + firstNodeIndex + "];");
+            map.AppendLine("\t\tobj = storedCSGs[" + firstNodeIndex + "];");
             map.AppendLine();
-            map.AppendLine("\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
+            map.AppendLine("\t\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
 
             // Parse this CSG.
             determineCSGCombineOpMat(ref map, csg, csgIndex);
-            //map.AppendLine("\tstoredCSGs[" + csgIndex + "] = csg;");
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
             map.AppendLine();
             ++csgIndex;
             return;
@@ -1171,7 +1178,7 @@ public class ShaderBuilder : MonoBehaviour
 
     private void determineCSGCombineOpMat(ref StringBuilder map, CSG csg, uint csgIndex)
     {
-        string result = "\tstoredCSGs[" + csgIndex + "]";
+        string result = "\t\tstoredCSGs[" + csgIndex + "]";
 
         switch (csg.NodeCombineOpType)
         {
@@ -1194,10 +1201,10 @@ public class ShaderBuilder : MonoBehaviour
                 map.AppendLine(result + " = opSmoothIntMat(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
                 break;
             case NodeCombineOpsTypes.Lerp:
-                map.AppendLine("\tcsg.dist = lerp(obj.dist, obj2.dist, _combineOpsCSGs[" + csgIndex + "].y);");
-                map.AppendLine("\tcsg.colour = lerp(obj.colour, obj2.colour, _combineOpsCSGs[" + csgIndex + "].y);");
-                map.AppendLine("\treflWeight = step(0.5, _combineOpsCSGs[7].y);");
-                map.AppendLine("\tcsg.reflInfo = (1.0 - reflWeight) * obj.reflInfo + reflWeight * obj2.reflInfo;");
+                map.AppendLine("\t\tcsg.dist = lerp(obj.dist, obj2.dist, _combineOpsCSGs[" + csgIndex + "].y);");
+                map.AppendLine("\t\tcsg.colour = lerp(obj.colour, obj2.colour, _combineOpsCSGs[" + csgIndex + "].y);");
+                map.AppendLine("\t\treflWeight = step(0.5, _combineOpsCSGs[7].y);");
+                map.AppendLine("\t\tcsg.reflInfo = (1.0 - reflWeight) * obj.reflInfo + reflWeight * obj2.reflInfo;");
                 map.AppendLine(result + " = csg;");
                 break;
             default:
@@ -1222,21 +1229,25 @@ public class ShaderBuilder : MonoBehaviour
 public class ShaderBuilderEditor : Editor
 {
     SerializedProperty _path;
-    SerializedProperty _templateHLSLPath;
-    SerializedProperty _templateShaderPath;
+    SerializedProperty shaderTemplatePath;
+    SerializedProperty _shaderTemplate;
     List<RayMarchShader> _shaders = new List<RayMarchShader>();
     SerializedProperty _currentShader;
     int _selectedShaderIndex = 0;
     string[] _shaderNames;
+    SerializedProperty _buildMode;
+    SerializedProperty _buildType;
 
 
 
     private void OnEnable()
     {
         _path = serializedObject.FindProperty("_path");
-        _templateHLSLPath = serializedObject.FindProperty("_templateHLSLPath");
-        _templateShaderPath = serializedObject.FindProperty("_templateShaderPath");
+        shaderTemplatePath = serializedObject.FindProperty("_shaderTemplatePath");
+        _shaderTemplate = serializedObject.FindProperty("shaderTemplate");
         _currentShader = serializedObject.FindProperty("_currentShader");
+        _buildMode = serializedObject.FindProperty("_buildMode");
+        _buildType = serializedObject.FindProperty("_buildType");
     }
 
     public override void OnInspectorGUI()
@@ -1247,11 +1258,24 @@ public class ShaderBuilderEditor : Editor
 
         serializedObject.Update();
 
+        GUIContent label = new GUIContent("General", "");
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
         EditorGUILayout.PropertyField(_path);
-        EditorGUILayout.PropertyField(_templateHLSLPath);
-        EditorGUILayout.PropertyField(_templateShaderPath);
+        //EditorGUILayout.PropertyField(_shaderTemplatePath);
+
+        EditorGUI.BeginChangeCheck();
+        EditorGUILayout.PropertyField(_shaderTemplate);
+        if (EditorGUI.EndChangeCheck())
+        {
+            shaderTemplatePath.stringValue = AssetDatabase.GetAssetPath(_shaderTemplate.objectReferenceValue);
+        }
 
         // Select a shader to build.
+        label.text = "Shaders";
+        label.tooltip = "Available shaders to build.";
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
         _shaders = shaderBuilder.GetRayMarcher.Shaders;
         _shaderNames = new string[_shaders.Count];
 
@@ -1263,8 +1287,16 @@ public class ShaderBuilderEditor : Editor
         _selectedShaderIndex = EditorGUILayout.Popup(_selectedShaderIndex, _shaderNames);
 
 
+        label.text = "Build Options";
+        label.tooltip = "";
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(_buildMode);
+        EditorGUILayout.PropertyField(_buildType);
+
+
         serializedObject.ApplyModifiedProperties();
 
+        EditorGUILayout.Space();
         if (GUILayout.Button("Build"))
         {
             shaderBuilder.CurrentShader = _shaders[_selectedShaderIndex];
