@@ -21,8 +21,8 @@ public class Movement : MonoBehaviour
     private float angle = 0.0f;
     //private float mousePosX = 0.0f;
     private float controllerPosX = 0.0f;
-    private float controllerMovementVert = 1;
-    private float controllerMovementHori = 1;
+    private float controllerMovementVert = 0.1f;
+    private float controllerMovementHori = 0.1f;
 
     bool onGround = true;
 

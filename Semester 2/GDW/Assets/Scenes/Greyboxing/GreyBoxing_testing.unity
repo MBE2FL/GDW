@@ -40890,6 +40890,7 @@ GameObject:
   - component: {fileID: 1126751912}
   - component: {fileID: 1126751911}
   - component: {fileID: 1126751913}
+  - component: {fileID: 1126751914}
   m_Layer: 11
   m_Name: bother
   m_TagString: Brother
@@ -40987,7 +40988,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1126751904}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!114 &1126751910
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41044,6 +41045,21 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.21956457, y: 0.60740906, z: 0.32616216}
   m_Center: {x: -0.0023642608, y: -1.06335, z: 0.044610612}
+--- !u!114 &1126751914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1126751904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14674609da9c4b348af7ea7c1ab54a45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shader: {fileID: 7200000, guid: 53331dde1af4c2e439a677214015a298, type: 3}
+  lerp: 0
+  dropDistance: 1000
 --- !u!4 &1133365290 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6184178657455693485, guid: bacbed11ee179fa43bff72b87957425b,
