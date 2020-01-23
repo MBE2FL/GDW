@@ -10,16 +10,18 @@ public class MoveKeyboardState : IPlayerState
     Moveable _moveable;
     float _mousePosX;
     Transform camTransform;
+    Animator _animator;
 
     Vector3 _force;
     float _speed = 0.0f;
 
-    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
+    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animator)
     {
         _movement = movement;
         _rb = rb;
         _transform = transform;
         _moveable = moveable;
+        _animator = animator;
         camTransform = Camera.main.transform;
     }
 
@@ -63,8 +65,12 @@ public class MoveKeyboardState : IPlayerState
             if (Input.GetKey(KeyCode.W))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-
+                _animator.SetBool("walkingForward", true);
                 _force += _transform.forward;
+            }
+            else
+            {
+                _animator.SetBool("walkingForward", false);
             }
 
             // Move backward

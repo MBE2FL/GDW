@@ -9,7 +9,7 @@ public class JumpState : IPlayerState
     Transform _transform;
     Moveable _moveable;
 
-    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
+    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animtor)
     {
         _movement = movement;
         _rb = rb;
