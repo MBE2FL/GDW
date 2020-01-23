@@ -84,14 +84,24 @@ public class MoveKeyboardState : IPlayerState
             if (Input.GetKey(KeyCode.A))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
+                _animator.SetBool("left", true);
                 _force -= _transform.right;
+            }
+            else
+            {
+                _animator.SetBool("left", false);
             }
 
             // Move right
             if (Input.GetKey(KeyCode.D))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
+                _animator.SetBool("right", true);
                 _force += _transform.right;
+            }
+            else
+            {
+                _animator.SetBool("right", false);
             }
 
             if (_movement.Angle > 5.0f)

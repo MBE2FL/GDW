@@ -74,6 +74,7 @@ public enum PrimitiveTypes
 public class RMPrimitive : RMObj
 {
     [SerializeField]
+    [ColorUsageAttribute(true, true)]
     private Color _colour = Color.white;
     //[SerializeField]
     //private Vector4 _combineOp;
