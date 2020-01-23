@@ -13,7 +13,7 @@ public class MoveControllerState : IPlayerState
     private float _controllerMovementHori = 1;
     Transform camTransform;
 
-    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
+    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animtor)
     {
         _movement = movement;
         _rb = rb;
