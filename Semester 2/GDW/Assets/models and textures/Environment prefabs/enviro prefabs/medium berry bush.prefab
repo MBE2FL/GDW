@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1605781168012845017}
   - component: {fileID: 7715765441328965103}
   - component: {fileID: 4048576235053127958}
-  - component: {fileID: 2340170687453950282}
+  - component: {fileID: 5352251088087900248}
   m_Layer: 0
   m_Name: medium berry bush
   m_TagString: Untagged
@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2311394091335429578}
   m_LocalRotation: {x: 0.2535766, y: 0.5788639, z: -0.5305839, w: 0.564886}
-  m_LocalPosition: {x: 30.22, y: 0.07, z: -31.47}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.03622255, y: 0.036222547, z: 0.03622255}
   m_Children: []
   m_Father: {fileID: 0}
@@ -80,7 +80,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!65 &2340170687453950282
+--- !u!65 &5352251088087900248
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
