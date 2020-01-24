@@ -46,6 +46,7 @@ public class MoveKeyboardState : IPlayerState
     public void update()
     {
         _mousePosX += Input.GetAxis("HorizontalC");
+        _movement.rampDetection();
     }
 
     public void fixedUpdate()
@@ -53,7 +54,7 @@ public class MoveKeyboardState : IPlayerState
         _force = Vector3.zero;
         _speed = 0.0f;
 
-        _movement.rampDetection();
+        
 
         // Move only while on ground.
         if (_movement.OnGround)
@@ -105,7 +106,7 @@ public class MoveKeyboardState : IPlayerState
             }
 
             if (_movement.Angle > 5.0f)
-                _speed = 8 * 1.8f * 2.0f;
+                _speed = 8 * 1.8f * 4.0f;
             else
                 _speed = 8.0f * 4.0f;
 
