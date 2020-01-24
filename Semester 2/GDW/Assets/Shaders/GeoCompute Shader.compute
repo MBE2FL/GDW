@@ -20,7 +20,8 @@ float3 Explode(float3 position, float3 normal)
 
 float3 Move(float3 base, float3 moved)
 {
-    return lerp(moved, base, t);
+    float y = lerp(moved.y, base.y, t);
+    return float3(base.x, y, base.z);
 }
 
 [numthreads(1024,1,1)]
