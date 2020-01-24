@@ -120,6 +120,6 @@ public class ExplodingMesh : MonoBehaviour
     private void Update()
     {
         RunShader();
-        //lerp += Time.deltaTime * 0.1f;
+        lerp += Time.deltaTime * 0.1f;
     }
 }
