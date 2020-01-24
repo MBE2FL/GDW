@@ -1,0 +1,105 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/RayMarchEssentialFunctions.hlsl"
+
+RWStructuredBuffer<float> _voxels;
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+float4x4 _invModelMats[MAX_RM_OBJS];
+int _primitiveTypes[MAX_RM_OBJS];
+float2 _combineOps[MAX_RM_OBJS];
+float4 _primitiveGeoInfo[MAX_RM_OBJS];
+float3 _volumeArea;
+
+//int width = 32, height = 32, length = 32;
+
+[numthreads(10,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float3 rayOrigin = 0;
+	int width = 10 * 5, height = 10 * 5, length = 10 * 5;
+    
+    // Fill voxels with values.
+    for (int y = 0; y < height; y++)
+    {
+        for (int z = 0; z < length; z++)
+        {
+            float fx = id.x / (width - 1.0f);
+            float fy = y / (height - 1.0f);
+            float fz = z / (length - 1.0f);
+            
+			//rayOrigin = float3(id.x, y, z);
+			rayOrigin = float3(fx, fy, fz) * _volumeArea;
+
+            int index = id.x + y * width + z * width * height;
+
+            _voxels[index] = map(rayOrigin);
+            
+            //if (abs(_voxels[index]) < 1.0)
+            //    _voxels[index] = 0.0;
+        }
+    }
+}
+
+
+float map(float3 p)
+	{
+		float scene = _maxDrawDist;
+        scene = 300.0;
+
+		float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+		float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+		float obj;
+		float obj2;
+
+		float csg;
+		float storedCSGs[MAX_CSG_CHILDREN];
+
+		float3 cell = float3(0.0, 0.0, 0.0);
+
+		// ######### Portal Monolith #########
+		pos = mul(_invModelMats[0], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[0];
+		obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
+
+		scene = opU(scene, obj);
+		// ######### Portal Monolith #########
+
+		// ######### Key Octahedron (Sub) #########
+		pos = mul(_invModelMats[1], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[1];
+		obj = sdOctahedronBound(pos.xyz, geoInfo.x);
+
+		scene = opSmoothSub(obj, scene, _combineOps[1].y);
+		// ######### Key Octahedron (Sub) #########
+
+		// ######### Key Sphere #########
+		pos = mul(_invModelMats[2], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[2];
+		obj = sdSphere(pos.xyz, geoInfo.x);
+
+		scene = opSmoothUnion(scene, obj, _combineOps[2].y);
+		// ######### Key Sphere #########
+
+		// ######### Key Torus #########
+		pos = mul(_invModelMats[3], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[3];
+		obj = sdTorus(pos.xyz, geoInfo.xy);
+
+		scene = opSmoothUnion(scene, obj, _combineOps[3].y);
+		// ######### Key Torus #########
+
+		// ######### Key Octahedron #########
+		pos = mul(_invModelMats[4], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[4];
+		obj = sdOctahedronBound(pos.xyz, geoInfo.x);
+
+		scene = opSmoothUnion(scene, obj, _combineOps[4].y);
+		// ######### Key Octahedron #########
+
+		return scene;
+	}

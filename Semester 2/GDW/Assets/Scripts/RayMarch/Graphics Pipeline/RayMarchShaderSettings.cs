@@ -14,10 +14,10 @@ public class RayMarchShaderSettings : ScriptableObject
 {
     [SerializeField]
     private List<ShaderKeywords> _keywords = new List<ShaderKeywords>();// The material keywords to disable for this shader.
-    [SerializeField]
-    private Shader _effectShader = null;
-    [SerializeField]
-    private string _shaderName;
+    //[SerializeField]
+    //private Shader _effectShader = null;
+    //[SerializeField]
+    //private string _shaderName;
 
 
 
@@ -52,14 +52,18 @@ public class RayMarchShaderSettings : ScriptableObject
 
     // Vectors
     [SerializeField]
+    [ColorUsage(true, true)]
     private Color _ambientColour = new Color(137.0f, 137.0f, 137.0f, 0.0f);
     [SerializeField]
+    [ColorUsage(true, true)]
     private Color _diffuseColour = new Color(130.0f, 130.0f, 130.0f, 0.0f);
     [SerializeField]
+    [ColorUsage(true, true)]
     private Color _specularColour = new Color(255.0f, 255.0f, 255.0f, 0.0f);
     [SerializeField]
     private Vector3 _lightConstants = new Vector3(0.2f, 0.2f, 2.0f);
     [SerializeField]
+    [ColorUsage(true, true)]
     private Color _rimLightColour = new Color(255.0f, 0.0f, 219.0f, 0.0f);
     [SerializeField]
     private Transform _sunLight;
@@ -121,6 +125,7 @@ public class RayMarchShaderSettings : ScriptableObject
     [Range(0.0f, 0.04f)]
     private float _fogInscattering = 0.0f;
     [SerializeField]
+    [ColorUsage(true, true)]
     private Color _fogColour = Color.grey;
 
     // TO-DO delete unsued hidden shaders
@@ -134,25 +139,25 @@ public class RayMarchShaderSettings : ScriptableObject
         }
     }
 
-    public Shader EffectShader
-    {
-        get
-        {
-            return _effectShader;
-        }
-    }
+    //public Shader EffectShader
+    //{
+    //    get
+    //    {
+    //        return _effectShader;
+    //    }
+    //}
 
-    public string ShaderName
-    {
-        get
-        {
-            return _shaderName;
-        }
-        set
-        {
-            _shaderName = value;
-        }
-    }
+    //public string ShaderName
+    //{
+    //    get
+    //    {
+    //        return _shaderName;
+    //    }
+    //    set
+    //    {
+    //        _shaderName = value;
+    //    }
+    //}
 
     public Texture2D ColourRamp
     {
