@@ -65,7 +65,7 @@ public class ExplodingMesh : MonoBehaviour
 
     private void RunShader()
     {
-        if (lerp > 0.999)
+        if (lerp > 0.999999)
         {
             mesh.triangles = triangles;
             mesh.vertices = vertices;
@@ -122,6 +122,6 @@ public class ExplodingMesh : MonoBehaviour
     private void Update()
     {
         RunShader();
-        lerp += Time.deltaTime * 0.1f;
+        lerp += Time.deltaTime * 0.5f;
     }
 }
