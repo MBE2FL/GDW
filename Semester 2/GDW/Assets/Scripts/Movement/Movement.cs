@@ -122,6 +122,11 @@ public class Movement : MonoBehaviour
             _currentState = _newState;
             _currentState.Entry(this, rb, transform, _moveable, _animator);
         }
+
+        if(transform.position.y < -10.0f)
+        {
+            transform.position = new Vector3(37, 0, -20);
+        }
     }
 
     private void FixedUpdate()
