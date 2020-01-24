@@ -17,6 +17,9 @@ public class RayMarchMesh : MonoBehaviour
 
     public bool meshify = false;
 
+    [SerializeField]
+    RayMarchShader _renderShader;
+
 
     void Start()
     {
@@ -332,8 +335,14 @@ public class RayMarchMesh : MonoBehaviour
             Destroy(gameObject);
         }
 
+
+
+        if (!_renderShader)
+            return;
+
+        RMObj[] rmObjs = _renderShader.RenderList.ToArray();
         // Get all ray march objects.
-        RMObj[] rmObjs = (RMObj[])FindObjectsOfType(typeof(RMObj));
+        //RMObj[] rmObjs = (RMObj[])FindObjectsOfType(typeof(RMObj));
         GameObject[] objs = new GameObject[rmObjs.Length];
 
         // Extract all neccessary info, and pack into float array.
@@ -451,7 +460,8 @@ public class RayMarchMesh : MonoBehaviour
             go.transform.localPosition = new Vector3(0, 0, 0);
             //go.transform.localPosition = new Vector3(0.0f, 4.0f, 0.0f);
             //go.transform.localPosition = new Vector3(x * 1.0f, y + 10.0f, z * 1.0f);
-            go.transform.localScale = new Vector3(.0323f, .0323f, .0323f);
+            //go.transform.localScale = new Vector3(.0323f, .0323f, .0323f);
+            go.transform.localScale = new Vector3(.102f, .102f, .102f);
 
             meshes.Add(go);
         }

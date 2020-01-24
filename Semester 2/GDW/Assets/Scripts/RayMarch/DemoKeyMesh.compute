@@ -62,27 +62,27 @@ float map(float3 p)
 		float3 cell = float3(0.0, 0.0, 0.0);
 
 		// ######### Portal Monolith #########
-		pos = mul(_invModelMats[4], float4(p, 1.0));
-		geoInfo = _primitiveGeoInfo[4];
+		pos = mul(_invModelMats[0], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[0];
 		obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);
 
 		scene = opU(scene, obj);
 		// ######### Portal Monolith #########
 
 		// ######### Key Octahedron (Sub) #########
-		pos = mul(_invModelMats[2], float4(p, 1.0));
-		geoInfo = _primitiveGeoInfo[2];
+		pos = mul(_invModelMats[1], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[1];
 		obj = sdOctahedronBound(pos.xyz, geoInfo.x);
 
-		scene = opSmoothSub(obj, scene, _combineOps[2].y);
+		scene = opSmoothSub(obj, scene, _combineOps[1].y);
 		// ######### Key Octahedron (Sub) #########
 
 		// ######### Key Sphere #########
-		pos = mul(_invModelMats[1], float4(p, 1.0));
-		geoInfo = _primitiveGeoInfo[1];
+		pos = mul(_invModelMats[2], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[2];
 		obj = sdSphere(pos.xyz, geoInfo.x);
 
-		scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+		scene = opSmoothUnion(scene, obj, _combineOps[2].y);
 		// ######### Key Sphere #########
 
 		// ######### Key Torus #########
@@ -94,11 +94,11 @@ float map(float3 p)
 		// ######### Key Torus #########
 
 		// ######### Key Octahedron #########
-		pos = mul(_invModelMats[0], float4(p, 1.0));
-		geoInfo = _primitiveGeoInfo[0];
+		pos = mul(_invModelMats[4], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[4];
 		obj = sdOctahedronBound(pos.xyz, geoInfo.x);
 
-		scene = opSmoothUnion(scene, obj, _combineOps[0].y);
+		scene = opSmoothUnion(scene, obj, _combineOps[4].y);
 		// ######### Key Octahedron #########
 
 		return scene;
