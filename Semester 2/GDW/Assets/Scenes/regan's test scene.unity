@@ -667,6 +667,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Final_Tutorial_Level_Paint
       objectReference: {fileID: 0}
+    - target: {fileID: -927199367670048503, guid: 91e8ab944c0593546a6f4213e2100212,
+        type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2534866581884222612, guid: 91e8ab944c0593546a6f4213e2100212,
+        type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 91e8ab944c0593546a6f4213e2100212, type: 3}
 --- !u!1001 &172064148

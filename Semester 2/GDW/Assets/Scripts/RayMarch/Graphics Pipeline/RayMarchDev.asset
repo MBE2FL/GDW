@@ -13,8 +13,6 @@ MonoBehaviour:
   m_Name: RayMarchDev
   m_EditorClassIdentifier: 
   _keywords: 
-  _effectShader: {fileID: 4800000, guid: 10aa08edd00600e468fbac7f0d9f11aa, type: 3}
-  _shaderName: Howdy
   _colourRamp: {fileID: 2800000, guid: 70b1b6bc55617f74bac81d47b62500e6, type: 3}
   _performanceRamp: {fileID: 2800000, guid: 243f1b7655336f447be92d1a4f8a4994, type: 3}
   _wood: {fileID: 0}
@@ -27,9 +25,9 @@ MonoBehaviour:
   _attenuationQuadratic: 0.001
   _ambientColour: {r: 0.7264151, g: 0.7264151, b: 0.7264151, a: 0}
   _diffuseColour: {r: 0.7075472, g: 0.7075472, b: 0.7075472, a: 0}
-  _specularColour: {r: 0.23487401, g: 1, b: 0, a: 0}
+  _specularColour: {r: 2, g: 2, b: 2, a: 0}
   _lightConstants: {x: 0.02, y: 0.2, z: 2}
-  _rimLightColour: {r: 0, g: 0.90351677, b: 1, a: 0}
+  _rimLightColour: {r: 0.18848166, g: 0, b: 3.9999995, a: 0}
   _sunLight: {fileID: 0}
   _penumbraFactor: 15
   _shadowMinDist: 0.05
