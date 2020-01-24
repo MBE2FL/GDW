@@ -7,6 +7,10 @@ using UnityEngine;
 public class RayMarchShader : MonoBehaviour
 {
     [SerializeField]
+    private Shader _effectShader = null;
+    [SerializeField]
+    private string _shaderName;
+    [SerializeField]
     RayMarchShaderSettings _settings;
     [SerializeField]
     List<RMObj> _renderList = new List<RMObj>();
@@ -45,7 +49,7 @@ public class RayMarchShader : MonoBehaviour
     {
         get
         {
-            return _settings.EffectShader;
+            return _effectShader;
         }
     }
 
@@ -61,7 +65,7 @@ public class RayMarchShader : MonoBehaviour
     {
         get
         {
-            return _settings.ShaderName;
+            return _shaderName;
         }
     }
 
