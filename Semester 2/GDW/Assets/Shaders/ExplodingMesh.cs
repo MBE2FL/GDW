@@ -65,44 +65,6 @@ public class ExplodingMesh : MonoBehaviour
 
     private void RunShader()
     {
-        ComputeBuffer buffer = new ComputeBuffer(data.Length, 16 * 4);
-        ComputeBuffer baseBuffer = new ComputeBuffer(baseData.Length, 16 * 4);
-
-        buffer.SetData(data);
-        baseBuffer.SetData(baseData);
-
-        int kernelHandle = shader.FindKernel("CSMain");
-        shader.SetBuffer(kernelHandle, "dataBuffer", buffer);
-        shader.SetFloat("t", lerp);
-
-        shader.Dispatch(kernelHandle, data.Length, 1, 1);
-        shader.SetBuffer(kernelHandle, "baseBuffer", baseBuffer);
-        shader.Dispatch(kernelHandle, baseData.Length, 1, 1);
-
-        //output = data;
-        buffer.GetData(output); ;
-        //buffer.Dispose();
-        //baseBuffer.Dispose();
-
-        int[] tri = new int[output.Length * 3];
-        for (int i = 0; i < tri.Length; i++)
-        {
-            tri[i] = i;
-        }
-        Vector3[] verts = new Vector3[mesh.triangles.Length];
-        int j = 0;
-        for (int i = 0; i < data.Length; i++)
-        {
-            verts[j] = new Vector3(output[i].GetRow(0).x, output[i].GetRow(0).y, output[i].GetRow(0).z);
-            j++;
-
-            verts[j] = new Vector3(output[i].GetRow(1).x, output[i].GetRow(1).y, output[i].GetRow(1).z);
-            j++;
-
-            verts[j] = new Vector3(output[i].GetRow(2).x, output[i].GetRow(2).y, output[i].GetRow(2).z);
-            j++;
-        }
-
         if (lerp > 0.999)
         {
             mesh.triangles = triangles;
@@ -110,6 +72,46 @@ public class ExplodingMesh : MonoBehaviour
         }
         else
         {
+            ComputeBuffer buffer = new ComputeBuffer(data.Length, 16 * 4);
+            ComputeBuffer baseBuffer = new ComputeBuffer(baseData.Length, 16 * 4);
+
+            buffer.SetData(data);
+            baseBuffer.SetData(baseData);
+
+            int kernelHandle = shader.FindKernel("CSMain");
+            shader.SetBuffer(kernelHandle, "dataBuffer", buffer);
+            shader.SetFloat("t", lerp);
+
+            shader.Dispatch(kernelHandle, data.Length, 1, 1);
+            shader.SetBuffer(kernelHandle, "baseBuffer", baseBuffer);
+            shader.Dispatch(kernelHandle, baseData.Length, 1, 1);
+
+            //output = data;
+            buffer.GetData(output); ;
+            //buffer.Dispose();
+            //baseBuffer.Dispose();
+
+            int[] tri = new int[output.Length * 3];
+            for (int i = 0; i < tri.Length; i++)
+            {
+                tri[i] = i;
+            }
+            Vector3[] verts = new Vector3[mesh.triangles.Length];
+            int j = 0;
+            for (int i = 0; i < data.Length; i++)
+            {
+                verts[j] = new Vector3(output[i].GetRow(0).x, output[i].GetRow(0).y, output[i].GetRow(0).z);
+                j++;
+
+                verts[j] = new Vector3(output[i].GetRow(1).x, output[i].GetRow(1).y, output[i].GetRow(1).z);
+                j++;
+
+                verts[j] = new Vector3(output[i].GetRow(2).x, output[i].GetRow(2).y, output[i].GetRow(2).z);
+                j++;
+            }
+
+
+
             mesh.vertices = verts;
             mesh.triangles = tri;
 
