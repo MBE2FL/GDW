@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: c69b1a17bbcca5845b01003f8e676e50
+guid: bc334edf71c6d29488b449ef9cbc63c5
 ModelImporter:
   serializedVersion: 19300
   internalIDToNameTable:
@@ -39,7 +39,7 @@ ModelImporter:
       takeName: mixamo.com
       internalID: 0
       firstFrame: 0
-      lastFrame: 29
+      lastFrame: 28
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -121,7 +121,7 @@ ModelImporter:
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
-  avatarSetup: 1
+  avatarSetup: 0
   additionalBone: 0
   userData: 
   assetBundleName: 

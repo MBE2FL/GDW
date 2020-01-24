@@ -24,7 +24,7 @@ public class PushPullState : IPlayerState
         }
     }
 
-    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable)
+    public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animator)
     {
         _movement = movement;
         _rb = rb;

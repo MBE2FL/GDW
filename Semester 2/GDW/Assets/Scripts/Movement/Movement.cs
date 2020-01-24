@@ -17,6 +17,7 @@ public class Movement : MonoBehaviour
     Vector3 rayPos;
     Vector3 otherNormal;
     Moveable _moveable;
+    Animator _animator;
 
     private float angle = 0.0f;
     //private float mousePosX = 0.0f;
@@ -85,8 +86,8 @@ public class Movement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         _moveable = GetComponent<Moveable>();
-
-        _currentState.Entry(this, rb, transform, _moveable);
+        _animator = GetComponent<Animator>();
+        _currentState.Entry(this, rb, transform, _moveable, _animator);
     }
 
     void doCursor()
@@ -119,7 +120,7 @@ public class Movement : MonoBehaviour
         else
         {
             _currentState = _newState;
-            _currentState.Entry(this, rb, transform, _moveable);
+            _currentState.Entry(this, rb, transform, _moveable, _animator);
         }
     }
 
