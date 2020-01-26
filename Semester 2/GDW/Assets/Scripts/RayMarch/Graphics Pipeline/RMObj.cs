@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.AnimatedValues;
 #endif
+using System.Linq;
 
 public enum AlterationTypes
 {
@@ -38,6 +40,8 @@ public enum BoundingShapes
     Box
 }
 
+
+
 public abstract class RMObj : MonoBehaviour
 {
     [SerializeField]
@@ -71,6 +75,11 @@ public abstract class RMObj : MonoBehaviour
     protected BoundingShapes _boundShape = BoundingShapes.Sphere;
     [SerializeField]
     protected Vector4 _boundGeoInfo = Vector4.one;
+
+    [SerializeField]
+    protected List<RayMarchShader> _shaderList = new List<RayMarchShader>();
+
+    protected event System.Action<RayMarchShader, RMObj> test;
 
     public bool IsPrim
     {
@@ -180,6 +189,51 @@ public abstract class RMObj : MonoBehaviour
         }
     }
 
+    public List<RayMarchShader> ShaderList
+    {
+        get
+        {
+            return _shaderList;
+        }
+    }
+
+    public void AddToShaderList(RayMarchShader shader)
+    {
+        _shaderList.Add(shader);
+    }
+
+    public void removeFromShaderList(RayMarchShader shader)
+    {
+        // Remove this object from the shader.
+        shader.removeFromRenderList(this);
+
+        // Remove the shader from this object.
+        int index =_shaderList.IndexOf(shader);
+        _shaderList[index] = _shaderList[_shaderList.Count - 1];
+        _shaderList.RemoveAt(_shaderList.Count - 1);
+    }
+
+    public void removeFromShaderList(int index)
+    {
+        // Remove this object from the shader.
+        _shaderList[index].removeFromRenderList(this);
+
+        // Remove the shader from this object.
+        _shaderList[index] = _shaderList[_shaderList.Count - 1];
+        _shaderList.RemoveAt(_shaderList.Count - 1);
+    }
+
+    public void removeAllFromShaderList()
+    {
+        // Remove this object from all the shaders.
+        foreach (RayMarchShader shader in _shaderList)
+        {
+            shader.removeFromRenderList(this);
+        }
+
+        // Remove all the shaders from this object.
+        _shaderList.Clear();
+    }
 
     private void Reset()
     {
@@ -212,6 +266,7 @@ public class RMObjEditor : Editor
     private SerializedProperty _static;
     private SerializedProperty _combineOpType;
     private SerializedProperty _combineSmoothness;
+    private SerializedProperty _shaderList;
 
     // Alteration variables
     private List<SerializedProperty> _alts = new List<SerializedProperty>(5);
@@ -228,12 +283,15 @@ public class RMObjEditor : Editor
     private int _selectedShaderIndex = 0;
     private string[] _shaderNames;
 
+    AnimBool _showShaderList;
+
     protected virtual void OnEnable()
     {
         _drawOrder = serializedObject.FindProperty("_drawOrder");
         _static = serializedObject.FindProperty("_static");
         _combineOpType = serializedObject.FindProperty("_combineOpType");
         _combineSmoothness = serializedObject.FindProperty("_combineSmoothness");
+        _shaderList = serializedObject.FindProperty("_shaderList");
 
         // Alteration stuff
         _displaceFormula = serializedObject.FindProperty("_displaceFormula");
@@ -248,6 +306,9 @@ public class RMObjEditor : Editor
         _boundGeoInfo = serializedObject.FindProperty("_boundGeoInfo");
 
         _rayMarcher = RayMarcher.Instance;
+
+        _showShaderList = new AnimBool(true);
+        _showShaderList.valueChanged.AddListener(Repaint);
     }
 
     public override void OnInspectorGUI()
@@ -258,10 +319,15 @@ public class RMObjEditor : Editor
 
         serializedObject.Update();
 
-        GUIContent label = new GUIContent("Shader Options", "All ray marching shaders you can add this object to.");
+
+        GUIContent label = new GUIContent("Shader List", "");
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
         // Retrieve all the ray march shaders, and display them as options to be added to.
         List<RayMarchShader> shaders = _rayMarcher.Shaders;
+        shaders = shaders.Except(rmObj.ShaderList).ToList();
+        label.text = "Shader Options";
+        label.tooltip = "All ray marching shaders you can add this object to.";
 
         if (shaders.Count > 0)
         {
@@ -277,13 +343,66 @@ public class RMObjEditor : Editor
 
             if (GUILayout.Button("Add To Shader"))
             {
-                shaders[_selectedShaderIndex].RenderList.Add(rmObj);
+                // Add to object's shader list.
+                rmObj.AddToShaderList(shaders[_selectedShaderIndex]);
+
+                // Add to shader's render list.
+                //shaders[_selectedShaderIndex].RenderList.Add(rmObj);
+                shaders[_selectedShaderIndex].AddToRenderList(rmObj);
             }
         }
         else
         {
+            _shaderNames = new string[1] { "No Shaders Available" };
             _selectedShaderIndex = EditorGUILayout.Popup(label, _selectedShaderIndex, _shaderNames);
         }
+
+        EditorGUILayout.Space(4.0f);
+        if (GUILayout.Button("Remove From All Shaders"))
+        {
+            rmObj.removeAllFromShaderList();
+        }
+        EditorGUILayout.Space(4.0f);
+
+        // Display all shaders in this object's shader list.
+        label.tooltip = "";
+        _showShaderList.target = EditorGUILayout.ToggleLeft("Show/Hide Shader List", _showShaderList.target);
+        if (EditorGUILayout.BeginFadeGroup(_showShaderList.faded))
+        {
+            shaders = rmObj.ShaderList;
+            Rect r = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            Rect shaderRect;
+
+            for (int i = 0; i < shaders.Count; ++i)
+            {
+                shaderRect = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+                label.text = shaders[i].ShaderName;
+                EditorGUILayout.LabelField(label, EditorStyles.centeredGreyMiniLabel);
+                EditorGUILayout.Space(2.0f);
+
+                label.text = "Draw Order";
+                label.tooltip = "The order in which this object will be placed in the shader.";
+                EditorGUILayout.PropertyField(_drawOrder, label);
+                EditorGUILayout.Space(2.0f);
+                
+                if (GUILayout.Button("Remove From Shader"))
+                {
+                    rmObj.removeFromShaderList(i);
+                    break;
+                }
+                EditorGUILayout.Space(1.0f);
+
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+        EditorGUILayout.EndFadeGroup();
+
+        EditorGUILayout.Space(10.0f);
+
+
 
 
         label.text = "Draw Order";

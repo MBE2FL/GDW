@@ -61,6 +61,30 @@ public class RayMarchShader : MonoBehaviour
         }
     }
 
+    public void AddToRenderList(RMObj rmObj)
+    {
+        // Check if the object is not already in the render list.
+        if (!_renderList.Contains(rmObj))
+        {
+            // Add the object to the render list, and sort the list based on draw order.
+            _renderList.Add(rmObj);
+            _renderList.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
+        }
+    }
+
+    public void removeFromRenderList(RMObj rmObj)
+    {
+        int index = _renderList.IndexOf(rmObj);
+
+        // Check if the object is in the list, if so then remove it.
+        if (index > -1)
+        {
+            _renderList[index] = _renderList[_renderList.Count - 1];
+            _renderList.RemoveAt(index);
+        }
+        
+    }
+
     public string ShaderName
     {
         get
