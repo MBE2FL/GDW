@@ -1,0 +1,2188 @@
+//float4x4 unity_ObjectToWorld;
+//float4x4 unity_MatrixVP;
+//float4x4 UNITY_MATRIX_MVP;
+
+// Floats
+float _totalTime;
+
+// Matrices
+float4x4 _FrustumCornersES;
+float4x4 _CameraInvViewMatrix;
+
+// Vectors
+float4 _MainTex_TexelSize;
+float4 _CameraPos;
+
+// Textures
+sampler2D _MainTex;
+sampler2D _CameraDepthTexture;
+sampler2D _colourRamp;
+sampler2D _performanceRamp;
+
+
+// ######### Light Variables #########
+// Floats
+float _specularExp;
+float _attenuationConstant;
+float _attenuationLinear;
+float _attenuationQuadratic;
+
+// Vectors
+float3 _LightDir;
+float3 _lightPos;
+float3 _ambientColour;
+float3 _diffuseColour;
+float3 _specularColour;
+float3 _lightConstants; // .x: ambient, .y: diffuse, .z: specular
+float3 _rimLightColour;
+
+// Textures
+
+// ######### Light Variables #########
+
+
+// ######### Shadow Variables #########
+float _penumbraFactor;
+float _shadowMinDist;
+float _shadowIntensity;
+// ######### Shadow Variables #########
+
+
+// ######### Ray March Variables #########
+int _maxSteps;
+float _maxDrawDist;
+// ######### Ray March Variables #########
+
+// ######### Reflection Variables #########
+int _reflectionCount;
+float _reflectionIntensity;
+float _envReflIntensity;
+samplerCUBE _skybox;
+// ######### Reflection Variables #########
+
+// ######### Refraction Variables #########
+float2 _refractInfo[32];
+// ######### Refraction Variables #########
+
+// ######### Ambient Occlusion Variables #########
+int _aoMaxSteps;
+float _aoStepSize;
+float _aoIntensity;
+// ######### Ambient Occlusion Variables #########
+
+// ######### Fog Variables #########
+float _fogExtinction;
+float _fogInscattering;
+float3 _fogColour;
+// ######### Fog Variables #########
+
+// ######### Vignette Variables #########
+float _vignetteIntensity;
+// ######### Vignette Variables #########
+
+
+/// ######### RM OBJS Information #########
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+float4x4 _invModelMats[MAX_RM_OBJS];
+//int _primIndices;
+float4 _rm_colours[MAX_RM_OBJS];
+int _primitiveTypes[MAX_RM_OBJS];
+float2 _combineOps[MAX_RM_OBJS];
+float4 _primitiveGeoInfo[MAX_RM_OBJS];
+float4 _reflInfo[MAX_RM_OBJS];
+float4 _altInfo[MAX_RM_OBJS];
+
+//int _csgNodesPerRoot[MAX_CSG_CHILDREN];
+float4 _bufferedCSGs[MAX_CSG_CHILDREN];
+float4 _combineOpsCSGs[MAX_CSG_CHILDREN];
+//int _totalRootCSGs;
+
+float4 _boundGeoInfo[MAX_RM_OBJS];
+/// ######### RM OBJS Information #########
+
+sampler2D _wood;
+sampler2D _brick;
+
+
+struct VertexInput
+{
+    float4 pos : POSITION;
+    float2 uv : TEXCOORD0;
+};
+
+struct VertexOutput
+{
+    float4 pos : SV_POSITION;
+    float2 uv : TEXCOORD0;
+    float3 ray : TEXCOORD1;
+};
+
+struct PixelOutput
+{
+    float4 sceneCol : SV_Target0;
+    float distMap : SV_Target1;
+};
+
+struct rmPixel
+{
+    float dist;
+    float4 colour;
+    float4 reflInfo;
+    float2 refractInfo;
+    int texID;
+    float totalDist;
+};
+
+float distBuffer[MAX_RM_OBJS];
+
+struct reflectInfo
+{
+    float3 pos;
+    float3 normal;
+    float3 dir;
+    rmPixel distField;
+};
+
+
+/// ######### Forward Declarations #########
+float dot2(float2 v);
+
+float dot2(float3 v);
+
+float sdSphere(float3 p, float s);
+
+float sdBox(float3 p, float3 b);
+
+float sdRoundBox(float3 pos, float3 geoInfo, float roundness);
+
+float sdTorus(float3 p, float2 t);
+
+float sdCappedTorus(float3 pos, float2 sc, float ra, float rb);
+
+float sdLink(float3 pos, float le, float r1, float r2);
+
+float sdCylinder(float3 p, float h, float r);
+
+float sdCappedCylinder(float3 pos, float h, float r);
+
+float sdCappedCylinder(float3 pos, float3 a, float3 b, float r);
+
+float sdRoundedCylinder(float3 pos, float ra, float rb, float h);
+
+float sdCone(float3 pos, float2 c);
+
+float sdCappedCone(float3 pos, float h, float r1, float r2);
+
+float sdRoundCone(float3 pos, float r1, float r2, float h);
+
+float sdPlane(float3 pos, float4 n);
+
+float sdHexagonalPrism(float3 pos, float2 h);
+
+float sdTriangularPrism(float3 pos, float2 h);
+
+float sdCapsule(float3 pos, float3 a, float3 b, float r);
+
+float sdVerticalCapsule(float3 pos, float h, float r);
+
+float sdSolidAngle(float3 pos, float2 c, float ra);
+
+float sdEllipsoid(float3 pos, float3 r);
+
+float sdOctahedron(float3 pos, float s);
+
+float sdOctahedronBound(float3 pos, float s);
+
+float sdTriangle(float3 pos, float3 a, float3 b, float3 c);
+
+float sdQuad(float3 pos, float3 a, float3 b, float3 c, float3 d);
+
+void opElongate1D(inout float3 pos, float3 h);
+
+float4 opElongate(float3 pos, float3 h);
+
+void opRound(inout float dist, float rad);
+
+float4 opOnion(float3 pos, float thickness);
+
+void opSymX(inout float3 pos, float2 c);
+
+void opSymXZ(inout float3 pos, float3 c);
+
+void opRepXZ(inout float3 pos, float2 domain, inout float2 cell);
+
+void opRepLim(inout float3 pos, float3 c, float3 l);
+
+void opDisplace(float3 pos, inout float dist, float3 c);
+
+void opTwist(inout float3 pos, float k);
+
+void opCheapBend(inout float3 pos, float k);
+/// ######### Forward Declarations #########
+
+
+/// ######### Conditional Functions #########
+float4 when_eq_float4(float4 x, float4 y)
+{
+    return 1.0 - abs(sign(x - y));
+}
+
+float when_eq_float(float x, float y)
+{
+    return 1.0 - abs(sign(x - y));
+}
+
+int when_eq_int(int x, int y)
+{
+    return 1 - abs(sign(x - y));
+}
+
+int when_gt_int(int x, int y)
+{
+    return max(sign(x - y), 0);
+}
+
+float when_gt_float(float x, float y)
+{
+    return max(sign(x - y), 0.0);
+}
+
+float4 when_gt_float4(float4 x, float4 y)
+{
+    return max(sign(x - y), 0.0);
+}
+
+int4 when_gt_int(int4 x, int4 y)
+{
+    return max(sign(x - y), 0);
+}
+
+float when_lt_float(float x, float y)
+{
+    return max(sign(y - x), 0);
+}
+
+float4 when_lt_float(float4 x, float4 y)
+{
+    return max(sign(y - x), 0.0);
+}
+
+int4 when_lt_int(int4 x, int4 y)
+{
+    return max(sign(y - x), 0);
+}
+
+float when_ge_float(float x, float y)
+{
+    return 1.0 - when_lt_float(x, y);
+}
+
+float4 when_ge_float(float4 x, float4 y)
+{
+    return 1.0 - when_lt_float(x, y);
+}
+
+int4 when_ge_int(int4 x, int4 y)
+{
+    return 1 - when_lt_float(x, y);
+}
+
+float when_le_float(float x, float y)
+{
+    return 1.0 - when_gt_float(x, y);
+}
+/// ######### Conditional Functions #########
+
+
+/// ######### Signed Distance Functions #########
+// Torus
+// t.x: diameter
+// t.y: thickness
+//float sdTorus(float3 p, float2 t)
+//{
+//    float2 q = float2(length(p.xz) - t.x, p.y);
+//    return length(q) - t.y;
+//}
+
+//// Box
+//// b: size of box in x/y/z
+//float sdBox(float3 p, float3 b)
+//{
+//    float3 d = abs(p) - b;
+    
+//    return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
+//}
+
+//// Sphere
+//// s: size/diameter
+//float sdSphere(float3 p, float s)
+//{
+//    return length(p) - s;
+//}
+
+//// Cylinder
+//// h:
+//// r:
+//float sdCylinder(float3 p, float h, float r)
+//{
+//    float2 d = abs(float2(length(p.xz), p.y)) - float2(h, r);
+//    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+//}
+
+//// Tetrahedron
+//float sdTetra(float3 p)
+//{
+//    float3 a1 = float3(1, 1, 1) * 2;
+//    float3 a2 = float3(-1, -1, 1) * 2;
+//    float3 a3 = float3(1, -1, -1) * 2;
+//    float3 a4 = float3(-1, 1, -1) * 2;
+
+//    float3 c;
+//    int n = 0;
+//    float dist, d;
+//    float scale = 2.0;
+
+//    while (n < 15)
+//    {
+//        c = a1;
+//        dist = length(p - a1);
+
+//        d = length(p - a2);
+//        if (d < dist)
+//        {
+//            c = a2;
+//            dist = d;
+//        }
+
+//        d = length(p - a3);
+//        if (d < dist)
+//        {
+//            c = a3;
+//            dist = d;
+//        }
+
+//        d = length(p - a4);
+//        if (d < dist)
+//        {
+//            c = a4;
+//            dist = d;
+//        }
+
+//        p = (scale * p) - (c * (scale - 1.0));
+//        n++;
+//    }
+
+//    return length(p) * pow(scale, float(-n));
+//}
+
+//float sdMandelbulb(float3 p, float2 geoInfo)
+//{
+//    float3 z = p;
+//    float dr = 1.0;
+//    float r = 0.0;
+
+//    float power = geoInfo.y;
+//    int iter = geoInfo.x;
+
+//    for (int i = 0; i < iter; ++i)
+//    {
+//        r = length(z);
+
+//        if (r > 1.5)
+//            break;
+
+//        // Convert to polar coordinates
+//        float theta = acos(z.z / r);
+//        float phi = atan2(z.y, z.x);
+//        dr = pow(r, power - 1.0) * power * dr + 1.0;
+
+//        // Scale and rotate the point
+//        float zr = pow(r, power);
+//        theta *= power;
+//        phi *= power;
+
+//        // Convert back to cartesian coordinates
+//        z = zr * float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+//        z += p;
+//    }
+
+//    return 0.5 * log(r) * r / dr;
+//}
+
+// Union
+// .x: distance
+float opU(float d1, float d2)
+{
+    return min(d1, d2);
+}
+
+float opUAbs(float d1, float d2)
+{
+    //if (abs(d1) > abs(d2))
+    //    d1 = d2;
+
+    //return d1;
+
+    return abs(d1) > abs(d2) ? d2 : d1;
+
+    //return min(abs(d1), abs(d2));
+}
+
+// Subtraction
+float opS(float d1, float d2)
+{
+    //return max(-d1, d2);
+    
+    //d1.dist = max(-d1.dist, d2.dist);
+
+    return max(-d1, d2);
+}
+
+// Intersection
+float opI(float d1, float d2)
+{
+    //return max(d1, d2);
+
+    //d1.dist = max(d1.dist, d2.dist);
+
+    return max(d1, d2);
+}
+
+// Smooth Union
+float opSmoothUnion(float d1, float d2, float k)
+{
+    float h = clamp(0.5 + (0.5 * (d2 - d1) / k), 0.0, 1.0);
+
+    //d1.dist = lerp(d2.dist, d1.dist, h) - (k * h * (1.0 - h));
+
+    return lerp(d2, d1, h) - (k * h * (1.0 - h));;
+}
+
+// Smooth Subtraction
+float opSmoothSub(float d1, float d2, float k)
+{
+    float h = clamp(0.5 - (0.5 * (d2 + d1) / k), 0.0, 1.0);
+
+    //d1 = lerp(d2, -d1, h) + (k * h * (1.0 - h));
+
+    return lerp(d2, -d1, h) + (k * h * (1.0 - h));;
+}
+
+// Smooth Intersection
+float opSmoothInt(float d1, float d2, float k)
+{
+    float h = clamp(0.5 - (0.5 * (d2 - d1) / k), 0.0, 1.0);
+
+    //d1.dist = lerp(d2.dist, d1.dist, h) + (k * h * (1.0 - h));
+
+    return lerp(d2, d1, h) + (k * h * (1.0 - h));;
+}
+
+//float opRep(float3 p, float3 c)
+//{
+//    float3 q = fmod(p, c) - 0.5 * c;
+
+//    //q = p;
+//    //q.xy = fmod(p.xy, 2.0) - float2(0.5, 0.5) * 2.0;
+
+//    return sdSphere(q, 0.5);
+//}
+
+
+// Union for materials
+// .x: distance
+rmPixel opUMat(rmPixel d1, rmPixel d2)
+{
+    //d1.dist = min(d1.dist, d2.dist);
+
+    //float d1Weight = when_le_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+
+    //d1.dist = (d1.dist * d1Weight) + (d2.dist * (1.0 - d2Weight));
+    //d1.colour = (d1.colour * d1Weight) + (d2.colour * (1.0 - d2Weight));
+    
+    d1.colour = d1.dist < d2.dist ? d1.colour : d2.colour;
+    d1.reflInfo = d1.dist < d2.dist ? d1.reflInfo : d2.reflInfo;
+    d1.refractInfo = d1.dist < d2.dist ? d1.refractInfo : d2.refractInfo;
+    d1.dist = d1.dist < d2.dist ? d1.dist : d2.dist;
+
+    //if (d1.dist > d2.dist)
+    //    d1 = d2;
+
+    return d1;
+}
+
+rmPixel opUAbsMat(rmPixel d1, rmPixel d2)
+{
+    //if (abs(d1) > abs(d2))
+    //    d1 = d2;
+
+    d1.colour = abs(d1.dist) > abs(d2.dist) ? d2.colour : d1.colour;
+    d1.reflInfo = abs(d1.dist) > abs(d2.dist) ? d2.reflInfo : d1.reflInfo;
+    d1.refractInfo = abs(d1.dist) > abs(d2.dist) ? d2.refractInfo : d1.refractInfo;
+    d1.dist = abs(d1.dist) > abs(d2.dist) ? d2.dist : d1.dist;
+
+    return d1;
+}
+
+// Subtraction for materials
+rmPixel opSMat(rmPixel d1, rmPixel d2)
+{
+    //return max(-d1, d2);
+    
+    //d1.dist = max(-d1.dist, d2.dist);;
+
+    float d1Weight = when_gt_float(-d1.dist, d2.dist);
+    float d2Weight = 1.0 - d1Weight;
+
+    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
+    d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
+    d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
+
+    //if (-d1.dist < d2.dist)
+    //{
+    //    d1 = d2;
+    //}
+
+    return d1;
+}
+
+// Intersection for materials
+rmPixel opIMat(rmPixel d1, rmPixel d2)
+{
+    //return max(d1, d2);
+
+
+    float d1Weight = when_gt_float(d1.dist, d2.dist);
+    float d2Weight = 1.0 - d1Weight;
+
+    d1.dist = (d1Weight * d1.dist) + (d2Weight * d2.dist);
+    d1.colour = (d1Weight * d1.colour) + (d2Weight * d2.colour);
+    d1.reflInfo = (d1Weight * d1.reflInfo) + (d2Weight * d2.reflInfo);
+    d1.refractInfo = (d1Weight * d1.refractInfo) + (d2Weight * d2.refractInfo);
+
+    //d1.dist = max(d1.dist, d2.dist);
+
+
+    //if (d1.dist <= d2.dist)
+    //{
+    //    d1 = d2;
+    //}
+
+    return d1;
+}
+
+// Smooth Union for materials
+rmPixel opSmoothUnionMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 + (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
+
+    d1.dist = lerp(d2.dist, d1.dist, h) - (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    //float d1Weight = when_lt_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+    //if (d1.dist > d2.dist) // TO-DO Check with textured obj
+    //    d1.texID = d2.texID;
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
+// Smooth Subtraction for materials
+rmPixel opSmoothSubMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 - (0.5 * (d2.dist + d1.dist) / k), 0.0, 1.0);
+
+    d1.dist = lerp(d2.dist, -d1.dist, h) + (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    //float d1Weight = when_gt_float(d1.dist, d2.dist);
+    //float d2Weight = 1.0 - d1Weight;
+    //d1.texID = (d1Weight * d1.texID) + (d2Weight * d2.texID);
+
+    //if (d1.dist < d2.dist) // TO-DO Check with textured obj
+    //    d1.texID = d2.texID;
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
+// Smooth Intersection for materials
+rmPixel opSmoothIntMat(rmPixel d1, rmPixel d2, float k)
+{
+    float h = clamp(0.5 - (0.5 * (d2.dist - d1.dist) / k), 0.0, 1.0);
+
+    //d1.dist = lerp(d2.dist, d1.dist, h) + (k * h * (1.0 - h));
+
+    d1.dist = lerp(d2.dist, d1.dist, h) + (k * h * (1.0 - h));
+    d1.colour = lerp(d2.colour, d1.colour, h);
+
+    float reflWeight = step(h, 0.5);
+    d1.reflInfo = (1.0 - reflWeight) * d1.reflInfo + reflWeight * d2.reflInfo;
+    d1.refractInfo = (1.0 - reflWeight) * d1.refractInfo + reflWeight * d2.refractInfo;
+
+    return d1;
+}
+
+
+float cheapMap(float3 p)
+{
+	float scene = _maxDrawDist;
+
+	float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+	float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+	float radius = 0.0;
+
+	float obj;
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[0], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[0];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[0].y);
+	// ######### New Game Object #########
+
+	// ######### New Game Object (1) #########
+	pos = mul(_invModelMats[1], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[1];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+	// ######### New Game Object (1) #########
+
+	// ######### New Game Object (2) #########
+	pos = mul(_invModelMats[2], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[2];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[2].y);
+	// ######### New Game Object (2) #########
+
+	// ######### New Game Object (3) #########
+	pos = mul(_invModelMats[3], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[3];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[3].y);
+	// ######### New Game Object (3) #########
+
+	// ######### New Game Object (4) #########
+	pos = mul(_invModelMats[4], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[4];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[4].y);
+	// ######### New Game Object (4) #########
+
+	// ######### New Game Object (5) #########
+	pos = mul(_invModelMats[5], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[5];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[5].y);
+	// ######### New Game Object (5) #########
+
+	// ######### New Game Object (6) #########
+	pos = mul(_invModelMats[6], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[6];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[6].y);
+	// ######### New Game Object (6) #########
+
+	// ######### New Game Object (7) #########
+	pos = mul(_invModelMats[7], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[7];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[7].y);
+	// ######### New Game Object (7) #########
+
+	// ######### New Game Object (8) #########
+	pos = mul(_invModelMats[8], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[8];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[8].y);
+	// ######### New Game Object (8) #########
+
+	// ######### New Game Object (9) #########
+	pos = mul(_invModelMats[9], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[9];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[9].y);
+	// ######### New Game Object (9) #########
+
+	// ######### New Game Object (10) #########
+	pos = mul(_invModelMats[10], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[10];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[10].y);
+	// ######### New Game Object (10) #########
+
+	// ######### New Game Object (11) #########
+	pos = mul(_invModelMats[11], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[11];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[11].y);
+	// ######### New Game Object (11) #########
+
+	// ######### New Game Object (12) #########
+	pos = mul(_invModelMats[12], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[12];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[12].y);
+	// ######### New Game Object (12) #########
+
+	// ######### New Game Object (13) #########
+	pos = mul(_invModelMats[13], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[13];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[13].y);
+	// ######### New Game Object (13) #########
+
+	// ######### New Game Object (14) #########
+	pos = mul(_invModelMats[14], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[14];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[14].y);
+	// ######### New Game Object (14) #########
+
+	// ######### New Game Object (15) #########
+	pos = mul(_invModelMats[15], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[15];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[15].y);
+	// ######### New Game Object (15) #########
+
+	// ######### New Game Object (16) #########
+	pos = mul(_invModelMats[16], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[16];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[16].y);
+	// ######### New Game Object (16) #########
+
+	// ######### New Game Object (17) #########
+	pos = mul(_invModelMats[17], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[17];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[17].y);
+	// ######### New Game Object (17) #########
+
+	// ######### New Game Object (18) #########
+	pos = mul(_invModelMats[18], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[18];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[18].y);
+	// ######### New Game Object (18) #########
+
+	// ######### New Game Object (19) #########
+	pos = mul(_invModelMats[19], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[19];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[19].y);
+	// ######### New Game Object (19) #########
+
+	// ######### New Game Object (20) #########
+	pos = mul(_invModelMats[20], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[20];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[20].y);
+	// ######### New Game Object (20) #########
+
+	// ######### New Game Object (21) #########
+	pos = mul(_invModelMats[21], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[21];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[21].y);
+	// ######### New Game Object (21) #########
+
+	// ######### New Game Object (22) #########
+	pos = mul(_invModelMats[22], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[22];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[22].y);
+	// ######### New Game Object (22) #########
+
+	// ######### New Game Object (23) #########
+	pos = mul(_invModelMats[23], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[23];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[23].y);
+	// ######### New Game Object (23) #########
+
+	// ######### New Game Object (24) #########
+	pos = mul(_invModelMats[24], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[24];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[24].y);
+	// ######### New Game Object (24) #########
+
+	// ######### New Game Object (25) #########
+	pos = mul(_invModelMats[25], float4(p, 1.0));
+	geoInfo = _boundGeoInfo[25];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+
+	scene = opSmoothUnion(scene, obj, _combineOps[25].y);
+	// ######### New Game Object (25) #########
+
+	return scene;
+    //<Insert Cheap Map Here>
+}
+
+/// Distance field function.
+/// The distance field represents the closest distance to the surface of any object
+/// we put in the scene. If the given point (point p) is inside of any object, we return an negative answer.
+/// Return.x: Distance field value.
+/// Return.y: Colour of closest object (0 - 1).
+float map(float3 p)
+{
+	float scene = _maxDrawDist;
+
+	float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+	float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+	float obj;
+	float obj2;
+
+	float csg;
+	float storedCSGs[MAX_CSG_CHILDREN];
+
+	float3 cell = float3(0.0, 0.0, 0.0);
+
+	// ######### New Game Object #########
+	pos = mul(_invModelMats[0], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[0];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[0] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[0].y);
+	// ######### New Game Object #########
+
+	// ######### New Game Object (1) #########
+	pos = mul(_invModelMats[1], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[1];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[1] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+	// ######### New Game Object (1) #########
+
+	// ######### New Game Object (2) #########
+	pos = mul(_invModelMats[2], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[2];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[2] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[2].y);
+	// ######### New Game Object (2) #########
+
+	// ######### New Game Object (3) #########
+	pos = mul(_invModelMats[3], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[3];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[3] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[3].y);
+	// ######### New Game Object (3) #########
+
+	// ######### New Game Object (4) #########
+	pos = mul(_invModelMats[4], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[4];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[4] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[4].y);
+	// ######### New Game Object (4) #########
+
+	// ######### New Game Object (5) #########
+	pos = mul(_invModelMats[5], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[5];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[5] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[5].y);
+	// ######### New Game Object (5) #########
+
+	// ######### New Game Object (6) #########
+	pos = mul(_invModelMats[6], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[6];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[6] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[6].y);
+	// ######### New Game Object (6) #########
+
+	// ######### New Game Object (7) #########
+	pos = mul(_invModelMats[7], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[7];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[7] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[7].y);
+	// ######### New Game Object (7) #########
+
+	// ######### New Game Object (8) #########
+	pos = mul(_invModelMats[8], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[8];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[8] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[8].y);
+	// ######### New Game Object (8) #########
+
+	// ######### New Game Object (9) #########
+	pos = mul(_invModelMats[9], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[9];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[9] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[9].y);
+	// ######### New Game Object (9) #########
+
+	// ######### New Game Object (10) #########
+	pos = mul(_invModelMats[10], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[10];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[10] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[10].y);
+	// ######### New Game Object (10) #########
+
+	// ######### New Game Object (11) #########
+	pos = mul(_invModelMats[11], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[11];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[11] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[11].y);
+	// ######### New Game Object (11) #########
+
+	// ######### New Game Object (12) #########
+	pos = mul(_invModelMats[12], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[12];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[12] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[12].y);
+	// ######### New Game Object (12) #########
+
+	// ######### New Game Object (13) #########
+	pos = mul(_invModelMats[13], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[13];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[13] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[13].y);
+	// ######### New Game Object (13) #########
+
+	// ######### New Game Object (14) #########
+	pos = mul(_invModelMats[14], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[14];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[14] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[14].y);
+	// ######### New Game Object (14) #########
+
+	// ######### New Game Object (15) #########
+	pos = mul(_invModelMats[15], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[15];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[15] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[15].y);
+	// ######### New Game Object (15) #########
+
+	// ######### New Game Object (16) #########
+	pos = mul(_invModelMats[16], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[16];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[16] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[16].y);
+	// ######### New Game Object (16) #########
+
+	// ######### New Game Object (17) #########
+	pos = mul(_invModelMats[17], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[17];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[17] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[17].y);
+	// ######### New Game Object (17) #########
+
+	// ######### New Game Object (18) #########
+	pos = mul(_invModelMats[18], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[18];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[18] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[18].y);
+	// ######### New Game Object (18) #########
+
+	// ######### New Game Object (19) #########
+	pos = mul(_invModelMats[19], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[19];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[19] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[19].y);
+	// ######### New Game Object (19) #########
+
+	// ######### New Game Object (20) #########
+	pos = mul(_invModelMats[20], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[20];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[20] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[20].y);
+	// ######### New Game Object (20) #########
+
+	// ######### New Game Object (21) #########
+	pos = mul(_invModelMats[21], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[21];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[21] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[21].y);
+	// ######### New Game Object (21) #########
+
+	// ######### New Game Object (22) #########
+	pos = mul(_invModelMats[22], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[22];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[22] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[22].y);
+	// ######### New Game Object (22) #########
+
+	// ######### New Game Object (23) #########
+	pos = mul(_invModelMats[23], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[23];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[23] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[23].y);
+	// ######### New Game Object (23) #########
+
+	// ######### New Game Object (24) #########
+	pos = mul(_invModelMats[24], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[24];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[24] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[24].y);
+	// ######### New Game Object (24) #########
+
+	// ######### New Game Object (25) #########
+	pos = mul(_invModelMats[25], float4(p, 1.0));
+	geoInfo = _primitiveGeoInfo[25];
+	obj = sdSphere(pos.xyz, geoInfo.x);
+	distBuffer[25] = obj;
+
+	scene = opSmoothUnion(scene, obj, _combineOps[25].y);
+	// ######### New Game Object (25) #########
+
+	return scene;
+}
+
+rmPixel mapMat()
+{
+	rmPixel scene;
+	scene.dist = _maxDrawDist;
+	scene.colour = float4(0.0, 0.0, 0.0, 0.0);
+	scene.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	scene.refractInfo = float2(0.0, 1.0);
+	scene.texID = 0;
+
+	rmPixel obj;
+	obj.colour = float4(0.0, 0.0, 0.0, 0.0);
+	obj.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	obj.refractInfo = float2(0.0, 1.0);
+	obj.texID = 0;
+
+	rmPixel obj2;
+	obj2.colour = float4(0.0, 0.0, 0.0, 0.0);
+	obj2.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	obj2.refractInfo = float2(0.0, 1.0);
+	obj2.texID = 0;
+
+	rmPixel csg;
+	csg.colour = float4(0.0, 0.0, 0.0, 0.0);
+	csg.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+	csg.refractInfo = float2(0.0, 1.0);
+	csg.texID = 0;
+	rmPixel storedCSGs[MAX_CSG_CHILDREN];
+
+	float reflWeight;
+	// ######### New Game Object #########
+	obj.dist = distBuffer[0];
+	obj.colour = _rm_colours[0];
+	obj.reflInfo = _reflInfo[0];
+	obj.refractInfo = _refractInfo[0];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[0].y);
+	// ######### New Game Object #########
+
+	// ######### New Game Object (1) #########
+	obj.dist = distBuffer[1];
+	obj.colour = _rm_colours[1];
+	obj.reflInfo = _reflInfo[1];
+	obj.refractInfo = _refractInfo[1];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[1].y);
+	// ######### New Game Object (1) #########
+
+	// ######### New Game Object (2) #########
+	obj.dist = distBuffer[2];
+	obj.colour = _rm_colours[2];
+	obj.reflInfo = _reflInfo[2];
+	obj.refractInfo = _refractInfo[2];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[2].y);
+	// ######### New Game Object (2) #########
+
+	// ######### New Game Object (3) #########
+	obj.dist = distBuffer[3];
+	obj.colour = _rm_colours[3];
+	obj.reflInfo = _reflInfo[3];
+	obj.refractInfo = _refractInfo[3];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[3].y);
+	// ######### New Game Object (3) #########
+
+	// ######### New Game Object (4) #########
+	obj.dist = distBuffer[4];
+	obj.colour = _rm_colours[4];
+	obj.reflInfo = _reflInfo[4];
+	obj.refractInfo = _refractInfo[4];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[4].y);
+	// ######### New Game Object (4) #########
+
+	// ######### New Game Object (5) #########
+	obj.dist = distBuffer[5];
+	obj.colour = _rm_colours[5];
+	obj.reflInfo = _reflInfo[5];
+	obj.refractInfo = _refractInfo[5];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[5].y);
+	// ######### New Game Object (5) #########
+
+	// ######### New Game Object (6) #########
+	obj.dist = distBuffer[6];
+	obj.colour = _rm_colours[6];
+	obj.reflInfo = _reflInfo[6];
+	obj.refractInfo = _refractInfo[6];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[6].y);
+	// ######### New Game Object (6) #########
+
+	// ######### New Game Object (7) #########
+	obj.dist = distBuffer[7];
+	obj.colour = _rm_colours[7];
+	obj.reflInfo = _reflInfo[7];
+	obj.refractInfo = _refractInfo[7];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[7].y);
+	// ######### New Game Object (7) #########
+
+	// ######### New Game Object (8) #########
+	obj.dist = distBuffer[8];
+	obj.colour = _rm_colours[8];
+	obj.reflInfo = _reflInfo[8];
+	obj.refractInfo = _refractInfo[8];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[8].y);
+	// ######### New Game Object (8) #########
+
+	// ######### New Game Object (9) #########
+	obj.dist = distBuffer[9];
+	obj.colour = _rm_colours[9];
+	obj.reflInfo = _reflInfo[9];
+	obj.refractInfo = _refractInfo[9];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[9].y);
+	// ######### New Game Object (9) #########
+
+	// ######### New Game Object (10) #########
+	obj.dist = distBuffer[10];
+	obj.colour = _rm_colours[10];
+	obj.reflInfo = _reflInfo[10];
+	obj.refractInfo = _refractInfo[10];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[10].y);
+	// ######### New Game Object (10) #########
+
+	// ######### New Game Object (11) #########
+	obj.dist = distBuffer[11];
+	obj.colour = _rm_colours[11];
+	obj.reflInfo = _reflInfo[11];
+	obj.refractInfo = _refractInfo[11];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[11].y);
+	// ######### New Game Object (11) #########
+
+	// ######### New Game Object (12) #########
+	obj.dist = distBuffer[12];
+	obj.colour = _rm_colours[12];
+	obj.reflInfo = _reflInfo[12];
+	obj.refractInfo = _refractInfo[12];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[12].y);
+	// ######### New Game Object (12) #########
+
+	// ######### New Game Object (13) #########
+	obj.dist = distBuffer[13];
+	obj.colour = _rm_colours[13];
+	obj.reflInfo = _reflInfo[13];
+	obj.refractInfo = _refractInfo[13];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[13].y);
+	// ######### New Game Object (13) #########
+
+	// ######### New Game Object (14) #########
+	obj.dist = distBuffer[14];
+	obj.colour = _rm_colours[14];
+	obj.reflInfo = _reflInfo[14];
+	obj.refractInfo = _refractInfo[14];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[14].y);
+	// ######### New Game Object (14) #########
+
+	// ######### New Game Object (15) #########
+	obj.dist = distBuffer[15];
+	obj.colour = _rm_colours[15];
+	obj.reflInfo = _reflInfo[15];
+	obj.refractInfo = _refractInfo[15];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[15].y);
+	// ######### New Game Object (15) #########
+
+	// ######### New Game Object (16) #########
+	obj.dist = distBuffer[16];
+	obj.colour = _rm_colours[16];
+	obj.reflInfo = _reflInfo[16];
+	obj.refractInfo = _refractInfo[16];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[16].y);
+	// ######### New Game Object (16) #########
+
+	// ######### New Game Object (17) #########
+	obj.dist = distBuffer[17];
+	obj.colour = _rm_colours[17];
+	obj.reflInfo = _reflInfo[17];
+	obj.refractInfo = _refractInfo[17];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[17].y);
+	// ######### New Game Object (17) #########
+
+	// ######### New Game Object (18) #########
+	obj.dist = distBuffer[18];
+	obj.colour = _rm_colours[18];
+	obj.reflInfo = _reflInfo[18];
+	obj.refractInfo = _refractInfo[18];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[18].y);
+	// ######### New Game Object (18) #########
+
+	// ######### New Game Object (19) #########
+	obj.dist = distBuffer[19];
+	obj.colour = _rm_colours[19];
+	obj.reflInfo = _reflInfo[19];
+	obj.refractInfo = _refractInfo[19];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[19].y);
+	// ######### New Game Object (19) #########
+
+	// ######### New Game Object (20) #########
+	obj.dist = distBuffer[20];
+	obj.colour = _rm_colours[20];
+	obj.reflInfo = _reflInfo[20];
+	obj.refractInfo = _refractInfo[20];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[20].y);
+	// ######### New Game Object (20) #########
+
+	// ######### New Game Object (21) #########
+	obj.dist = distBuffer[21];
+	obj.colour = _rm_colours[21];
+	obj.reflInfo = _reflInfo[21];
+	obj.refractInfo = _refractInfo[21];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[21].y);
+	// ######### New Game Object (21) #########
+
+	// ######### New Game Object (22) #########
+	obj.dist = distBuffer[22];
+	obj.colour = _rm_colours[22];
+	obj.reflInfo = _reflInfo[22];
+	obj.refractInfo = _refractInfo[22];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[22].y);
+	// ######### New Game Object (22) #########
+
+	// ######### New Game Object (23) #########
+	obj.dist = distBuffer[23];
+	obj.colour = _rm_colours[23];
+	obj.reflInfo = _reflInfo[23];
+	obj.refractInfo = _refractInfo[23];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[23].y);
+	// ######### New Game Object (23) #########
+
+	// ######### New Game Object (24) #########
+	obj.dist = distBuffer[24];
+	obj.colour = _rm_colours[24];
+	obj.reflInfo = _reflInfo[24];
+	obj.refractInfo = _refractInfo[24];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[24].y);
+	// ######### New Game Object (24) #########
+
+	// ######### New Game Object (25) #########
+	obj.dist = distBuffer[25];
+	obj.colour = _rm_colours[25];
+	obj.reflInfo = _reflInfo[25];
+	obj.refractInfo = _refractInfo[25];
+	scene = opSmoothUnionMat(scene, obj, _combineOps[25].y);
+	// ######### New Game Object (25) #########
+
+	return scene;
+}
+/// ######### Signed Distance Functions #########
+
+float ambientOcclusion(float3 p, float3 normal)
+{
+    float step = _aoStepSize;
+    float ao = 0.0;
+    float dist;
+
+    for (int i = 1; i <= _aoMaxSteps; ++i)
+    {
+        dist = step * i;
+        ao += max((dist - map(p + (normal * dist))) / dist, 0.0);
+    }
+
+    return (1.0 - (ao * _aoIntensity));
+}
+
+float shadow(float3 rayOrigin, float3 rayDir, float mint, float maxt, float _penumbraFactor)
+{
+    float shadowFactor = 1.0;
+
+    for (float t = mint; t < maxt;)
+    {
+        float h = map(rayOrigin + (rayDir * t));
+
+        if (h < 0.001)
+            return 0.0;
+
+        shadowFactor = min(shadowFactor, _penumbraFactor * h / t);
+
+        t += h;
+    }
+
+    return shadowFactor;
+}
+
+float3 calcNormal(in float3 pos)
+{
+    // Epsilon - used to approximate dx when taking the derivative.
+    const float2 EPS = float2(0.001, 0.0);
+
+    // Find the "gradient" of the distance field at pos.
+    // Remember, the distance field is not boolean - even if you are inside an object
+    // the number is negative, so this calculation still works.
+    // Essentially you are approximating the derivative of the distance field at this point.
+    float3 normal = float3(
+                            map(pos + EPS.xyy) - map(pos - EPS.xyy),
+                            map(pos + EPS.yxy) - map(pos - EPS.yxy),
+                            map(pos + EPS.yyx) - map(pos - EPS.yyx));
+
+    return normalize(normal);
+}
+
+float3 triplanarMap(float3 p, float3 normal, sampler2D tex)
+{
+    float3x3 triSamples = float3x3(
+                            tex2D(tex, p.yz).rgb,
+                            tex2D(tex, p.xz).rgb,
+                            tex2D(tex, p.xy).rgb
+                            );
+
+    //return triSamples * abs(normal);
+    return mul(abs(normal), triSamples);
+}
+
+float4 calcLighting(float3 p, float3 normal, rmPixel distField, float useShadow = 1.0, float useAO = 1.0)
+{
+    float4 colour = 0.0;
+
+    int hasTex = when_gt_int(distField.texID, 0);
+    //if (when_gt_int(distField.texID, 0))
+    //{
+        //tex = _textures[0];
+        //tex = distField.tex;
+    float4 firstTex = float4(triplanarMap(p, normal, _wood), 1.0) * (when_eq_int(distField.texID, 1) * hasTex);
+    firstTex += float4(triplanarMap(p, normal, _brick), 1.0) * (when_eq_int(distField.texID, 2) * hasTex);
+    colour += firstTex;
+    //}
+
+    // Ambient contribution
+    colour.rgb += _lightConstants.x * _ambientColour;
+
+    //colour += float4(dot(-_LightDir, normal).rrr, 1.0);
+    float NdotL = saturate(dot(-_LightDir, normal));
+
+    float shadowFactor = 1.0;
+
+
+    // Light contributes diffuse and specular lighting.
+    float NdotL_gt_0 = when_gt_float(NdotL, 0.0);
+    //if (NdotL > 0.0)
+    //{
+    float dist = length(_lightPos - p);
+
+    // Calculate light's attenuation
+    float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
+
+    // Apply shadow
+    shadowFactor = shadow(p, -_LightDir, _shadowMinDist, 64.0 * useShadow * NdotL_gt_0, _penumbraFactor) * 0.5 + 0.5; // * 3;
+    shadowFactor = max(0.0, pow(shadowFactor, _shadowIntensity)); // Note: In shaders 0^0 is undefined i.e. 0.
+
+    // Diffuse Contribution
+    colour.rgb += _diffuseColour * (_lightConstants.y * NdotL * attenuation * NdotL_gt_0);
+
+    // Calculate the Half-Angle vector
+    float3 H = normalize(-_LightDir + normalize(-p));
+    float NdotH = saturate(dot(normal, H));
+            
+    // Specular Contribution
+    colour.rgb += _specularColour * (_lightConstants.z * pow(NdotH, _specularExp) * attenuation * NdotL_gt_0);
+    //}
+
+
+
+    // Use y value given by map() to choose a colour from our Colour Ramp.
+    colour.rgb += distField.colour.rgb * max(NdotL, 0.2);
+    colour.a = distField.colour.a;
+
+    // Apply rim lighting
+    float rimFactor = 1.0 - saturate(dot(normal, normalize(_CameraPos.xyz - p)));
+    rimFactor = smoothstep(0.5, 1.0, rimFactor);
+    colour.rgb += _rimLightColour * rimFactor;
+
+    // Apply shadow
+    colour.rgb *= shadowFactor;
+
+    // Apply ambient occlusion.
+    float ao = ambientOcclusion(p, normal);
+    colour.rgb *= ao;
+
+
+    //colour.rgb = ao;
+    //colour.a = 1.0;
+    //colour = float4(shadowFactor.rrr, 1.0);
+    return colour;
+}
+
+float4 cheapLighting(float3 p, float3 normal, rmPixel distField)
+{
+    float4 colour = 0.0;
+
+    int hasTex = when_gt_int(distField.texID, 0);
+    //if (when_gt_int(distField.texID, 0))
+    //{
+        //tex = _textures[0];
+        //tex = distField.tex;
+    float4 firstTex = float4(triplanarMap(p, normal, _wood), 1.0) * (when_eq_int(distField.texID, 1) * hasTex);
+    firstTex += float4(triplanarMap(p, normal, _brick), 1.0) * (when_eq_int(distField.texID, 2) * hasTex);
+    colour += firstTex;
+    //}
+
+    // Ambient contribution
+    colour.rgb += _lightConstants.x * _ambientColour;
+
+    //colour += float4(dot(-_LightDir, normal).rrr, 1.0);
+    float NdotL = saturate(dot(-_LightDir, normal));
+
+    // Light contributes diffuse and specular lighting.
+    float NdotL_gt_0 = when_gt_float(NdotL, 0.0);
+    //if (NdotL > 0.0)
+    //{
+    float dist = length(_lightPos - p);
+
+        // Calculate light's attenuation
+    float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
+
+        // Diffuse Contribution
+    colour.rgb += _diffuseColour * (_lightConstants.y * NdotL * attenuation * NdotL_gt_0);
+
+        // Calculate the Half-Angle vector
+    float3 H = normalize(-_LightDir + normalize(-p));
+    float NdotH = saturate(dot(normal, H));
+            
+        // Specular Contribution
+    colour.rgb += _specularColour * (_lightConstants.z * pow(NdotH, _specularExp) * attenuation * NdotL_gt_0);
+    //}
+
+    // Use y value given by map() to choose a colour from our Colour Ramp.
+    colour.rgb += distField.colour.rgb * max(NdotL, 0.2);
+    colour.a = distField.colour.a;
+
+
+    return colour;
+}
+
+// Raymarch along the ray
+int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField, int rayHit)
+{
+    //int rayHit = 0;
+
+    //const int MAX_STEP = 100;
+    //const float DRAW_DIST = 64.0;
+    float totalDist = distField.totalDist; // Current distance travaled along the ray.
+
+    /// ### Performance Test ###
+    //float performance = 0.95;
+    /// ### Performance Test ###
+
+    int2 bothCond;
+    int2 breakLoop;
+
+//#if BOUNDING_SPHERE_DEBUG
+//    int test = rayHit;
+//#endif
+
+
+    // Only march through actual map, iff the ray hit an object in the cheap map.
+    for (int i = 0 + ((1 - rayHit) * maxSteps); i < maxSteps; ++i)
+    {
+        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
+        distField.dist = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
+
+        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+        // This way raymarched objects and traditional meshes can co-exist.
+        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+        //if ((totalDist >= depth) || (totalDist > maxDrawDist))
+        //{
+        //    rayHit = false;
+
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
+
+        //    break;
+        //}
+        // If the sample <= 0, we have hit an object.
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+        //else if (distField.dist < 0.001)
+        //{
+        //    // Perform colour/lighting
+        //    rayHit = true;
+
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
+
+        //    break;
+        //}
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
+        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+        totalDist += distField.dist;
+    }
+
+    //determineMaterial(distField);
+    distField = mapMat();
+    distField.totalDist = totalDist;
+
+
+
+//#if BOUNDING_SPHERE_DEBUG
+//    if (test)
+//    {
+//        distField.colour.rgb += float3(0.6, 0.0, 0.0);
+//        distField.colour.a = 1.0;
+//        rayHit = test;
+//    }
+//#endif
+
+    return rayHit;
+
+    /// ### Performance Test ###
+    //colour = float4(tex2D(_performanceRamp, float2(performance, 0.0)).xyz, 1.0);
+    /// ### Performance Test ###
+
+    // Perform colour/lighting
+    //if (useColourLighting)
+    //{
+        /// ### Performance Test ###
+        //colour = float4(tex2D(_performanceRamp, float2(performance, 0.0)).xyz, 1.0);
+        /// ### Performance Test ###
+    //}
+}
+
+// Raymarch along the ray
+int unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+{
+    int rayHit = 0;
+
+    //const int MAX_STEP = 100;
+    //const float DRAW_DIST = 64.0;
+    float t = 0; // Current distance travaled along the ray.
+
+    /// ### Performance Test ###
+    //float performance = 0.95;
+    /// ### Performance Test ###
+
+    int2 bothCond;
+    int2 breakLoop;
+
+    for (int i = 0; i < maxSteps; ++i)
+    {
+        p = rayOrigin + (rayDir * t); // World space position of sample.
+        distField.dist = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
+        distField.dist = abs(distField.dist);
+
+        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+        // This way raymarched objects and traditional meshes can co-exist.
+        bothCond = when_ge_float(float4(t, t, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+        //if ((t >= depth) || (t > maxDrawDist))
+        //{
+        //    rayHit = false;
+
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
+
+        //    break;
+        //}
+        // If the sample <= 0, we have hit an object.
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+        //else if (distField.dist < 0.001)
+        //{
+        //    // Perform colour/lighting
+        //    rayHit = true;
+
+        //    /// ### Performance Test ###
+        //    //performance = (float) i / MAX_STEP;
+        //    /// ### Performance Test ###
+
+        //    break;
+        //}
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+        // If the sample > 0, we haven't hit anything yet so we should march forward.
+        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+        t += distField.dist;
+    }
+
+    distField = mapMat();
+    distField.totalDist = t;
+
+    return rayHit;
+}
+
+int cheapRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+{
+    int rayHit = 0;
+    float totalDist = distField.totalDist; // Current distance travaled along the ray.
+    int2 bothCond;
+    int2 breakLoop;
+
+
+
+    // March through the cheap map.
+    for (int i = 0; i < maxSteps; ++i)
+    {
+        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
+        distField.dist = cheapMap(p); // Sample cheap distance field.
+
+        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+        // This way raymarched objects and traditional meshes can co-exist.
+        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+
+        // If the sample <= 0, we have hit an object.
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
+        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+        totalDist += distField.dist;
+    }
+
+    distField.colour = float4(0.0, 0.0, 0.0, 0.0);
+    distField.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    distField.refractInfo = float2(0.0, 1.0);
+    distField.texID = 0;
+    distField.totalDist = totalDist;
+
+    return rayHit;
+}
+
+//int invertCheapRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+//{
+//    int rayHit = 0;
+//    float totalDist = distField.totalDist; // Current distance travaled along the ray.
+//    int2 bothCond;
+//    int2 breakLoop;
+
+
+
+//    // March through the cheap map.
+//    for (int i = 0; i < maxSteps; ++i)
+//    {
+//        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
+//        distField.dist = cheapMap(p); // Sample cheap distance field.
+//        distField.dist *= -1.0;
+
+//        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+//        // This way raymarched objects and traditional meshes can co-exist.
+//        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+//        breakLoop.x = saturate(bothCond.x + bothCond.y);
+//        i += maxSteps * breakLoop.x;
+
+//        // If the sample <= 0, we have hit an object.
+//        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+//        i += maxSteps * breakLoop.y;
+
+//        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+//        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
+//        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+//        totalDist += distField.dist;
+//    }
+
+
+//    return rayHit;
+//}
+
+int unsignedCheapRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+{
+    int rayHit = 0;
+    float totalDist = distField.totalDist; // Current distance travaled along the ray.
+    int2 bothCond;
+    int2 breakLoop;
+
+
+
+    // March through the cheap map.
+    for (int i = 0; i < maxSteps; ++i)
+    {
+        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
+        distField.dist = cheapMap(p); // Sample cheap distance field.
+        distField.dist = abs(distField.dist);
+
+        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+        // This way raymarched objects and traditional meshes can co-exist.
+        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+
+        // If the sample <= 0, we have hit an object.
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
+        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+        totalDist += distField.dist;
+    }
+
+
+    return rayHit;
+}
+
+// ior: Index of refraction.
+// eta (Greek letter n): Represents a refraction index.
+//  eta_i: Index of refraction for the medium we are currently in. (Incident medium)
+//  eta_t: Index of refraction for the medium we want to transmit through. (Transmission medium)
+float2 fresnel(float ior, float3 incidenceRay, float3 normal)
+{
+    float2 ratio = 0.0;
+
+    float cos_i = clamp(dot(incidenceRay, normal), -1.0, 1.0);
+
+
+
+    // If incidence ray is inside of the medium with the greater refraction index, then swap the indices around.
+    //float cos_i_gt_zero_true = when_gt_float(cos_i, 0.0);
+    //float cos_i_gt_zero_false = 1.0 - cos_i_gt_zero_true;
+
+    //float eta_i = (cos_i_gt_zero_false * 1.0) + (cos_i_gt_zero_true * ior);
+    //float eta_t = (cos_i_gt_zero_true * 1.0) + (cos_i_gt_zero_false * ior);
+    float eta_i = 1.0;
+    float eta_t = ior;
+
+    if (cos_i > 0)
+    {
+        eta_i = ior;
+        eta_t = 1.0;
+    }
+
+
+    // In the case of total internal reflection, just return 1 for reflection and 0 for refraction.
+    float sin_t = (eta_i / eta_t) * sqrt(max(0.0, 1.0 - (cos_i * cos_i)));
+
+    //float sin_t_ge_zero_true = when_ge_float(sin_t, 1.0);
+    //float sin_t_ge_zero_false = 1.0 - sin_t_ge_zero_true;
+
+    
+    if (sin_t >= 1.0)
+        ratio.x = 1.0; //Total internal reflection.
+        //float c2SqrtTerm = 1 - pow((eta_i / eta_t), 2.0) * (1.0 - pow(cos_i, 2.0));
+        //float c2SqrtTerm_lt_zero = when_lt_float(c2SqrtTerm, 0.0);
+    else
+    {
+        // Fresnel equations
+        float cos_t = sqrt(max(0.0, 1.0 - (sin_t * sin_t)));
+        cos_i = abs(cos_i);
+    
+        float parallel = pow(((eta_t * cos_i) - (eta_i * cos_t)) / ((eta_t * cos_i) + (eta_i * cos_t)), 2.0);
+        float perpen = pow(((eta_i * cos_t) - (eta_t * cos_i)) / ((eta_i * cos_t) + (eta_t * cos_i)), 2.0);
+        ratio.x = saturate((parallel + perpen) * 0.5);
+    }
+
+    // Fresnel equations
+    //float cos_t = sqrt(max(0.0, 1.0 - (sin_t * sin_t)));
+    //cos_i = abs(cos_i);
+    
+    //float parallel = pow(((eta_t * cos_i) - (eta_i * cos_t)) / ((eta_t * cos_i) + (eta_i * cos_t)), 2.0);
+    //float perpen = pow(((eta_i * cos_t) - (eta_t * cos_i)) / ((eta_i * cos_t) + (eta_t * cos_i)), 2.0);
+    //ratio.x = saturate((parallel + perpen) * 0.5);
+
+    //ratio.x = (sin_t_ge_zero_true * 1.0) + (sin_t_ge_zero_false * ratio.x);
+    ratio.y = 1.0 - ratio.x;
+
+    return ratio;
+}
+
+//float3 calcRefractRay(float3 i, float3 n, float etat)
+//{
+//    float cos_i = clamp(dot(i, n), -1.0, 1.0);
+//    float etai = 1.0;
+  
+
+//    //if (cos_i < 0.0)
+//    //{
+//    //    cos_i = -cos_i;
+//    //}
+//    //else
+//    //{
+//    //    etai = etat;
+//    //    n = -n;
+//    //}
+
+
+//    float cos_i_lt_zero_true = when_lt_float(cos_i, 0);
+//    float cos_i_lt_zero_false = 1.0 - cos_i_lt_zero_true;
+
+//    // cos_i < 0
+//    cos_i = (cos_i_lt_zero_true * -cos_i) + (cos_i_lt_zero_false * cos_i);
+//    // cos_i >= 0
+//    etai = (cos_i_lt_zero_false * etat) + (cos_i_lt_zero_true * etai);
+//    n = (cos_i_lt_zero_false * -n) + (cos_i_lt_zero_true * n);
+
+
+//    float eta = etai / etat;
+//    float k = 1.0 - (eta * eta) * (1.0 - (cos_i * cos_i));
+//    return k < 0.0 ? 0.0 : (eta * i) + ((eta * cos_i - sqrt(k)) * n);
+//}
+
+//void performReflection(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio, inout reflectInfo info)
+//{
+//    // Distance field reflection.
+//    bool rayHit = false;
+//    uint quality;
+//    float4 refl = distField.reflInfo;
+//    float prevRefl = 0;
+
+//    quality = 2;
+//    rayDir = normalize(reflect(rayDir, normal));
+//    rayOrigin = pos + (rayDir * 0.01);
+//    rayHit = unsignedRaymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl.x) / quality, _maxDrawDist / quality, pos, distField);
+
+//    if (rayHit)
+//    {
+//        normal = calcNormal(pos);
+//        add += float4(calcLighting(pos, normal, distField).rgb, 0.0) * refl.w * ratio.x;
+//    }
+
+
+//    info.pos = pos;
+//    info.normal = normal;
+//    info.dir = rayDir;
+//    info.distField = distField;
+//}
+
+//void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
+//{
+//    reflectInfo info;
+
+//    // Calculate refraction.
+//    int rayHit = 0;
+//    //float3 refractRayDir = normalize(calcRefractRay(rayDir, normal, distField.refractInfo.y));
+//    float3 refractRayDir = normalize(refract(rayDir, normal, 1.0 / distField.refractInfo.y));
+//    float3 refractRayOrigin = pos + (refractRayDir * 0.02);
+
+//    // March along refraction ray THROUGH the current object (medium).
+//    rayHit = unsignedRaymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
+
+
+//    // See inside of current object.
+//    if (rayHit)
+//    {
+//        //ratio.y = 
+//        // Add colour of any object hit inside of the current object, or the current object itself.
+//        normal = calcNormal(pos);
+//        //add += float4(calcLighting(pos, normal, distField, 1.0, 0.0).rgb, 0.0) * ratio.y;
+//        add += float4(cheapLighting(pos, normal, distField).rgb, 0.0) * ratio.y;
+
+//        // Calculate frensel ratio.
+//        ratio = fresnel(distField.refractInfo.y, refractRayDir, normal);
+//        //ratio.y = 1.0; // Ignoring total internal reflection. Just making it refract instead.
+//        // Calculate reflection.
+//        //performReflection(add, refractRayOrigin, refractRayDir, pos, -normal, distField, ratio, info);
+
+//        //if (dot(info.dir, info.normal) > 0.0)
+//        //{
+//        //    float3 dir = normalize(refract(info.dir, -info.normal, distField.refractInfo.y));
+//        //    dir = normalize(calcRefractRay(info.dir, info.normal, distField.refractInfo.y));
+//        //    float origin = info.pos + (dir * 0.05);
+
+//        //    rayHit = raymarch(origin, dir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, info.pos, info.distField);
+
+//        //    if (rayHit)
+//        //    {
+//        //        float3 norm = calcNormal(info.pos);
+//        //        add += float4(calcLighting(info.pos, norm, info.distField, 1.0, 1.0).rgb, 0.0) * 0.2;
+//        //        //add = float4(0.0, 0.0, 0.0, 1.0);
+//        //    }
+//        //}
+
+//        // Calculate refraction.
+//        // March along refraction ray EXITING the current object (medium).
+//        refractRayDir = normalize(calcRefractRay(refractRayDir, normal, distField.refractInfo.y));
+//        //refractRayDir = normalize(refract(refractRayDir, -normal, distField.refractInfo.y)); //distField.refractInfo.y / 1.0
+//        refractRayOrigin = pos + (refractRayDir * 0.02);
+
+//        rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
+
+//        // See behind the current object.
+//        if (rayHit)
+//        {
+//            // Add the colour of what is behind the current object.
+//            normal = calcNormal(pos);
+//            add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * (ratio.y * 0.6);
+//            //add = float4(ratio.yyy, 1.0);
+//        }
+//    }
+//}
+
+void reflection(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
+{
+	// Distance field reflection.
+    float quality;
+    float4 refl = distField.reflInfo;
+    float prevRefl = 0;
+    int rayHit = 0;
+    int maxSteps;
+
+
+    // First reflection bounce.
+    quality = 0.5;
+    rayDir = normalize(reflect(rayDir, normal));
+    rayOrigin = pos + (rayDir * 0.01);
+    maxSteps = (_maxSteps * refl.x) * quality;
+    distField.totalDist = 0.0;
+
+    //rayHit = unsignedCheapRaymarch(rayOrigin, rayDir, _maxDrawDist, maxSteps, _maxDrawDist * quality, pos, distField);
+    //distField.totalDist += 0.2;
+    //rayHit = cheapRaymarch(rayOrigin, rayDir, _maxDrawDist, maxSteps, _maxDrawDist * quality, pos, distField);
+    rayHit = 1;
+    rayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, maxSteps, _maxDrawDist * quality, pos, distField, rayHit);
+
+    if (rayHit)
+    {
+        normal = calcNormal(pos);
+        add += float4(calcLighting(pos, normal, distField).rgb, 0.0) * refl.w * ratio.x; //_reflectionIntensity;
+    }
+
+
+
+
+    //Skybox reflection.
+    //add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;
+}
+
+
+// Vertex program
+VertexOutput vert(VertexInput input)
+{
+    VertexOutput output;
+
+    float index = input.pos.z;
+    input.pos.z = 0.0;
+
+    float4 worldPos = mul(unity_ObjectToWorld, float4(input.pos.xyz, 1.0));
+    output.pos = mul(unity_MatrixVP, worldPos);
+    //output.pos = mul(UNITY_MATRIX_MVP, float4(input.pos.xyz, 1.0));
+    output.uv = input.uv;
+
+
+    #if UNITY_UV_STARTS_AT_TOP
+    if (_MainTex_TexelSize.y < 0)
+        output.uv.y = 1 - output.uv.y;
+    #endif
+
+    // Get the eyespace view ray (normalized)
+    output.ray = _FrustumCornersES[(int) index].xyz;
+
+    // Dividing by z "normalizes" it in the z axis.
+    // Therefore multiplying the ray by some number i gives the viewspace position
+    // of the point on the ray with [viewspace z] = i.
+    output.ray /= abs(output.ray.z);
+
+    // Transform the ray from eyespace to worldspace
+    output.ray = mul(_CameraInvViewMatrix, float4(output.ray.xyz, 0.0)).xyz;
+
+    return output;
+}
+
+// Fragment program
+PixelOutput frag(VertexOutput input) : SV_Target
+{
+    // Ray direction
+    float3 rayDir = normalize(input.ray);
+    // Ray origin
+    float3 rayOrigin = _CameraPos.xyz;
+
+
+    float2 uv = input.uv;
+
+    #if UNITY_UV_STARTS_AT_TOP
+    if (_MainTex_TexelSize.y < 0)
+        uv.y = 1 - uv.y;
+    #endif
+
+    // Convert from depth buffer (eye space) to true distance from camera.
+    // This is done by multiplying the eyespace depth by the length of the "z-normalized" ray.
+    // Think of similar triangles:
+    // The view-space z-distance between a point and the camera is proportional to the absolute distance.
+    float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, uv).r);
+    depth *= length(input.ray);
+
+    // Colour of the scene before this shader was run
+    float4 col = tex2D(_MainTex, input.uv);
+
+    // March a ray for each pixel, and check whether anything was hit.
+    float3 p = 0.0;
+    rmPixel distField;
+    float4 add = float4(0.0, 0.0, 0.0, 0.0);
+    float3 normal = 0.0;
+    int rayHit = cheapRaymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
+    rayHit = raymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField, rayHit);
+
+    // Perform shading/lighting.
+    if (rayHit)
+    {
+        normal = calcNormal(p);
+        add = calcLighting(p, normal, distField);
+
+        float2 ratio = fresnel(distField.refractInfo.y, rayDir, normal);
+        ratio.x = (distField.refractInfo.x > 0.0) ? ratio.x : 1.0;
+
+        // Perform refraction
+        //performRefraction(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        //ReflectAndRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        //cheapRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+
+        // Perform reflection
+        reflection(add, rayOrigin, rayDir, p, normal, distField, ratio);
+
+    }
+
+    //add = float4(tex2D(_performanceRamp, float2(distField.dist, 0.0)).xyz, 1.0);
+
+    // Returns final colour using alpha blending.
+    //col = float4((col.xyz * (1.0 - add.w)) + (add.xyz * (add.w)), 1.0);
+    col = float4(lerp(col.rgb, add.rgb, add.a), 1.0);
+
+
+#if BOUND_DEBUG
+    rayDir = normalize(input.ray);
+    rayOrigin = _CameraPos.xyz;
+    p = 0.0;
+    distField.totalDist = 0.0;
+
+    rayHit = cheapRaymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
+    if (rayHit)
+    {
+        col.rgb += float3(0.3 * sin(p.x * 4) + 0.2, 0.0, 0.3 * sin(p.z * 4) + 0.2);
+    }
+#endif
+
+
+    // Gamma correction
+    //add.rgb = pow(add.rgb, float3(0.4545, 0.4545, 0.4545));
+
+    // Contrast
+    //add.rgb = smoothstep(0.0, 1.0, add.rgb);
+
+    // Vignette
+    //float2 test = abs(input.uv - float2(0.5, 0.5));
+    //col.rgb += (smoothstep(0.4, 0.5, test.x) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
+    //col.rgb += (smoothstep(0.4, 0.5, test.y) * _vignetteIntensity) * float3(1.0, 0.0, 0.0);
+
+
+    // Fog
+    // Technique One
+    //float fogAmount = 1.0 - exp(-distField.totalDist * _fogInscattering);
+    //float3 fogColour = float3(0.5, 0.6, 0.7);
+    //col = float4(lerp(col.rgb, fogColour.rgb, fogAmount), 1.0);
+
+    // Technique Two
+    //col.rgb = (col.rgb * (1.0 - exp(-distField.dist * _fogExtinction))) + (fogColour * (exp(-distField.dist * _fogExtinction)));
+
+    // Technique Three
+    //float3 extColour = exp(-distField.totalDist * _fogExtinction.rrr);
+    //float3 insColour = exp(-distField.totalDist * _fogInscattering.rrr);
+    //float3 extColour = float3(exp(-distField.dist * _fogExtinction.x), exp(-distField.dist * _fogExtinction.y), exp(-distField.dist * _fogExtinction.z));
+    //float3 insColour = float3(exp(-distField.dist * _fogInscattering.x), exp(-distField.dist * _fogInscattering.y), exp(-distField.dist * _fogInscattering.z));
+    //col.rgb = (col.rgb * (1.0 - extColour)) + (fogColour * insColour);
+
+    // Technique Four
+    //float b = _fogInscattering;
+    //fogAmount = _fogExtinction * exp(-rayOrigin.y * b) * ((1.0 - exp(-distField.totalDist * rayDir.y * b)) / (b * rayDir.y));
+    //fogAmount = clamp(fogAmount, 0.0, 1.0);
+    //col.rgb = lerp(col.rgb, _fogColour, fogAmount);
+    
+
+    //col.rgb = float3(distField.totalDist / _maxDrawDist, 0.0, 0.0);
+    //col.rgb = float3(fogAmount, 0.0, 0.0);
+
+    PixelOutput output;
+    output.sceneCol = col;
+    output.distMap = distField.totalDist / _maxDrawDist;
+
+    return output;
+}

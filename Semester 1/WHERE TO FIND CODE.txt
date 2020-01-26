@@ -1,0 +1,25 @@
+Hello and hopefully you found your way to this text file.
+
+
+
+to begin with the code we will start with the state pattern:
+
+you will find the files needed at Assets/Greyboxing/GBscripts   and in /States (within the GBscripts folder)
+there will be 4 states in the States folder and the movement script in the GBscripts folder
+
+to find the observer pattern files they will be located in:
+
+\Assets\Scripts\Puzzles
+
+for the eye tracking this is found in:
+
+\Assets\Scripts\EyeTracking
+
+lastly the DLL code can be found in:
+
+c++ code:
+root\ PluginDLL\ PluginDev
+
+c# code:
+
+\Assets\Scripts\Puzzles (in the puzzle manager script)

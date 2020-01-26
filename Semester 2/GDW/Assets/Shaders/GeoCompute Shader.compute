@@ -1,0 +1,67 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+RWStructuredBuffer<float4x4> dataBuffer;
+RWStructuredBuffer<float4x4> baseBuffer;
+
+float t;
+
+float3 GetNormal(float3 a, float3 b, float3 c)
+{
+   float3 d = a-b;
+   float3 e = c-b;
+   return normalize(cross(d, e));
+}
+
+float3 Explode(float3 position, float3 normal)
+{
+    return position - normal * -0.01;
+}
+
+float3 Move(float3 base, float3 moved)
+{
+    float y = lerp(moved.y, base.y, t);
+    return float3(base.x, y, base.z);
+}
+
+[numthreads(1024,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float4x4 input;
+    input = dataBuffer[id.x];
+
+    float3 movedTri[3];
+    movedTri[0] = float3(input[0][0], input[0][1], input[0][2]); 
+    movedTri[1] = float3(input[1][0], input[1][1], input[1][2]);
+    movedTri[2] = float3(input[2][0], input[2][1], input[2][2]);
+
+    float4x4 baseInput;
+    baseInput = baseBuffer[id.x];
+
+    float3 baseTri[3];
+    baseTri[0] = float3(baseInput[0][0], baseInput[0][1], baseInput[0][2]); 
+    baseTri[1] = float3(baseInput[1][0], baseInput[1][1], baseInput[1][2]);
+    baseTri[2] = float3(baseInput[2][0], baseInput[2][1], baseInput[2][2]);
+
+    //float3 norm = GetNormal(movedTri[0], movedTri[1], movedTri[2]);
+    for(int i = 0; i < 3; i++)
+    {
+        //movedTri[i] = Explode(movedTri[i], norm);
+        movedTri[i] = Move(baseTri[i], movedTri[i]);
+    }
+
+    float4x4 output = input;
+    output[0][0] = movedTri[0].x;
+    output[0][1] = movedTri[0].y;
+    output[0][2] = movedTri[0].z;
+
+    output[1][0] = movedTri[1].x;
+    output[1][1] = movedTri[1].y;
+    output[1][2] = movedTri[1].z;
+
+    output[2][0] = movedTri[2].x;
+    output[2][1] = movedTri[2].y;
+    output[2][2] = movedTri[2].z;
+
+    dataBuffer[id.x] = output;
+}

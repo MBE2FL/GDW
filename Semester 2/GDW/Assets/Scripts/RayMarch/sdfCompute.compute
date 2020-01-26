@@ -1,0 +1,316 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/RayMarchEssentialFunctions.hlsl"
+
+RWStructuredBuffer<float> _voxels;
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+float4x4 _invModelMats[MAX_RM_OBJS];
+int _primitiveTypes[MAX_RM_OBJS];
+float2 _combineOps[MAX_RM_OBJS];
+float4 _primitiveGeoInfo[MAX_RM_OBJS];
+float3 _volumeArea;
+
+//int width = 32, height = 32, length = 32;
+
+[numthreads(32,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float3 rayOrigin = 0;
+	int width = 32, height = 32, length = 32;
+    
+    // Fill voxels with values.
+    for (int y = 0; y < height; y++)
+    {
+        for (int z = 0; z < length; z++)
+        {
+            float fx = id.x / (width - 1.0f);
+            float fy = y / (height - 1.0f);
+            float fz = z / (length - 1.0f);
+            
+			//rayOrigin = float3(id.x, y, z);
+			rayOrigin = float3(fx, fy, fz) + _volumeArea;
+
+            int index = id.x + y * width + z * width * height;
+
+            _voxels[index] = map(rayOrigin);
+            
+            //if (abs(_voxels[index]) < 1.0)
+            //    _voxels[index] = 0.0;
+        }
+    }
+}
+
+
+float map(float3 p)
+{
+    float scene = _maxDrawDist;
+    scene = 300.0;
+
+    float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+    float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+    float obj;
+    float obj2;
+
+    float csg;
+    float storedCSGs[MAX_CSG_CHILDREN];
+
+    float3 cell = float3(0.0, 0.0, 0.0);
+
+		// ######### New Game Object #########
+    pos = mul(_invModelMats[0], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[0];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[0].y);
+		// ######### New Game Object #########
+
+		// ######### New Game Object (1) #########
+    pos = mul(_invModelMats[1], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[1];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+		// ######### New Game Object (1) #########
+
+		// ######### New Game Object (2) #########
+    pos = mul(_invModelMats[2], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[2];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[2].y);
+		// ######### New Game Object (2) #########
+
+		// ######### New Game Object (3) #########
+    pos = mul(_invModelMats[3], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[3];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[3].y);
+		// ######### New Game Object (3) #########
+
+		// ######### New Game Object (4) #########
+    pos = mul(_invModelMats[4], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[4];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[4].y);
+		// ######### New Game Object (4) #########
+
+		// ######### New Game Object (5) #########
+    pos = mul(_invModelMats[5], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[5];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[5].y);
+		// ######### New Game Object (5) #########
+
+		// ######### New Game Object (6) #########
+    pos = mul(_invModelMats[6], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[6];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[6].y);
+		// ######### New Game Object (6) #########
+
+		// ######### New Game Object (7) #########
+    pos = mul(_invModelMats[7], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[7];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[7].y);
+		// ######### New Game Object (7) #########
+
+		// ######### New Game Object (8) #########
+    pos = mul(_invModelMats[8], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[8];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[8].y);
+		// ######### New Game Object (8) #########
+
+		// ######### New Game Object (9) #########
+    pos = mul(_invModelMats[9], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[9];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[9].y);
+		// ######### New Game Object (9) #########
+
+		// ######### New Game Object (10) #########
+    pos = mul(_invModelMats[10], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[10];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[10].y);
+		// ######### New Game Object (10) #########
+
+		// ######### New Game Object (11) #########
+    pos = mul(_invModelMats[11], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[11];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[11].y);
+		// ######### New Game Object (11) #########
+
+		// ######### New Game Object (12) #########
+    pos = mul(_invModelMats[12], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[12];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[12].y);
+		// ######### New Game Object (12) #########
+
+		// ######### New Game Object (13) #########
+    pos = mul(_invModelMats[13], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[13];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[13].y);
+		// ######### New Game Object (13) #########
+
+		// ######### New Game Object (14) #########
+    pos = mul(_invModelMats[14], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[14];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[14].y);
+		// ######### New Game Object (14) #########
+
+		// ######### New Game Object (15) #########
+    pos = mul(_invModelMats[15], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[15];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[15].y);
+		// ######### New Game Object (15) #########
+
+		// ######### New Game Object (16) #########
+    pos = mul(_invModelMats[16], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[16];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[16].y);
+		// ######### New Game Object (16) #########
+
+		// ######### New Game Object (17) #########
+    pos = mul(_invModelMats[17], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[17];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[17].y);
+		// ######### New Game Object (17) #########
+
+		// ######### New Game Object (18) #########
+    pos = mul(_invModelMats[18], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[18];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[18].y);
+		// ######### New Game Object (18) #########
+
+		// ######### New Game Object (19) #########
+    pos = mul(_invModelMats[19], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[19];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[19].y);
+		// ######### New Game Object (19) #########
+
+		// ######### New Game Object (20) #########
+    pos = mul(_invModelMats[20], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[20];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[20].y);
+		// ######### New Game Object (20) #########
+
+		// ######### New Game Object (21) #########
+    pos = mul(_invModelMats[21], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[21];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[21].y);
+		// ######### New Game Object (21) #########
+
+		// ######### New Game Object (22) #########
+    pos = mul(_invModelMats[22], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[22];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[22].y);
+		// ######### New Game Object (22) #########
+
+		// ######### New Game Object (23) #########
+    pos = mul(_invModelMats[23], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[23];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[23].y);
+		// ######### New Game Object (23) #########
+
+		// ######### New Game Object (24) #########
+    pos = mul(_invModelMats[24], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[24];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[24].y);
+		// ######### New Game Object (24) #########
+
+		// ######### New Game Object (25) #########
+    pos = mul(_invModelMats[25], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[25];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+
+    scene = opSmoothUnion(scene, obj, _combineOps[25].y);
+		// ######### New Game Object (25) #########
+
+    return scene;
+}
+
+//float map(float3 p)
+//{
+//    float scene = _maxDrawDist;
+//    scene = 300.0;
+
+//    float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+//    float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+//    float obj;
+//    float obj2;
+
+//    float csg;
+//    float storedCSGs[MAX_CSG_CHILDREN];
+
+//    float3 cell = float3(0.0, 0.0, 0.0);
+
+//	// ######### RM Cube #########
+//    pos = mul(_invModelMats[2], float4(p, 1.0));
+//    geoInfo = _primitiveGeoInfo[2];
+//    obj = sdBox(pos.xyz, geoInfo.xyz);
+
+//    scene = opU(scene, obj);
+//	// ######### RM Cube #########
+
+//	// ######### Sub Sphere #########
+//    pos = mul(_invModelMats[0], float4(p, 1.0));
+//    geoInfo = _primitiveGeoInfo[0];
+//    obj = sdSphere(pos.xyz, geoInfo.x);
+
+//    scene = opSmoothSub(obj, scene, _combineOps[1].y);
+//	// ######### Sub Sphere #########
+
+//	// ######### RM Sphere #########
+//    pos = mul(_invModelMats[1], float4(p, 1.0));
+//    geoInfo = _primitiveGeoInfo[1];
+//    obj = sdSphere(pos.xyz, geoInfo.x);
+
+//    scene = opU(scene, obj);
+//	// ######### RM Sphere #########
+
+//    return scene;
+//}
