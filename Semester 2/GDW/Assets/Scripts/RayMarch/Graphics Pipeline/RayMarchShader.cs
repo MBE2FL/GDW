@@ -89,6 +89,12 @@ public class RayMarchShader : MonoBehaviour
         
     }
 
+    public void removeAllFromRenderList()
+    {
+        _renderList.Clear();
+        // Also run rmObj remove actions
+    }
+
     public string ShaderName
     {
         get

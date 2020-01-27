@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.AnimatedValues;
 #endif
+using System;
 
 [ExecuteInEditMode]
 [AddComponentMenu("Ray Marching/RayMarcher")]
@@ -428,6 +429,8 @@ public class RayMarcherEditor : Editor
         }
     }
 
+
+
     public override void OnInspectorGUI()
     {
         //base.OnInspectorGUI();
@@ -473,6 +476,11 @@ public class RayMarcherEditor : Editor
 
             // Each shaders section of info.
             _showShaderBools[i].target = EditorGUILayout.ToggleLeft("Show/Hide " + shaders[i].ShaderName, _showShaderBools[i].target);
+
+            if (GUILayout.Button(shaders[i].ShaderName))
+            {
+                ShaderEditorWindow.Init(shaders[i]);
+            }
 
             if (EditorGUILayout.BeginFadeGroup(_showShaderBools[i].faded))
             {
@@ -554,6 +562,146 @@ public class RayMarcherEditor : Editor
     }
 }
 
+public class ShaderEditorWindow : EditorWindow
+{
+    static Camera _camera;
+    static List<System.Type> _desiredDockNextTo = new List<System.Type>();
+
+
+    static RayMarcher _rayMarcher;
+
+
+    Vector2 shaderScrollPos;
+    Vector2 renderListScrollPos;
+    bool _renderListFoldout = false;
+    RayMarchShader _shader;
+    event Action<RMObj> _onRemoveObj;
+    event Action _onRemoveShader;
+
+
+
+    // Add menu named "Shader Editor" to the Window menu
+    //[MenuItem("Window/Shader Editor")]
+    //public static void Init()
+    //{
+    //    // Get existing open window or if none, make a new one:
+    //    //ShaderEditorWindow window = (ShaderEditorWindow)EditorWindow.GetWindow(typeof(ShaderEditorWindow));
+    //    //window.Show();
+
+    //    ShaderEditorWindow window = CreateWindow<ShaderEditorWindow>(_desiredDockNextTo.ToArray());
+    //    window.Show();
+    //    _desiredDockNextTo.Add(window.GetType());
+
+    //    _rayMarcher = RayMarcher.Instance;
+    //}
+
+    public static void Init(RayMarchShader shader)
+    {
+        // Get existing open window or if none, make a new one:
+        //ShaderEditorWindow window = (ShaderEditorWindow)EditorWindow.GetWindow(typeof(ShaderEditorWindow));
+        //window.Show();
+
+        ShaderEditorWindow window = CreateWindow<ShaderEditorWindow>(_desiredDockNextTo.ToArray());
+        window.Show();
+        _desiredDockNextTo.Add(window.GetType());
+        window._shader = shader;
+
+        window.titleContent = new GUIContent(shader.ShaderName);
+
+        _rayMarcher = RayMarcher.Instance;
+
+        window._onRemoveObj += window.removeObj;
+        window._onRemoveShader += window.removeShader;
+    }
+
+
+    void OnGUI()
+    {
+        shaderScrollPos = GUILayout.BeginScrollView(shaderScrollPos);
+
+
+        GUIContent label = new GUIContent();
+
+
+        // Display the current shader's effect shader.
+        label.text = "Effect Shader";
+        label.tooltip = "";
+        _shader.EffectShader = EditorGUILayout.ObjectField(label, _shader.EffectShader, typeof(Shader), true) as Shader;
+
+        // Display the current shader's name.
+        EditorGUILayout.BeginHorizontal();
+        label.text = "Shader Name";
+        EditorGUILayout.PrefixLabel(label);
+        _shader.ShaderName = EditorGUILayout.TextField(_shader.ShaderName);
+        EditorGUILayout.EndHorizontal();
+
+        // Settings retrieved from a scriptable object.
+        label.text = "Settings";
+        label.tooltip = "";
+        _shader.Settings = EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
+
+        // Objects in the current shader's render list.
+        label.text = "Render List";
+        _renderListFoldout = EditorGUILayout.Foldout(_renderListFoldout, label, true);
+        List<RMObj> _renderList;
+        renderListScrollPos = EditorGUILayout.BeginScrollView(renderListScrollPos);
+
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        EditorGUILayout.Space(6.0f);
+
+        if (_renderListFoldout)
+        {
+            _renderList = _shader.RenderList;
+            foreach (RMObj obj in _renderList)
+            {
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+                EditorGUILayout.LabelField(obj.name, EditorStyles.centeredGreyMiniLabel);
+
+                if (GUILayout.Button("Remove"))
+                {
+                    _onRemoveObj.Invoke(obj);
+                }
+
+                EditorGUILayout.Space(2.0f);
+
+                EditorGUILayout.EndVertical();
+
+                EditorGUILayout.Space(6.0f);
+            }
+        }
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.EndScrollView();
+
+
+        EditorGUILayout.EndScrollView();
+
+        if (GUILayout.Button("Remove Shader"))
+        {
+            _onRemoveShader.Invoke();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _onRemoveObj -= removeObj;
+        _onRemoveShader -= removeShader;
+    }
+
+    private void removeObj(RMObj rmObj)
+    {
+        //_shader.removeFromRenderList(rmObj);
+        rmObj.removeFromShaderList(_shader);
+    }
+
+    private void removeShader()
+    {
+        RayMarcher.Instance.removeShader(_shader);
+        _shader.removeAllFromRenderList();
+    }
+}
 
 /* public class ShaderEditorWindow : EditorWindow
 {

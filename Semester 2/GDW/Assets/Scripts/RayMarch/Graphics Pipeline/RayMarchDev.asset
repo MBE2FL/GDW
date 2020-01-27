@@ -27,7 +27,7 @@ MonoBehaviour:
   _diffuseColour: {r: 0.7075472, g: 0.7075472, b: 0.7075472, a: 0}
   _specularColour: {r: 2, g: 2, b: 2, a: 0}
   _lightConstants: {x: 0.02, y: 0.2, z: 2}
-  _rimLightColour: {r: 0.18848166, g: 0, b: 3.9999995, a: 0}
+  _rimLightColour: {r: 1.2146596, g: 0, b: 7.999999, a: 0}
   _sunLight: {fileID: 0}
   _penumbraFactor: 15
   _shadowMinDist: 0.05

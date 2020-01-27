@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.AnimatedValues;
@@ -80,6 +81,7 @@ public abstract class RMObj : MonoBehaviour
     protected List<RayMarchShader> _shaderList = new List<RayMarchShader>();
 
     protected event System.Action<RayMarchShader, RMObj> test;
+    
 
     public bool IsPrim
     {
