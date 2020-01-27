@@ -14,7 +14,7 @@ public class RayMarchShader : MonoBehaviour
     RayMarchShaderSettings _settings;
     [SerializeField]
     List<RMObj> _renderList = new List<RMObj>();
-    private RMObj[] objects;                                // The array of objects to render.
+    //private RMObj[] objects;                                // The array of objects to render.
 
 
     private Matrix4x4[] _invModelMats = new Matrix4x4[32];   // The inverse transformation matrices of every object.
@@ -50,6 +50,10 @@ public class RayMarchShader : MonoBehaviour
         get
         {
             return _effectShader;
+        }
+        set
+        {
+            _effectShader = value;
         }
     }
 
@@ -90,6 +94,11 @@ public class RayMarchShader : MonoBehaviour
         get
         {
             return _shaderName;
+        }
+
+        set
+        {
+            _shaderName = value;
         }
     }
 
