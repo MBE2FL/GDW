@@ -12,6 +12,11 @@ public class ExplodingMesh : MonoBehaviour
 
     int[] triangles;
     Vector3[] vertices;
+    Vector3[] normals;
+    Vector2[] uvs;
+
+    Vector3[] newNormals;
+    Vector2[] newUvs;
     
     
     Matrix4x4[] data;
@@ -22,7 +27,20 @@ public class ExplodingMesh : MonoBehaviour
         mesh = GetComponent<MeshFilter>().sharedMesh;
         triangles = mesh.triangles;
         vertices = mesh.vertices;
-        //lerp = -5.0f;
+        normals = mesh.normals;
+        uvs = mesh.uv;
+
+        newNormals = new Vector3[triangles.Length];
+        newUvs = new Vector2[triangles.Length];
+
+
+        for(int i = 0; i < newNormals.Length; i++)
+        {
+            newNormals[i] = mesh.normals[mesh.triangles[i]];
+            newUvs[i] = mesh.uv[mesh.triangles[i]];
+        }
+        
+        
 
         data = new Matrix4x4[mesh.triangles.Length/3];
         output = new Matrix4x4[mesh.triangles.Length/3];
@@ -69,6 +87,8 @@ public class ExplodingMesh : MonoBehaviour
         {
             mesh.triangles = triangles;
             mesh.vertices = vertices;
+            mesh.normals = normals;
+            mesh.uv = uvs;
         }
         else
         {
@@ -114,6 +134,8 @@ public class ExplodingMesh : MonoBehaviour
 
             mesh.vertices = verts;
             mesh.triangles = tri;
+            mesh.normals = newNormals;
+            mesh.uv = newUvs;
 
         }
         //mesh.vertices = vertices;
