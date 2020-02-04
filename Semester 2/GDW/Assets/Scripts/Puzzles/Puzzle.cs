@@ -18,7 +18,7 @@ public class Puzzle : Subject, IObserver
     void Start()
     {
         // Load reward
-        _reward = Resources.Load("Puzzles/key Variant") as GameObject;
+        //_reward = Resources.Load("Puzzles/key Variant") as GameObject;
 
         // Add all puzzle items
         foreach (PuzzleItem objective in _objectives)
@@ -67,7 +67,8 @@ public class Puzzle : Subject, IObserver
         {
             _completed = true;
 
-            Instantiate(_reward, _rewardSpawn.position, _rewardSpawn.rotation);
+            //Instantiate(_reward, _rewardSpawn.position, _rewardSpawn.rotation);
+            _reward.SetActive(true);
 
             // Notify puzzle manager
             notify(gameObject, PuzzleEvents.PUZZLE_FINISHED);
