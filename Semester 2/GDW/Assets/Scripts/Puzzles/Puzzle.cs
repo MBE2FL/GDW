@@ -17,8 +17,8 @@ public class Puzzle : Subject, IObserver
     // Start is called before the first frame update
     void Start()
     {
-        // Load reward
-        //_reward = Resources.Load("Puzzles/key Variant") as GameObject;
+        //Hides the reward
+        _reward.SetActive(false);
 
         // Add all puzzle items
         foreach (PuzzleItem objective in _objectives)

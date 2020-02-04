@@ -46,8 +46,8 @@ public class PuzzleManager : MonoBehaviour, IObserver
         if (_currPuzzles == _puzzles.Count)
         {
             // Activate portal;
-            Debug.Log("All puzzles completed!");
-            GetComponent<PortalManager>().activatePortals();
+            //Debug.Log("All puzzles completed!");
+            //GetComponent<PortalManager>().activatePortals();
         }
     }
 
