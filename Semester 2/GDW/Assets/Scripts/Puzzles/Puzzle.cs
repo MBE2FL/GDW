@@ -11,7 +11,10 @@ public class Puzzle : Subject, IObserver
     [SerializeField]
     GameObject _reward;
     [SerializeField]
-    Transform _rewardSpawn;
+    GameObject _reward2 = null;
+    //[SerializeField]
+    //Transform _rewardSpawn;
+    //Transform _rewardSpawn2;
 
 
     // Start is called before the first frame update
@@ -19,6 +22,10 @@ public class Puzzle : Subject, IObserver
     {
         //Hides the reward
         _reward.SetActive(false);
+        if(_reward2)
+        {
+            _reward2.SetActive(false);
+        }
 
         // Add all puzzle items
         foreach (PuzzleItem objective in _objectives)
@@ -69,6 +76,10 @@ public class Puzzle : Subject, IObserver
 
             //Instantiate(_reward, _rewardSpawn.position, _rewardSpawn.rotation);
             _reward.SetActive(true);
+            if (_reward2)
+            {
+                _reward2.SetActive(true);
+            }
 
             // Notify puzzle manager
             notify(gameObject, PuzzleEvents.PUZZLE_FINISHED);
