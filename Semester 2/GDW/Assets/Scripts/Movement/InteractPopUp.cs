@@ -42,22 +42,4 @@ public class InteractPopUp : MonoBehaviour
             popUp.transform.position = popUpPos;
         }
     }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.transform.tag == "Brother" || other.transform.tag == "Sister")
-        {
-            inInteractRange = true;
-            popUp.transform.position = transform.position + new Vector3(0, 2, 0);
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.transform.tag == "Brother" || other.transform.tag == "Sister")
-        {
-            inInteractRange = false;
-            popUp.transform.position = popUpPos;
-        }
-    }
 }

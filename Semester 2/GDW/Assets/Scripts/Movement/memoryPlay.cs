@@ -10,7 +10,7 @@ public class memoryPlay : MonoBehaviour
     public GameObject memoryPlayer;
     void Start()
     {
-        memoryPlayer.SetActive(false);
+        
     }
 
     // Update is called once per frame
@@ -37,23 +37,6 @@ public class memoryPlay : MonoBehaviour
     private void OnCollisionExit(Collision collision)
     {
         if (collision.transform.tag == "Brother" || collision.transform.tag == "Sister")
-        {
-            inPlayRange = false;
-        }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.transform.tag == "Brother" || other.transform.tag == "Sister")
-        {
-            inPlayRange = true;
-            Debug.Log("Reeeeet");
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.transform.tag == "Brother" || other.transform.tag == "Sister")
         {
             inPlayRange = false;
         }
