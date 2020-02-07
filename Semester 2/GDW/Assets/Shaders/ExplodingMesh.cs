@@ -146,4 +146,12 @@ public class ExplodingMesh : MonoBehaviour
         RunShader();
         lerp += Time.deltaTime * 0.5f;
     }
+
+    private void OnApplicationQuit()
+    {
+        mesh.triangles = triangles;
+        mesh.vertices = vertices;
+        mesh.normals = normals;
+        mesh.uv = uvs;
+    }
 }
