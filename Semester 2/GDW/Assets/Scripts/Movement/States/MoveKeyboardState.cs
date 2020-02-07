@@ -59,7 +59,8 @@ public class MoveKeyboardState : IPlayerState
         // Move only while on ground.
         if (_movement.OnGround)
         {
-            _rb.drag = 15;
+            _rb.drag = 17.5f;
+            _rb.angularDrag = 0.05f;
 
 
             // Move forward
@@ -67,7 +68,7 @@ public class MoveKeyboardState : IPlayerState
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
                 _animator.SetBool("walkingForward", true);
-                _force += _transform.forward*0.6f;
+                _force += _transform.forward;
             }
             else
             {
@@ -135,6 +136,7 @@ public class MoveKeyboardState : IPlayerState
         else
         {
             _rb.drag = 0;
+            _rb.angularDrag = 0;
         }
     }
 }

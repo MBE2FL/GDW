@@ -17,7 +17,8 @@ public class JumpState : IPlayerState
         _transform = transform;
         _moveable = moveable;
         _animator = animator;
-
+        _rb.drag = 0;
+        _rb.angularDrag = 0;
         //_animator.SetBool("jump", true);
         _rb.AddForce(new Vector3(0, 300, 0));
         //_animator.SetBool("jump", false);
