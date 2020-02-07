@@ -11,6 +11,8 @@ extern "C"
 	PLUGIN_API int load(char* filePath);
 	PLUGIN_API void logCurrPuzzles(char* filePath, int currPuzzles);
 
+	PLUGIN_API void sendTransform()
+
 
 #ifdef __cplusplus
 }
