@@ -1,0 +1,41 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+RWStructuredBuffer<float3> dataBuffer;
+RWStructuredBuffer<float3> baseBuffer;
+
+float t;
+
+float3 GetNormal(float3 a, float3 b, float3 c)
+{
+   float3 d = a-b;
+   float3 e = c-b;
+   return normalize(cross(d, e));
+}
+
+float3 Explode(float3 position, float3 normal)
+{
+    return position - normal * -0.01;
+}
+
+float3 Move(float3 base, float3 moved)
+{
+    float y = lerp(moved.y, base.y, t);
+    return float3(base.x, y, base.z);
+}
+
+[numthreads(1024,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float3 input;
+    input = dataBuffer[id.x];
+
+    float3 baseInput;
+    baseInput = baseBuffer[id.x];
+
+    //float3 norm = GetNormal(movedTri[0], movedTri[1], movedTri[2]);
+        //movedTri[i] = Explode(movedTri[i], norm);
+    input = Move(baseInput, input);
+   
+    dataBuffer[id.x] = input;
+}
