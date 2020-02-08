@@ -1,16 +1,24 @@
 #include "Wrapper.h"
-#include "ClientSide.h"
 
 ClientSide cs;
 
-PLUGIN_API
 
-PLUGIN_API void send(const Vector3& position, const Quaternion& rotation)
+void sendData(const Vector3& position, const Quaternion& rotation)
 {
-	return PLUGIN_API send(position, rotation);
+	return cs.sendData(position, rotation);
 }
 
-PLUGIN_API void receive(Vector3& position, Quaternion& rotation)
+void receiveData(Vector3& position, Quaternion& rotation)
 {
-	return PLUGIN_API receive(position, rotation);
+	return cs.receiveData(position, rotation);
+}
+
+bool connectToServer(const char* id)
+{
+	return cs.connectToServer(id);
+}
+
+bool initNetwork(const string& ip)
+{
+	return cs.initNetwork(ip);
 }

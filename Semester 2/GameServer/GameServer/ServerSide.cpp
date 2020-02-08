@@ -11,19 +11,24 @@
 
 #include "Transform.h"
 
+using std::cout;
+using std::endl;
+using std::string;
+
 //INPUT handling
-struct  Player
+struct Player
 {
 	Transform _transform;
-	size_t _ip;
+	string _ip = "";
 	bool connected = false;
+	string _id = "";
 };
 
 
 
 
-Player player1;
-Player player2;
+Player _player1;
+Player _player2;
 // Networking
 SOCKET server_socket;
 struct addrinfo* ptr = NULL;
@@ -31,45 +36,7 @@ struct addrinfo* ptr = NULL;
 #define BUF_LEN 512
 #define UPDATE_INTERVAL 0.100 //seconds
 
-bool connect()
-{
-	char buf[BUF_LEN];
-	struct sockaddr_in fromAdder;
-	int fromLen;
-	fromLen = sizeof(fromAdder);
 
-	memset(buf, 0, BUF_LEN);
-
-	int bytes_received = -1;
-	int sError = -1;
-
-	bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
-
-	sError = WSAGetLastError();
-
-	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
-	{
-		//std::cout << "Received: " << buf << std::endl;
-
-		std::string temp = buf;
-		if (temp == "connect")
-		{
-			if (!player1.connected)
-			{
-				player1._ip = fromAdder.sin_addr.S_un.S_addr;
-				player1.connected = true;
-			}
-			else
-			{
-				player2._ip = fromAdder.sin_addr.S_un.S_addr;
-				player2.connected = true;
-			}
-			memset(buf, 0, BUF_LEN);
-			strcpy(buf,"connected");
-			sendto(client_socket, buf, BUF_LEN, 0, ptr->ai_addr, ptr->ai_addrlen)
-		}
-	}
-}
 
 bool initNetwork() {
 	//Initialize winsock
@@ -126,49 +93,154 @@ bool initNetwork() {
 	return 1;
 }
 
+bool connectPlayer()
+{
+	char buf[BUF_LEN];
+	struct sockaddr_in fromAdder;
+	int fromLen;
+	fromLen = sizeof(fromAdder);
 
-int main() {
+	memset(buf, 0, BUF_LEN);
+
+	int bytes_received = -1;
+	int sError = -1;
+
+	// Receive message from a client.
+	bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
+
+	sError = WSAGetLastError();
+
+
+	// Check if incoming message is for connecting.
+	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+	{
+		//std::cout << "Received: " << buf << std::endl;
+		char ipbuf[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &fromAdder, ipbuf, sizeof(ipbuf));
+		
+
+
+		string temp = buf;
+		temp = temp.substr(0, 7);
+		if (temp == "connect")
+		{
+			temp = buf;
+			temp = temp.substr(7);
+
+			// First player is connecting
+			if (!_player1.connected)
+			{
+				_player1._ip = ipbuf;
+				_player1.connected = true;
+				_player1._id = temp;
+			}
+			// Second player is connecting
+			else
+			{
+				// Make sure not the same player connecting.
+				//if (_player1._ip == ipbuf)
+				//	return false;
+				if (_player1._id == temp)
+					return false;
+
+
+
+				// New player connecting.
+				_player2._ip = ipbuf;
+				_player2.connected = true;
+				_player2._id = temp;
+
+				cout << "Both players have connected" << endl;
+			}
+
+			// Tell client they have connected to the server.
+			memset(buf, 0, BUF_LEN);
+			strcpy_s(buf, "connected");
+			sendto(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, fromLen);
+
+			cout << "Player connected" << endl;
+			printf("Source IP address: %s\n", ipbuf);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void updateTransform()
+{
+	char buf[BUF_LEN];
+	struct sockaddr_in fromAdder;
+	int fromLen;
+	fromLen = sizeof(fromAdder);
+
+	memset(buf, 0, BUF_LEN);
+
+	int bytes_received = -1;
+	int sError = -1;
+
+
+	// Reveive transform updates from players.
+	bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
+
+	sError = WSAGetLastError();
+
+	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+	{
+		//std::cout << "Received: " << buf << std::endl;
+
+		string temp = buf;
+		//std::size_t pos = temp.find('@');
+		//temp = temp.substr(0, pos - 1);
+		//tx = std::stof(temp);
+		//temp = buf;
+		//temp = temp.substr(pos + 1);
+		//ty = std::stof(temp);
+
+		//std::cout << tx << " " << ty << std::endl;
+
+		char ipbuf[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &fromAdder, ipbuf, sizeof(ipbuf));
+		if (strcmp(ipbuf, _player1._ip.c_str()) == 0)
+		{
+			cout << "Player 1" << endl;
+		}
+		else
+		{
+			cout << "Player 2" << endl;
+		}
+		cout << temp << endl;
+	}
+}
+
+
+int main() 
+{
 	//Initialize Network
 	if (!initNetwork())
 		return 1;
 	
 	///// Game loop /////
-	while (true) {
+	while (true) 
+	{
 		
 		////////////////////
 		/*
 		CODE TO RECEIVE UPDATES FROM CLIENT GOES HERE...
 		*/
-		char buf[BUF_LEN];
-		struct sockaddr_in fromAdder;
-		int fromLen;
-		fromLen = sizeof(fromAdder);
 
-		memset(buf, 0, BUF_LEN);
 
-		int bytes_received = -1;
-		int sError = -1;
-
-		bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
-
-		sError = WSAGetLastError();
-
-		if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+		// Don't send updates until both players have connected.
+		while (!_player1.connected || !_player2.connected)
 		{
-			//std::cout << "Received: " << buf << std::endl;
-
-			std::string temp = buf;
-			std::size_t pos = temp.find('@');
-			temp = temp.substr(0, pos - 1);
-			tx = std::stof(temp);
-			temp = buf;
-			temp = temp.substr(pos + 1);
-			ty = std::stof(temp);
-
-			std::cout << tx <<" " << ty << std::endl;
+			connectPlayer();
 		}
+
+		
+
+		updateTransform();
 		////////////////////
 	}
-	return 0;
 
+	return 0;
 }
