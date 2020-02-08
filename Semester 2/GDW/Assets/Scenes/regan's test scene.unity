@@ -4262,7 +4262,7 @@ MonoBehaviour:
   - {fileID: 236791444}
   - {fileID: 1788398365}
   _reward: {fileID: 891213873}
-  _rewardSpawn: {fileID: 8606382126473267644}
+  _reward2: {fileID: 0}
 --- !u!1001 &653826973
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4644,7 +4644,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 60.199585, y: -168}
+  m_AnchoredPosition: {x: 60.199463, y: -168}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &702457653
@@ -5570,7 +5570,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 60.30017, y: -56}
+  m_AnchoredPosition: {x: 60.30005, y: -56}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &807298304
@@ -10714,6 +10714,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d849e8e9c4719d4caacbd32e65feb8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1408562020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1408562010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c8af55a832a5be419fc867122238c36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _connected: 0
+  _connect: 0
+  _ip: 127.0.0.1
+  _id: 2
 --- !u!1001 &1418509279
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13295,6 +13311,22 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &1705048494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1705048486}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c8af55a832a5be419fc867122238c36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _connected: 0
+  _connect: 0
+  _ip: 127.0.0.1
+  _id: 1
 --- !u!1001 &1711238188
 PrefabInstance:
   m_ObjectHideFlags: 0

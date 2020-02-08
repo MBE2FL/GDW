@@ -1,6 +1,7 @@
 #pragma once
+#include "PluginSettings.h"
 
-struct Vector3
+struct PLUGIN_API Vector3
 {
 	Vector3() { x = 0; y = 0; z = 0; }
 	Vector3(const Vector3 &other) { x = other.x; y = other.y; z = other.z; }
@@ -9,7 +10,7 @@ struct Vector3
 	float z;
 };
 
-struct Quaternion
+struct PLUGIN_API Quaternion
 {
 	Quaternion() { x = 0; y = 0; z = 0; w = 1; }
 	Quaternion(const Quaternion &other) { x = other.x; y = other.y; z = other.z; w = other.w; }
@@ -19,7 +20,7 @@ struct Quaternion
 	float w;
 };
 
-class Transform
+class PLUGIN_API Transform
 {
 public:
 	Transform();
