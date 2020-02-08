@@ -14,6 +14,7 @@ public class MoveKeyboardState : IPlayerState
 
     Vector3 _force;
     float _speed = 0.0f;
+    float _speedRamp = 1.0f;
 
     public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animator)
     {
@@ -59,7 +60,8 @@ public class MoveKeyboardState : IPlayerState
         // Move only while on ground.
         if (_movement.OnGround)
         {
-            _rb.drag = 4;
+            _rb.drag = 17.5f;
+            _rb.angularDrag = 0.05f;
 
 
             // Move forward
@@ -73,6 +75,8 @@ public class MoveKeyboardState : IPlayerState
             {
                 _animator.SetBool("walkingForward", false);
             }
+
+            
 
             // Move backward
             if (Input.GetKey(KeyCode.S))
@@ -112,6 +116,19 @@ public class MoveKeyboardState : IPlayerState
 
             _force.Normalize();
 
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                if (_speedRamp < 3.0f)
+                    _speedRamp += 0.07f;
+                
+            }
+            else
+            {
+                if(_speedRamp >1.0f)
+                    _speedRamp -= 0.07f;
+
+            }
+            _speed *= _speedRamp;
             _rb.AddForce(_force * _speed);
 
 
@@ -135,6 +152,7 @@ public class MoveKeyboardState : IPlayerState
         else
         {
             _rb.drag = 0;
+            _rb.angularDrag = 0;
         }
     }
 }
