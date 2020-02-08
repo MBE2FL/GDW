@@ -38,6 +38,9 @@ public class ExplodingMesh : MonoBehaviour
         newNormals = new Vector3[triangles.Length];
         newUvs = new Vector2[triangles.Length];
         newVerts = new Vector3[triangles.Length];
+        baseData = new Vector3[triangles.Length];
+        data = new Vector3[triangles.Length];
+        output = new Vector3[triangles.Length];
 
 
         for(int i = 0; i < newNormals.Length; i++)
@@ -45,15 +48,11 @@ public class ExplodingMesh : MonoBehaviour
             newNormals[i] = mesh.normals[mesh.triangles[i]];
             newUvs[i] = mesh.uv[mesh.triangles[i]];
             newVerts[i] = mesh.vertices[mesh.triangles[i]];
+            baseData[i] = mesh.vertices[mesh.triangles[i]];
         }
-
-        baseData = newVerts;
 
         RunDisShader();
 
-        data = newVerts;
-
-        output = new Vector3[triangles.Length];
 
 
         //data = new Matrix4x4[mesh.triangles.Length/3];
@@ -92,7 +91,7 @@ public class ExplodingMesh : MonoBehaviour
         //    baseData[i].SetRow(3, new Vector4(0, 0, 0, 0)); 
         //
         //}
-        RunShader();
+        //RunShader();
     }
 
     private void RunShader()
@@ -122,8 +121,8 @@ public class ExplodingMesh : MonoBehaviour
 
             //output = data;
             buffer.GetData(output); ;
-            //buffer.Dispose();
-            //baseBuffer.Dispose();
+            buffer.Dispose();
+            baseBuffer.Dispose();
 
             int[] tri = new int[triangles.Length];
             for (int i = 0; i < tri.Length; i++)
@@ -149,13 +148,15 @@ public class ExplodingMesh : MonoBehaviour
         ComputeBuffer buffer = new ComputeBuffer(newVerts.Length, 3 * 4);
         buffer.SetData(newVerts);
 
-        int kernelHandle = displacementShader.FindKernel("CSMain");
+        int kernelHandle = displacementShader.FindKernel("Main");
         displacementShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
 
         displacementShader.Dispatch(kernelHandle, newVerts.Length, 1, 1);
         
-        buffer.GetData(newVerts); ;
-        
+        buffer.GetData(data); ;
+
+        buffer.Dispose();
+
     }
 
 

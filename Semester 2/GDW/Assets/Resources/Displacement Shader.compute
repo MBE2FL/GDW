@@ -1,7 +1,7 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
+#pragma kernel Main
 
-RWStructuredBuffer<float4x4> dataBuffer;
+RWStructuredBuffer<float3> dataBuffer;
 
 float3 GetNormal(float3 a, float3 b, float3 c)
 {
@@ -22,7 +22,7 @@ float3 Move(float3 pos, int i)
 }
 
 [numthreads(1024,1,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void Main (uint3 id : SV_DispatchThreadID)
 {
     float3 input;
     input = dataBuffer[id.x];
