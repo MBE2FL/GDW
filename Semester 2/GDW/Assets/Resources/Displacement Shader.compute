@@ -17,7 +17,7 @@ float3 Explode(float3 position, float3 normal)
 
 float3 Move(float3 pos, int i)
 {
-    pos.y = pos.y - i * 0.1;
+    pos.y = pos.y - i * 0.01;
     return pos;
 }
 

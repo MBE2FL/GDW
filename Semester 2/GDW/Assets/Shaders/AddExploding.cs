@@ -6,11 +6,12 @@ public class AddExploding : MonoBehaviour
 {
     private void Awake()
     {
-        var meshList = GameObject.FindObjectsOfType<MeshRenderer>(); 
+        var meshList = GameObject.FindObjectsOfType<MeshFilter>();
 
-        for(int i = 0; i < meshList.Length; i++)
+        for (int i = 0; i < meshList.Length; i++)
         {
-            //ExplodingMesh explodingMesh = meshList[i].gameObject.AddComponent(typeof(ExplodingMesh)) as ExplodingMesh;
+            if (meshList[i].gameObject.GetComponent<ExplodingMesh>() == null && meshList[i].sharedMesh.isReadable)
+                meshList[i].gameObject.AddComponent(typeof(ExplodingMesh));
            
         }
     }

@@ -6,6 +6,7 @@ public class ExplodingMesh : MonoBehaviour
 {
     private ComputeShader shader;
     private ComputeShader displacementShader;
+    private ComputeShader memoryShader;
     public float lerp = 0.0f;
     public float dropDistance = 0.0f;
 
@@ -19,15 +20,19 @@ public class ExplodingMesh : MonoBehaviour
     Vector3[] newNormals;
     Vector2[] newUvs;
     Vector3[] newVerts;
+    int[] newTris;
     
     
     Vector3[] data;
     Vector3[] baseData;
     Vector3[] output;
+    bool reset = true;
+    bool re = true;
     void Start()
     {
         shader = (ComputeShader)Resources.Load("GeoCompute Shader");
         displacementShader = (ComputeShader)Resources.Load("Displacement Shader");
+        memoryShader = (ComputeShader)Resources.Load("Memory Allocation Shader");
 
         mesh = GetComponent<MeshFilter>().sharedMesh;
         triangles = mesh.triangles;
@@ -38,18 +43,22 @@ public class ExplodingMesh : MonoBehaviour
         newNormals = new Vector3[triangles.Length];
         newUvs = new Vector2[triangles.Length];
         newVerts = new Vector3[triangles.Length];
+        newTris = new int[triangles.Length];
         baseData = new Vector3[triangles.Length];
         data = new Vector3[triangles.Length];
         output = new Vector3[triangles.Length];
 
 
-        for(int i = 0; i < newNormals.Length; i++)
+        for(int i = 0; i < triangles.Length; i++)
         {
-            newNormals[i] = mesh.normals[mesh.triangles[i]];
-            newUvs[i] = mesh.uv[mesh.triangles[i]];
-            newVerts[i] = mesh.vertices[mesh.triangles[i]];
-            baseData[i] = mesh.vertices[mesh.triangles[i]];
+            //newNormals[i] = mesh.normals[mesh.triangles[i]];
+            //newUvs[i] = mesh.uv[mesh.triangles[i]];
+            //baseData[i] = newVerts[i] = mesh.vertices[mesh.triangles[i]];
+            //baseData[i] = mesh.vertices[mesh.triangles[i]];
+            newTris[i] = i;
         }
+
+        RunMemShader();
 
         RunDisShader();
 
@@ -98,12 +107,17 @@ public class ExplodingMesh : MonoBehaviour
     {
         if (lerp > 0.99)
         {
-            mesh.triangles = triangles;
-            mesh.vertices = vertices;
-            mesh.normals = normals;
-            mesh.uv = uvs;
+            if (reset)
+            {
+                mesh.triangles = triangles;
+                mesh.vertices = vertices;
+                mesh.normals = normals;
+                mesh.uv = uvs;
+                reset = false;
+                re = true;
+            }
         }
-        else
+        else if (data.Length > 0)
         {
             ComputeBuffer buffer = new ComputeBuffer(data.Length, 3 * 4);
             ComputeBuffer baseBuffer = new ComputeBuffer(baseData.Length, 3 * 4);
@@ -124,20 +138,15 @@ public class ExplodingMesh : MonoBehaviour
             buffer.Dispose();
             baseBuffer.Dispose();
 
-            int[] tri = new int[triangles.Length];
-            for (int i = 0; i < tri.Length; i++)
-            {
-                tri[i] = i;
-            }
-            
-
-
-
             mesh.vertices = output;
-            mesh.triangles = tri;
-            mesh.normals = newNormals;
-            mesh.uv = newUvs;
-
+            if (re)
+            {
+                mesh.triangles = newTris;
+                mesh.normals = newNormals;
+                mesh.uv = newUvs;
+                reset = true;
+                re = false;
+            }
         }
         //mesh.vertices = vertices;
         //mesh.triangles = triangles;
@@ -145,17 +154,95 @@ public class ExplodingMesh : MonoBehaviour
 
     private void RunDisShader()
     {
-        ComputeBuffer buffer = new ComputeBuffer(newVerts.Length, 3 * 4);
-        buffer.SetData(newVerts);
+        if (newVerts.Length > 0)
+        {
+            ComputeBuffer buffer = new ComputeBuffer(newVerts.Length, 3 * 4);
+            buffer.SetData(newVerts);
 
-        int kernelHandle = displacementShader.FindKernel("Main");
-        displacementShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
+            int kernelHandle = displacementShader.FindKernel("Main");
+            displacementShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
 
-        displacementShader.Dispatch(kernelHandle, newVerts.Length, 1, 1);
-        
-        buffer.GetData(data); ;
+            displacementShader.Dispatch(kernelHandle, newVerts.Length, 1, 1);
 
-        buffer.Dispose();
+            buffer.GetData(data);
+
+            buffer.Dispose();
+        }
+
+    }
+
+    private void RunMemShader()
+    {
+
+        for (int i = 0; i < newNormals.Length; i++)
+        {
+            newNormals[i] = mesh.normals[mesh.triangles[i]];
+            newUvs[i] = mesh.uv[mesh.triangles[i]];
+            baseData[i] = newVerts[i] = mesh.vertices[mesh.triangles[i]];
+            //baseData[i] = mesh.vertices[mesh.triangles[i]];
+            newTris[i] = i;
+        }
+        if (newVerts.Length > 0)
+        {
+            ComputeBuffer triBuffer = new ComputeBuffer(mesh.triangles.Length, sizeof(int));
+            triBuffer.SetData(mesh.triangles);
+
+            ComputeBuffer normBuffer = new ComputeBuffer(mesh.normals.Length, 3 * 4);
+            normBuffer.SetData(mesh.normals);
+            ComputeBuffer newNormBuffer = new ComputeBuffer(newNormals.Length, 3 * 4);
+            newNormBuffer.SetData(newNormals);
+
+            ComputeBuffer uvBuffer = new ComputeBuffer(mesh.uv.Length, 2 * 4);
+            uvBuffer.SetData(mesh.uv);
+            ComputeBuffer newUVBuffer = new ComputeBuffer(newUvs.Length, 2 * 4);
+            newUVBuffer.SetData(newUvs);
+
+            ComputeBuffer vertBuffer = new ComputeBuffer(mesh.vertices.Length, 3 * 4);
+            vertBuffer.SetData(mesh.vertices);
+            ComputeBuffer baseBuffer = new ComputeBuffer(baseData.Length, 3 * 4);
+            baseBuffer.SetData(baseData);
+            ComputeBuffer newVertBuffer = new ComputeBuffer(newVerts.Length, 3 * 4);
+            newVertBuffer.SetData(newVerts);
+
+            ComputeBuffer newTriBuffer = new ComputeBuffer(newTris.Length, sizeof(int));
+            newTriBuffer.SetData(newTris);
+
+
+            int kernelHandle = memoryShader.FindKernel("Main");
+
+            memoryShader.SetBuffer(kernelHandle, "tris", triBuffer);
+            memoryShader.Dispatch(kernelHandle, mesh.triangles.Length, 1, 1);
+
+            memoryShader.SetBuffer(kernelHandle, "normals", normBuffer);
+            memoryShader.Dispatch(kernelHandle, mesh.normals.Length, 1, 1);
+            memoryShader.SetBuffer(kernelHandle, "newNormals", newNormBuffer);
+            memoryShader.Dispatch(kernelHandle, newNormals.Length, 1, 1);
+
+            memoryShader.SetBuffer(kernelHandle, "uvs", uvBuffer);
+            memoryShader.Dispatch(kernelHandle, mesh.uv.Length, 1, 1);
+            memoryShader.SetBuffer(kernelHandle, "newUvs", newUVBuffer);
+            memoryShader.Dispatch(kernelHandle, newUvs.Length, 1, 1);
+
+            memoryShader.SetBuffer(kernelHandle, "vertices", vertBuffer);
+            memoryShader.Dispatch(kernelHandle, mesh.vertices.Length, 1, 1);
+            memoryShader.SetBuffer(kernelHandle, "baseData", baseBuffer);
+            memoryShader.Dispatch(kernelHandle, baseData.Length, 1, 1);
+            memoryShader.SetBuffer(kernelHandle, "newVerts", newVertBuffer);
+            memoryShader.Dispatch(kernelHandle, newVerts.Length, 1, 1);
+
+
+            newNormBuffer.GetData(newNormals);
+            newNormBuffer.Dispose();
+
+            newUVBuffer.GetData(newUvs);
+            newUVBuffer.Dispose();
+
+            baseBuffer.GetData(baseData);
+            baseBuffer.Dispose();
+            newVertBuffer.GetData(newVerts);
+            newVertBuffer.Dispose();
+
+        }
 
     }
 
