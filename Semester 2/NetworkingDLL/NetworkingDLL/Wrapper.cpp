@@ -18,7 +18,7 @@ bool connectToServer(const char* id)
 	return cs.connectToServer(id);
 }
 
-bool initNetwork(const string& ip)
+bool initNetwork(const char* ip, const char* id)
 {
-	return cs.initNetwork(ip);
+	return cs.initNetwork(ip, id);
 }

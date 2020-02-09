@@ -14,6 +14,7 @@
 using std::cout;
 using std::endl;
 using std::string;
+using std::stof;
 
 //INPUT handling
 struct Player
@@ -22,6 +23,9 @@ struct Player
 	string _ip = "";
 	bool connected = false;
 	string _id = "";
+	sockaddr* _sockAddr;
+	int _sockAddrLen;
+	sockaddr_in fromAddr;
 };
 
 
@@ -36,7 +40,7 @@ struct addrinfo* ptr = NULL;
 #define BUF_LEN 512
 #define UPDATE_INTERVAL 0.100 //seconds
 
-
+void parseData(const string& buf, Vector3& pos, Quaternion rot);
 
 bool initNetwork() {
 	//Initialize winsock
@@ -96,9 +100,9 @@ bool initNetwork() {
 bool connectPlayer()
 {
 	char buf[BUF_LEN];
-	struct sockaddr_in fromAdder;
+	struct sockaddr_in fromAddr;
 	int fromLen;
-	fromLen = sizeof(fromAdder);
+	fromLen = sizeof(fromAddr);
 
 	memset(buf, 0, BUF_LEN);
 
@@ -106,7 +110,7 @@ bool connectPlayer()
 	int sError = -1;
 
 	// Receive message from a client.
-	bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
+	bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, &fromLen);
 
 	sError = WSAGetLastError();
 
@@ -116,7 +120,7 @@ bool connectPlayer()
 	{
 		//std::cout << "Received: " << buf << std::endl;
 		char ipbuf[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &fromAdder, ipbuf, sizeof(ipbuf));
+		inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
 		
 
 
@@ -133,6 +137,9 @@ bool connectPlayer()
 				_player1._ip = ipbuf;
 				_player1.connected = true;
 				_player1._id = temp;
+				_player1._sockAddr = (sockaddr*) &fromAddr;
+				_player1._sockAddrLen = fromLen;
+				_player1.fromAddr = fromAddr;
 			}
 			// Second player is connecting
 			else
@@ -149,6 +156,9 @@ bool connectPlayer()
 				_player2._ip = ipbuf;
 				_player2.connected = true;
 				_player2._id = temp;
+				_player2._sockAddr = (sockaddr*) &fromAddr;
+				_player2._sockAddrLen = fromLen;
+				_player2.fromAddr = fromAddr;
 
 				cout << "Both players have connected" << endl;
 			}
@@ -156,7 +166,7 @@ bool connectPlayer()
 			// Tell client they have connected to the server.
 			memset(buf, 0, BUF_LEN);
 			strcpy_s(buf, "connected");
-			sendto(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, fromLen);
+			sendto(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, fromLen);
 
 			cout << "Player connected" << endl;
 			printf("Source IP address: %s\n", ipbuf);
@@ -170,9 +180,9 @@ bool connectPlayer()
 void updateTransform()
 {
 	char buf[BUF_LEN];
-	struct sockaddr_in fromAdder;
+	struct sockaddr_in fromAddr;
 	int fromLen;
-	fromLen = sizeof(fromAdder);
+	fromLen = sizeof(fromAddr);
 
 	memset(buf, 0, BUF_LEN);
 
@@ -181,7 +191,7 @@ void updateTransform()
 
 
 	// Reveive transform updates from players.
-	bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
+	bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, &fromLen);
 
 	sError = WSAGetLastError();
 
@@ -199,18 +209,100 @@ void updateTransform()
 
 		//std::cout << tx << " " << ty << std::endl;
 
-		char ipbuf[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &fromAdder, ipbuf, sizeof(ipbuf));
-		if (strcmp(ipbuf, _player1._ip.c_str()) == 0)
+		// Retrieve network id of incomming message.
+		temp = temp.substr(0, 1);
+
+		Vector3 position;
+		Quaternion rotation;
+
+
+		// Player one sent transform data.
+		if (temp == _player1._id)
 		{
-			cout << "Player 1" << endl;
+			cout << "Network ID: " << temp << endl;
+			temp = buf;
+
+			parseData(temp, position, rotation);
+
+			// Send data to other player.
+			if (sendto(server_socket, buf, BUF_LEN, 0, (sockaddr*)&_player2.fromAddr, fromLen) == SOCKET_ERROR)
+			{
+				printf("Failed to send transform data. %d\n", WSAGetLastError());
+				//char ipbuf[INET_ADDRSTRLEN];
+				//inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
+				//cout << ipbuf << endl;
+			}
+
+			//if (sendto(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, fromLen) == SOCKET_ERROR)
+			//{
+			//	printf("Failed to send transform data. %d\n", WSAGetLastError());
+			//}
+		}
+		// Player two sent transform data.
+		else if (temp == _player2._id)
+		{
+			cout << "Network ID: " << temp << endl;
+			temp = buf;
+
+			parseData(temp, position, rotation);
+
+			//// Send data to other player.
+			if (sendto(server_socket, buf, BUF_LEN, 0, (sockaddr*)&_player1.fromAddr, fromLen) == SOCKET_ERROR)
+			{
+				printf("Failed to send transform data. %d\n", WSAGetLastError());
+				//char ipbuf[INET_ADDRSTRLEN];
+				//inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
+				//cout << ipbuf << endl;
+			}
 		}
 		else
 		{
-			cout << "Player 2" << endl;
+			cout << "Unkown network id!" << endl;
+			return;
 		}
-		cout << temp << endl;
 	}
+}
+
+void parseData(const string& buf, Vector3& pos, Quaternion rot)
+{
+	size_t currPos = 0;
+	size_t endPos = 0;
+	float data[7];
+	unsigned int index = 0;
+
+	string temp = buf;
+
+	do
+	{
+		currPos = buf.find_first_of("WXYZ", currPos);
+		endPos = buf.find_first_of("WXYZ", currPos + 1);
+
+		currPos = currPos + 2; // Skip space
+
+		if (endPos != string::npos)
+			temp = buf.substr(currPos, (endPos - currPos) - 1);
+		else
+			temp = buf.substr(currPos);
+
+
+		data[index] = stof(temp);
+
+		++index;
+
+	} while (endPos != string::npos);
+
+	pos.x = data[0];
+	pos.y = data[1];
+	pos.z = data[2];
+
+	rot.x = data[3];
+	rot.y = data[4];
+	rot.z = data[5];
+	rot.w = data[6];
+
+
+	cout << pos.x << " " << pos.y << " " << pos.z << endl;
+	cout << rot.x << " " << rot.y << " " << rot.z << " " << rot.w << endl;
 }
 
 
