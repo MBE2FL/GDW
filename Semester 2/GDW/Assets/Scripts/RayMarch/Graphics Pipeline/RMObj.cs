@@ -80,7 +80,10 @@ public abstract class RMObj : MonoBehaviour
     [SerializeField]
     protected List<RayMarchShader> _shaderList = new List<RayMarchShader>();
 
-    protected event System.Action<RayMarchShader, RMObj> test;
+    //protected event System.Action<RayMarchShader, RMObj> test;
+    //protected event System.Action _onRemove;
+    //protected event System.Action _onDrawOrderChange;
+    
     
 
     public bool IsPrim
@@ -207,7 +210,7 @@ public abstract class RMObj : MonoBehaviour
     public void removeFromShaderList(RayMarchShader shader)
     {
         // Remove this object from the shader.
-        shader.removeFromRenderList(this);
+        //shader.removeFromRenderList(this);
 
         // Remove the shader from this object.
         int index =_shaderList.IndexOf(shader);
@@ -218,7 +221,7 @@ public abstract class RMObj : MonoBehaviour
     public void removeFromShaderList(int index)
     {
         // Remove this object from the shader.
-        _shaderList[index].removeFromRenderList(this);
+        //_shaderList[index].removeFromRenderList(this);
 
         // Remove the shader from this object.
         _shaderList[index] = _shaderList[_shaderList.Count - 1];
@@ -237,9 +240,21 @@ public abstract class RMObj : MonoBehaviour
         _shaderList.Clear();
     }
 
+    public void remove()
+    {
+        // Notify all listeners
+        removeAllFromShaderList();
+    }
+
+    public void removeFromShader(RayMarchShader shader)
+    {
+        shader.removeFromRenderList(this);
+    }
+
     private void Reset()
     {
         clearAlts();
+        remove();
     }
     public void clearAlts()
     {
@@ -255,6 +270,11 @@ public abstract class RMObj : MonoBehaviour
         alt5.order = 4;
 
         _alterations.Clear();
+    }
+
+    private void OnDestroy()
+    {
+        remove();
     }
 
 }
@@ -362,7 +382,7 @@ public class RMObjEditor : Editor
         EditorGUILayout.Space(4.0f);
         if (GUILayout.Button("Remove From All Shaders"))
         {
-            rmObj.removeAllFromShaderList();
+            rmObj.remove();
         }
         EditorGUILayout.Space(4.0f);
 
@@ -372,14 +392,16 @@ public class RMObjEditor : Editor
         if (EditorGUILayout.BeginFadeGroup(_showShaderList.faded))
         {
             shaders = rmObj.ShaderList;
-            Rect r = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            Rect shaderRect;
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            RayMarchShader shader;
 
             for (int i = 0; i < shaders.Count; ++i)
             {
-                shaderRect = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                shader = shaders[i];
 
-                label.text = shaders[i].ShaderName;
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+                label.text = shader.ShaderName;
                 EditorGUILayout.LabelField(label, EditorStyles.centeredGreyMiniLabel);
                 EditorGUILayout.Space(2.0f);
 
@@ -387,11 +409,12 @@ public class RMObjEditor : Editor
                 label.tooltip = "The order in which this object will be placed in the shader.";
                 EditorGUILayout.PropertyField(_drawOrder, label);
                 EditorGUILayout.Space(2.0f);
-                
+
                 if (GUILayout.Button("Remove From Shader"))
                 {
                     rmObj.removeFromShaderList(i);
-                    break;
+                    rmObj.removeFromShader(shader);
+                    return;
                 }
                 EditorGUILayout.Space(1.0f);
 

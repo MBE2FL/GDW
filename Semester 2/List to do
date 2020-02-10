@@ -1,0 +1,42 @@
+RM Objects:
+	Removal:
+		Notify all appropriate shaders
+
+	Draw Order:
+		Draw order is shader dependent.
+		Notify appropriate shader
+
+	Alterations:
+		Have a look at
+
+	Transformations:
+		Scaling should be done as an alteration
+			Uniform and non-uniform option
+			Should be relative to it's parents
+
+
+RayMarcher:
+	Display all shaders:
+		Make sure window is stable
+		Hide all shader components attached to the game object
+		Allow window to open all shaders available, from top toolbar
+
+	Shader Removal:
+		Notify all appropriate rm objects
+
+
+Shader Builder:
+	Allow a selection of shaders to build
+	Allow for all shaders to be built
+	Allow for the creation of Marching Cube compute shaders
+
+
+Ray March Shader:
+	Change to an abstract class, to allow specific types of shaders to be made.
+		Rendering
+		Marching Cube
+
+
+Marching Cube:
+	Implement own version of algorithm
+	Allow 3D volume to be any position in the scene

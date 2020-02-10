@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.AnimatedValues;
 #endif
 using System;
+using UnityEngine.Events;
 
 [ExecuteInEditMode]
 [AddComponentMenu("Ray Marching/RayMarcher")]
@@ -190,14 +191,29 @@ public class RayMarcher : MonoBehaviour
     }
 
 
-    public void addShader()
+    public void addShader(ShaderType shaderType)
     {
         // RayMarchShader shader = ScriptableObject.CreateInstance<RayMarchShader>();
         // shader.ShaderName = "New Shader";
         // _shaders.Add(shader);
 
 
-        RayMarchShader shader = gameObject.AddComponent<RayMarchShader>();
+        RayMarchShader shader;
+
+        switch (shaderType)
+        {
+            case ShaderType.Rendering:
+                shader = gameObject.AddComponent<RMRenderShader>();
+                break;
+            case ShaderType.MarchingCube:
+                shader = gameObject.AddComponent<RMMarchingCubeShader>();
+                break;
+            case ShaderType.Collision:
+                return;
+            default:
+                return;
+        }
+
         _shaders.Add(shader);
     }
 
@@ -220,6 +236,15 @@ public class RayMarcher : MonoBehaviour
 
     public void removeAllShaders()
     {
+        foreach (RayMarchShader shader in _shaders)
+        {
+#if UNITY_EDITOR
+            DestroyImmediate(shader);
+#else
+            Destroy(shader);
+#endif
+        }
+
         _shaders.Clear();
     }
 
@@ -396,19 +421,14 @@ public class RayMarcher : MonoBehaviour
 [CustomEditor(typeof(RayMarcher))]
 public class RayMarcherEditor : Editor
 {
-
-    private bool _boundDebug = false;
-
-    private List<RayMarchShader> shaders;
-    private List<RMObj> _renderList;
-    private bool _renderListFoldout = false;
-    private SerializedProperty _shaders;
-    private SerializedProperty _sunLight;
-    private SerializedProperty _distTex;
-    private SerializedProperty _collisionCompute;
-    private SerializedProperty _computeTex;
-
-    List<AnimBool> _showShaderBools;
+    List<RayMarchShader> shaders;
+    SerializedProperty _shaders;
+    SerializedProperty _sunLight;
+    SerializedProperty _distTex;
+    SerializedProperty _collisionCompute;
+    SerializedProperty _computeTex;
+    ShaderType _shaderType = ShaderType.Rendering;
+    int _selectedShaderIndex = 0;
 
     private void OnEnable()
     {
@@ -417,16 +437,6 @@ public class RayMarcherEditor : Editor
         _distTex = serializedObject.FindProperty("_distTex");
         _collisionCompute = serializedObject.FindProperty("_collisionCompute");
         _computeTex = serializedObject.FindProperty("_computeTex");
-
-        // Add an AnimBool variable for each shader in this RayMarcher.
-        AnimBool showShader;
-        _showShaderBools = new List<AnimBool>();
-        foreach (RayMarchShader shader in (target as RayMarcher).Shaders)
-        {
-            showShader = new AnimBool(false);
-            showShader.valueChanged.AddListener(Repaint);
-            _showShaderBools.Add(showShader);
-        }
     }
 
 
@@ -449,14 +459,13 @@ public class RayMarcherEditor : Editor
         GUIContent label = new GUIContent("Shaders", "");
         EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
+        label.text = "Shader Type";
+        _shaderType = (ShaderType)EditorGUILayout.EnumPopup(label, _shaderType);
+
         // Add a another shader to this RayMarcher.
         if (GUILayout.Button("Add Shader"))
         {
-            rayMarcher.addShader();
-
-            AnimBool showShaderBool = new AnimBool(false);
-            showShaderBool.valueChanged.AddListener(Repaint);
-            _showShaderBools.Add(showShaderBool);
+            rayMarcher.addShader(_shaderType);
         }
 
         // Remove all shaders from this RayMarcher.
@@ -464,7 +473,6 @@ public class RayMarcherEditor : Editor
         if (GUILayout.Button("Remove All Shaders"))
         {
             rayMarcher.removeAllShaders();
-            _showShaderBools.Clear();
         }
         EditorGUILayout.Space(6.0f);
 
@@ -472,93 +480,18 @@ public class RayMarcherEditor : Editor
         shaders = rayMarcher.Shaders;
         for (int i = 0; i < shaders.Count; ++i)
         {
-            EditorGUILayout.Space(4.0f);
-
-            // Each shaders section of info.
-            _showShaderBools[i].target = EditorGUILayout.ToggleLeft("Show/Hide " + shaders[i].ShaderName, _showShaderBools[i].target);
+            EditorGUILayout.Space(8.0f);
 
             if (GUILayout.Button(shaders[i].ShaderName))
             {
                 ShaderEditorWindow.Init(shaders[i]);
             }
-
-            if (EditorGUILayout.BeginFadeGroup(_showShaderBools[i].faded))
-            {
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-                // Display the current shader's effect shader.
-                label.text = "Effect Shader";
-                label.tooltip = "";
-                shaders[i].EffectShader = EditorGUILayout.ObjectField(label, shaders[i].EffectShader, typeof(Shader), true) as Shader;
-
-                // Display the current shader's name.
-                EditorGUILayout.BeginHorizontal();
-                label.text = "Shader Name";
-                EditorGUILayout.PrefixLabel(label);
-                shaders[i].ShaderName = EditorGUILayout.TextField(shaders[i].ShaderName);
-                EditorGUILayout.EndHorizontal();
-
-                // Settings retrieved from a scriptable object.
-                label.text = "Settings";
-                label.tooltip = "";
-                shaders[i].Settings = EditorGUILayout.ObjectField(label, shaders[i].Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
-
-                // Objects in the current shader's render list.
-                label.text = "Render List";
-                _renderListFoldout = EditorGUILayout.Foldout(_renderListFoldout, label, true);
-                //EditorGUILayout.BeginScrollView()
-                if (_renderListFoldout)
-                {
-                    _renderList = shaders[i].RenderList;
-                    foreach (RMObj obj in _renderList)
-                    {
-                        EditorGUILayout.TextField(obj.name);
-                    }
-                }
-
-                // Remove the current shader.
-                EditorGUILayout.Space(12.0f);
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Remove Shader"))
-                {
-                    rayMarcher.removeShader(i);
-
-                    _showShaderBools.RemoveAt(i);
-                    //_showShaderBools[i] = _showShaderBools[_showShaderBools.Count - 1];
-                    //_showShaderBools.RemoveAt(_showShaderBools.Count - 1);
-                    break;
-                }
-                GUILayout.EndHorizontal();
-
-                EditorGUILayout.EndVertical();
-            }
-            EditorGUILayout.EndFadeGroup();
         }
-
-
-
-
-
-        //if (GUILayout.Button("Shader Editor"))
-        //{
-        //    //rayMarcher.ShowShaderWindow = !rayMarcher.ShowShaderWindow;
-        //    ShaderEditorWindow.Init();
-        //}
 
 
 
         serializedObject.ApplyModifiedProperties();
 
-
-        //if (GUILayout.Button("Bound Debug"))
-        //{
-        //    _boundDebug = !_boundDebug;
-
-        //    if (_boundDebug)
-        //        rayMarcher.EffectMaterial.EnableKeyword("BOUND_DEBUG");
-        //    else
-        //        rayMarcher.EffectMaterial.DisableKeyword("BOUND_DEBUG");
-        //}
     }
 }
 
@@ -575,10 +508,8 @@ public class ShaderEditorWindow : EditorWindow
     Vector2 renderListScrollPos;
     bool _renderListFoldout = false;
     RayMarchShader _shader;
-    event Action<RMObj> _onRemoveObj;
-    event Action _onRemoveShader;
-
-
+    //event Action<RMObj> _onRemoveObj;
+    //event Action _onRemoveShader;
 
     // Add menu named "Shader Editor" to the Window menu
     //[MenuItem("Window/Shader Editor")]
@@ -610,8 +541,8 @@ public class ShaderEditorWindow : EditorWindow
 
         _rayMarcher = RayMarcher.Instance;
 
-        window._onRemoveObj += window.removeObj;
-        window._onRemoveShader += window.removeShader;
+        //window._onRemoveObj += window.removeObj;
+        //window._onRemoveShader += window.removeShader;
     }
 
 
@@ -660,7 +591,9 @@ public class ShaderEditorWindow : EditorWindow
 
                 if (GUILayout.Button("Remove"))
                 {
-                    _onRemoveObj.Invoke(obj);
+                    //_onRemoveObj.Invoke(obj);
+                    removeObj(obj);
+                    return;
                 }
 
                 EditorGUILayout.Space(2.0f);
@@ -680,26 +613,37 @@ public class ShaderEditorWindow : EditorWindow
 
         if (GUILayout.Button("Remove Shader"))
         {
-            _onRemoveShader.Invoke();
+            //_onRemoveShader.Invoke();
+            removeShader();
+            return;
         }
     }
 
-    private void OnDestroy()
-    {
-        _onRemoveObj -= removeObj;
-        _onRemoveShader -= removeShader;
-    }
+    //private void OnDestroy()
+    //{
+    //    _onRemoveObj -= removeObj;
+    //    _onRemoveShader -= removeShader;
+    //}
 
     private void removeObj(RMObj rmObj)
     {
         //_shader.removeFromRenderList(rmObj);
-        rmObj.removeFromShaderList(_shader);
+        //rmObj.removeFromShaderList(_shader);
+        rmObj.remove();
     }
 
     private void removeShader()
     {
         RayMarcher.Instance.removeShader(_shader);
-        _shader.removeAllFromRenderList();
+        //_shader.removeAllFromRenderList();
+        _shader.remove();
+
+        // Delete the shader.
+#if UNITY_EDITOR
+        DestroyImmediate(_shader);
+#else
+        Destroy(_shader);
+#endif
     }
 }
 

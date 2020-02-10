@@ -121,6 +121,41 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!84 &129044884
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_ForcedFallbackFormat: 4
+  m_DownscaleFallback: 0
+  serializedVersion: 3
+  m_Width: 1020
+  m_Height: 414
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthFormat: 0
+  m_ColorFormat: 49
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
 --- !u!1 &156894880
 GameObject:
   m_ObjectHideFlags: 0
@@ -347,7 +382,7 @@ MonoBehaviour:
   mode: 0
   _sdfCompute: {fileID: 7200000, guid: e89df66c60d25ee4f83870a35330fff8, type: 3}
   meshify: 0
-  _renderShader: {fileID: 1425710442}
+  _renderShader: {fileID: 0}
 --- !u!114 &160750145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -623,41 +658,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!84 &371986384
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  serializedVersion: 3
-  m_Width: 1015
-  m_Height: 221
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthFormat: 0
-  m_ColorFormat: 49
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
 --- !u!1 &456400395
 GameObject:
   m_ObjectHideFlags: 0
@@ -2072,7 +2072,7 @@ MonoBehaviour:
   _shaders:
   - {fileID: 1425710442}
   _sunLight: {fileID: 1381117112}
-  _distTex: {fileID: 371986384}
+  _distTex: {fileID: 129044884}
   _collisionCompute: {fileID: 7200000, guid: b7c5a38061b4f6a4c83ae7f3ea565cf9, type: 3}
   _computeTex: {fileID: 8400000, guid: 79c490384388c4c4994815e0e5bf6427, type: 2}
 --- !u!114 &1425710442
@@ -2084,12 +2084,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1425710440}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6912fcd98db997c42b684e93e52e9faa, type: 3}
+  m_Script: {fileID: 11500000, guid: eccfe9a406c268d458d113080bc1a138, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _effectShader: {fileID: 4800000, guid: f836cc80070ab70479fb4e91aeb05e4e, type: 3}
   _shaderName: Demo One
   _settings: {fileID: 11400000, guid: 358ace96ef26500438a5c59f3d35b859, type: 2}
+  _shaderType: 0
   _renderList:
   - {fileID: 929048229}
   - {fileID: 589324310}
@@ -2123,7 +2124,7 @@ MonoBehaviour:
   _path: Assets/Scripts/RayMarch
   _shaderTemplatePath: Assets/Scripts/RayMarch/RayMarchShaderTemplate.shader
   shaderTemplate: {fileID: 4800000, guid: d2f2e48d75cd2d2498c3fe3a9cb81ea7, type: 3}
-  _currentShader: {fileID: 1425710442}
+  _currentShader: {fileID: 0}
   _buildMode: 0
   _buildType: 0
 --- !u!4 &1425710445
