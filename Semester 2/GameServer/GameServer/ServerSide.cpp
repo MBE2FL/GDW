@@ -40,7 +40,7 @@ struct addrinfo* ptr = NULL;
 #define BUF_LEN 512
 #define UPDATE_INTERVAL 0.100 //seconds
 
-void parseData(const string& buf, Vector3& pos, Quaternion rot);
+void parseData(const string& buf, Vector3& pos, Quaternion& rot);
 
 bool initNetwork() {
 	//Initialize winsock
@@ -263,7 +263,7 @@ void updateTransform()
 	}
 }
 
-void parseData(const string& buf, Vector3& pos, Quaternion rot)
+void parseData(const string& buf, Vector3& pos, Quaternion& rot)
 {
 	size_t currPos = 0;
 	size_t endPos = 0;

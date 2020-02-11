@@ -255,7 +255,7 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 	}
 }
 
-void ClientSide::parseData(const string& buf, Vector3& pos, Quaternion rot)
+void ClientSide::parseData(const string& buf, Vector3& pos, Quaternion& rot)
 {
 	size_t currPos = 0;
 	size_t endPos = 0;

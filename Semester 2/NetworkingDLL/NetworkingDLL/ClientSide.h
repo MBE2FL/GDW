@@ -32,7 +32,7 @@ public:
 	bool connectToServer(const char* id);
 	void sendData(const Vector3& position, const Quaternion& rotation);//from unity to here
 	void receiveData(Vector3& position, Quaternion& rotation);//from here to unity
-	void parseData(const string& buf, Vector3& pos, Quaternion rot);
+	void parseData(const string& buf, Vector3& pos, Quaternion& rot);
 
 private:
 	Transform _transform;
