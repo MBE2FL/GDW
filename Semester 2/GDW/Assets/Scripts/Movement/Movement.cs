@@ -138,13 +138,13 @@ public class Movement : MonoBehaviour
 
     private void OnTriggerStay(Collider collision)
     {
-        //if (collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
+        if (collision.gameObject.tag != "memory trigger")
             onGround = true;
     }
 
     private void OnTriggerExit(Collider collision)
     {
-        //if(collision.gameObject.tag == "ground" || collision.gameObject.tag == "Interactable")
+        if (collision.gameObject.tag != "memory trigger")
         onGround = false;
 
     }
