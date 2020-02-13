@@ -17,8 +17,8 @@ public enum BuildMode
 public enum BuildType
 {
     Rendering,
-    Collision,
-    MarchingCubes
+    MarchingCube,
+    Collision
 }
 
 [ExecuteInEditMode]
@@ -31,7 +31,9 @@ public class ShaderBuilder : MonoBehaviour
     [SerializeField]
     private string _shaderTemplatePath;
     [SerializeField]
-    Shader shaderTemplate;
+    Shader _shaderTemplate;
+    [SerializeField]
+    ComputeShader _computeShaderTemplate;
     [HideInInspector]
     private RayMarcher _rayMarcher;
     [SerializeField]
@@ -40,6 +42,11 @@ public class ShaderBuilder : MonoBehaviour
     BuildMode _buildMode = BuildMode.BuildSelected;
     [SerializeField]
     BuildType _buildType = BuildType.Rendering;
+
+    [SerializeField]
+    Vector3Int _numThreads = new Vector3Int(32, 1, 1);
+    [SerializeField]
+    Vector3Int _resolution = new Vector3Int(32, 32, 32);
 
 
     public RayMarcher GetRayMarcher
@@ -67,7 +74,19 @@ public class ShaderBuilder : MonoBehaviour
     {
         //_path = Application.dataPath + "/Graphics Pipeline/Shaders/";
         //_shaderTemplatePath = Application.dataPath + "/Graphics Pipeline/Shaders/RayMarchTemplate.shader";
-        _shaderTemplatePath = AssetDatabase.GetAssetPath(shaderTemplate);
+        switch (_buildType)
+        {
+            case BuildType.Rendering:
+                _shaderTemplatePath = AssetDatabase.GetAssetPath(_shaderTemplate);
+                break;
+            case BuildType.MarchingCube:
+                _shaderTemplatePath = AssetDatabase.GetAssetPath(_computeShaderTemplate);
+                break;
+            case BuildType.Collision:
+                break;
+            default:
+                break;
+        }
     }
 
     // Start is called before the first frame update
@@ -80,12 +99,86 @@ public class ShaderBuilder : MonoBehaviour
 
     public void build()
     {
+        //if ((int)_buildType != (int)_currentShader.ShaderType)
+        //{
+        //    Debug.LogError("Template shader is not the same type as the build type!");
+        //    return;
+        //}
+        if ((_buildType == BuildType.Rendering) && !_shaderTemplate)
+        {
+            Debug.LogError("No template shader assigned!");
+            return;
+        }
+        else if ((_buildType != BuildType.Rendering) && !_computeShaderTemplate)
+        {
+            Debug.LogError("No template compute shader assigned!");
+            return;
+        }
+
+
         Debug.Log("Building shader.");
 
         StringBuilder file = new StringBuilder();
 
         string shaderName = _currentShader.ShaderName;
 
+        switch (_buildType)
+        {
+            case BuildType.Rendering:
+                _shaderTemplatePath = AssetDatabase.GetAssetPath(_shaderTemplate);
+                buildRenderShader(ref file, ref shaderName);
+                break;
+            case BuildType.MarchingCube:
+                _shaderTemplatePath = AssetDatabase.GetAssetPath(_computeShaderTemplate);
+                buildMarchingCubeShader(ref file, ref shaderName);
+                break;
+            case BuildType.Collision:
+                Debug.LogError("Collision shaders are not supported yet!");
+                break;
+            default:
+                Debug.LogError("Unkown build type selected!");
+                break;
+        }
+
+
+
+
+        // Write new shader.
+        string fileType = "";
+
+        switch (_buildType)
+        {
+            case BuildType.Rendering:
+                fileType = ".shader";
+                break;
+            case BuildType.MarchingCube:
+                fileType = ".compute";
+                break;
+            case BuildType.Collision:
+                fileType = ".compute";
+                break;
+            default:
+                fileType = ".shader";
+                break;
+        }
+
+        using (StreamWriter shader = new StreamWriter(File.Create(_path + "/" + shaderName + fileType)))
+        {
+            shader.Write(file.ToString());
+        }
+
+
+        file.Clear();
+
+
+#if UNITY_EDITOR
+        AssetDatabase.Refresh();
+        //AssetDatabase.ImportAsset("Assets/Graphics Pipeline/Shaders/Resources/" + _name + ".shader");
+#endif
+    }
+
+    private void buildRenderShader(ref StringBuilder file, ref string shaderName)
+    {
         foreach (string line in File.ReadAllLines(_shaderTemplatePath))
         {
             // Replace insert statement.
@@ -125,22 +218,45 @@ public class ShaderBuilder : MonoBehaviour
                 file.AppendLine(line);
             }
         }
+    }
 
-
-        // Write new shader.
-        using (StreamWriter shader = new StreamWriter(File.Create(_path + "/" + shaderName + ".shader")))
+    private void buildMarchingCubeShader(ref StringBuilder file, ref string shaderName)
+    {
+        foreach (string line in File.ReadAllLines(_shaderTemplatePath))
         {
-            shader.Write(file.ToString());
+            // Replace insert statement.
+            // Number of threads
+            if (line.Contains("// <Insert Number Of Threads Here>>"))
+            {
+                file.AppendLine("[numthreads(" + _numThreads.x + ", " + _numThreads.y + ", " + _numThreads.z + ")]");
+            }
+            // Resolution
+            else if (line.Contains("// <Insert Resolution Here>>"))
+            {
+                file.AppendLine("\tint width = " + _resolution.x + ", height = " + _resolution.y + ", length = " + _resolution.z + ";");
+            }
+            // Maps
+            else if (line.Contains("// <Insert Maps Here>"))
+            {
+                file.AppendLine("\tfloat cheapMap(float3 p)");
+                file.AppendLine("\t{");
+                buildCheapMap(ref file);
+                file.AppendLine("\t}");
+                file.AppendLine();
+
+
+                file.AppendLine("\tfloat map(float3 p)");
+                file.AppendLine("\t{");
+                buildMap(ref file, false);
+                file.AppendLine("\t}");
+                file.AppendLine();
+            }
+            // Copy line from template.
+            else
+            {
+                file.AppendLine(line);
+            }
         }
-
-
-        file.Clear();
-
-
-#if UNITY_EDITOR
-        AssetDatabase.Refresh();
-        //AssetDatabase.ImportAsset("Assets/Graphics Pipeline/Shaders/Resources/" + _name + ".shader");
-#endif
     }
 
     public void buildCheapMap(ref StringBuilder map)
@@ -198,7 +314,7 @@ public class ShaderBuilder : MonoBehaviour
         map.AppendLine("\t\treturn scene;");
     }
 
-    private void buildMap(ref StringBuilder map)
+    private void buildMap(ref StringBuilder map, bool useDistBuf = true)
     {
         map.AppendLine("\t\tfloat scene = _maxDrawDist;");
         map.AppendLine();
@@ -243,7 +359,7 @@ public class ShaderBuilder : MonoBehaviour
                     continue;
 
                 map.AppendLine("\t\t// ######### " + prim.gameObject.name + " #########");
-                parsePrimitive(ref map, prim, ref primIndex, ref altIndex);
+                parsePrimitive(ref map, prim, ref primIndex, ref altIndex, false, useDistBuf);
                 map.AppendLine("\t\t// ######### " + prim.gameObject.name + " #########");
                 map.AppendLine();
             }
@@ -259,7 +375,7 @@ public class ShaderBuilder : MonoBehaviour
 
                 map.AppendLine("\t\t// ######### " + csg.gameObject.name + " #########");
 
-                parseCSG(ref map, csg, ref primIndex, ref csgIndex, ref altIndex);
+                parseCSG(ref map, csg, ref primIndex, ref csgIndex, ref altIndex, useDistBuf);
 
                 determineCombineOp(ref map, null, csg, csgIndex - 1);
                 map.AppendLine("\t\t// ######### " + csg.gameObject.name + " #########");
@@ -460,7 +576,7 @@ public class ShaderBuilder : MonoBehaviour
 
 
 
-    private void parsePrimitive(ref StringBuilder map, RMPrimitive prim, ref uint primIndex, ref uint altIndex, bool csgNodeTwo = false)
+    private void parsePrimitive(ref StringBuilder map, RMPrimitive prim, ref uint primIndex, ref uint altIndex, bool csgNodeTwo = false, bool useDistBuf = true)
     {
         if (!prim.Static)
         {
@@ -479,9 +595,13 @@ public class ShaderBuilder : MonoBehaviour
             // Determine primitive type
             parsePrimitiveType(ref map, prim.PrimitiveType);
 
-            // Store distance into distance buffer
+            // Determine alteration operations
             parseAlterationTypes(ref map, prim.Alterations, ref altIndex, false);
-            map.AppendLine("\t\tdistBuffer[" + primIndex + "] = " + obj + ";");
+
+            // Store distance into distance buffer
+            if (useDistBuf)
+                map.AppendLine("\t\tdistBuffer[" + primIndex + "] = " + obj + ";");
+
             map.AppendLine();
 
             // Determine combining operation
@@ -522,7 +642,9 @@ public class ShaderBuilder : MonoBehaviour
             parsePrimitiveType(ref map, prim.PrimitiveType);
 
             // Store distance into distance buffer
-            map.AppendLine("\t\tdistBuffer[" + primIndex + "] = " + obj + ";");
+            if (useDistBuf)
+                map.AppendLine("\t\tdistBuffer[" + primIndex + "] = " + obj + ";");
+
             map.AppendLine();
 
             // Determine combining operation
@@ -705,14 +827,14 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
-    private void parseCSG(ref StringBuilder map, CSG csg, ref uint primIndex, ref uint csgIndex, ref uint altIndex)
+    private void parseCSG(ref StringBuilder map, CSG csg, ref uint primIndex, ref uint csgIndex, ref uint altIndex, bool useDistBuf = true)
     {
         // Base case: Both nodes are primitives.
         if (csg.AllPrimNodes)
         {
             // Parse both nodes.
-            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
-            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex, true);
+            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex, false, useDistBuf);
+            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex, true, useDistBuf);
 
             // Parse this CSG.
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
@@ -725,10 +847,10 @@ public class ShaderBuilder : MonoBehaviour
         else if (csg.IsFirstPrim)
         {
             // Recurse through second node (Must be a CSG).
-            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
+            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex, useDistBuf);
 
             // Parse first node.
-            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
+            parsePrimitive(ref map, csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex, false, useDistBuf);
 
             // Parse this CSG.
             map.AppendLine("\t\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
@@ -743,13 +865,13 @@ public class ShaderBuilder : MonoBehaviour
         else if (csg.IsSecondPrim)
         {
             // Recurse through first node (Must be a csg).
-            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
+            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex, useDistBuf);
 
             map.AppendLine("\t\tobj = storedCSGs[" + (csgIndex - 1) + "];");
             map.AppendLine();
 
             // Parse second node.
-            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex, true);
+            parsePrimitive(ref map, csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex, true, useDistBuf);
 
             // Parse this CSG.
             determineCSGNodeCombineOp(ref map, csg, csgIndex);
@@ -762,12 +884,12 @@ public class ShaderBuilder : MonoBehaviour
         else
         {
             // Recurse through first node.
-            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
+            parseCSG(ref map, csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex, useDistBuf);
 
             uint firstNodeIndex = (csgIndex - 1);
 
             // Recurse through second node.
-            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
+            parseCSG(ref map, csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex, useDistBuf);
 
             map.AppendLine("\t\tobj = storedCSGs[" + firstNodeIndex + "];");
             map.AppendLine();
@@ -1214,6 +1336,8 @@ public class ShaderBuilder : MonoBehaviour
 
 
 
+    // ********* Marching Cube Shader *********
+
 
     [MenuItem("Shader Builder/Build Command _F6")]
     static void BuildCommand()
@@ -1234,9 +1358,14 @@ public class ShaderBuilderEditor : Editor
     List<RayMarchShader> _shaders = new List<RayMarchShader>();
     SerializedProperty _currentShader;
     int _selectedShaderIndex = 0;
-    string[] _shaderNames;
+    List<string> _shaderNames;
     SerializedProperty _buildMode;
     SerializedProperty _buildType;
+
+    // Marching cube variables
+    SerializedProperty _computeShaderTemplate;
+    SerializedProperty _numThreads;
+    SerializedProperty _resolution;
 
 
 
@@ -1244,10 +1373,15 @@ public class ShaderBuilderEditor : Editor
     {
         _path = serializedObject.FindProperty("_path");
         shaderTemplatePath = serializedObject.FindProperty("_shaderTemplatePath");
-        _shaderTemplate = serializedObject.FindProperty("shaderTemplate");
+        _shaderTemplate = serializedObject.FindProperty("_shaderTemplate");
         _currentShader = serializedObject.FindProperty("_currentShader");
         _buildMode = serializedObject.FindProperty("_buildMode");
         _buildType = serializedObject.FindProperty("_buildType");
+
+        // Marching cube variables
+        _computeShaderTemplate = serializedObject.FindProperty("_computeShaderTemplate");
+        _numThreads = serializedObject.FindProperty("_numThreads");
+        _resolution = serializedObject.FindProperty("_resolution");
     }
 
     public override void OnInspectorGUI()
@@ -1265,7 +1399,10 @@ public class ShaderBuilderEditor : Editor
         //EditorGUILayout.PropertyField(_shaderTemplatePath);
 
         EditorGUI.BeginChangeCheck();
-        EditorGUILayout.PropertyField(_shaderTemplate);
+        if (_buildType.enumValueIndex == (int)BuildType.Rendering)
+            EditorGUILayout.PropertyField(_shaderTemplate);
+        else
+            EditorGUILayout.PropertyField(_computeShaderTemplate);
         if (EditorGUI.EndChangeCheck())
         {
             shaderTemplatePath.stringValue = AssetDatabase.GetAssetPath(_shaderTemplate.objectReferenceValue);
@@ -1277,14 +1414,31 @@ public class ShaderBuilderEditor : Editor
         EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
         _shaders = shaderBuilder.GetRayMarcher.Shaders;
-        _shaderNames = new string[_shaders.Count];
+        _shaderNames = new List<string>(_shaders.Count);
+        List<RayMarchShader> _validShaders = new List<RayMarchShader>(_shaders.Count);
 
         for (int i = 0; i < _shaders.Count; ++i)
         {
-            _shaderNames[i] = _shaders[i].ShaderName;
+            // Skip non-relevant shader types, based on the current build type.
+            if ((int)_shaders[i].ShaderType != _buildType.enumValueIndex)
+                continue;
+
+            _shaderNames.Add(_shaders[i].ShaderName);
+            _validShaders.Add(_shaders[i]);
         }
 
-        _selectedShaderIndex = EditorGUILayout.Popup(_selectedShaderIndex, _shaderNames);
+        // No appropiate shaders available.
+        if (_shaderNames.Count <= 0)
+        {
+            label.text = "No appropiate shaders available.";
+            EditorGUILayout.LabelField(label);
+        }
+        // Display available shaders.
+        else
+        {
+            _selectedShaderIndex = EditorGUILayout.Popup(_selectedShaderIndex, _shaderNames.ToArray());
+            shaderBuilder.CurrentShader = _validShaders[_selectedShaderIndex];
+        }
 
 
         label.text = "Build Options";
@@ -1293,13 +1447,19 @@ public class ShaderBuilderEditor : Editor
         EditorGUILayout.PropertyField(_buildMode);
         EditorGUILayout.PropertyField(_buildType);
 
+        if (_buildType.enumValueIndex == (int)BuildType.MarchingCube)
+        {
+            EditorGUILayout.PropertyField(_numThreads);
+            EditorGUILayout.PropertyField(_resolution);
+        }
+
 
         serializedObject.ApplyModifiedProperties();
 
         EditorGUILayout.Space();
         if (GUILayout.Button("Build"))
         {
-            shaderBuilder.CurrentShader = _shaders[_selectedShaderIndex];
+            //shaderBuilder.CurrentShader = _shaders[_selectedShaderIndex];
             shaderBuilder.build();
         }
     }

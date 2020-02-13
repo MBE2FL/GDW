@@ -207,6 +207,7 @@ public class RayMarcher : MonoBehaviour
                 break;
             case ShaderType.MarchingCube:
                 shader = gameObject.AddComponent<RMMarchingCubeShader>();
+                shader.ShaderType = ShaderType.MarchingCube;
                 break;
             case ShaderType.Collision:
                 return;
@@ -474,13 +475,13 @@ public class RayMarcherEditor : Editor
         {
             rayMarcher.removeAllShaders();
         }
-        EditorGUILayout.Space(6.0f);
+        EditorGUILayout.Space(10.0f);
 
         // Display all shaders.
         shaders = rayMarcher.Shaders;
         for (int i = 0; i < shaders.Count; ++i)
         {
-            EditorGUILayout.Space(8.0f);
+            //EditorGUILayout.Space(2.0f);
 
             if (GUILayout.Button(shaders[i].ShaderName))
             {
@@ -555,9 +556,18 @@ public class ShaderEditorWindow : EditorWindow
 
 
         // Display the current shader's effect shader.
-        label.text = "Effect Shader";
-        label.tooltip = "";
-        _shader.EffectShader = EditorGUILayout.ObjectField(label, _shader.EffectShader, typeof(Shader), true) as Shader;
+        if (_shader.ShaderType == ShaderType.Rendering)
+        {
+            label.text = "Effect Shader";
+            label.tooltip = "";
+            _shader.EffectShader = EditorGUILayout.ObjectField(label, _shader.EffectShader, typeof(Shader), true) as Shader;
+        }
+        else
+        {
+            label.text = "SDF To Mesh Shader";
+            label.tooltip = "";
+            (_shader as RMMarchingCubeShader).SDFtoMeshShader = EditorGUILayout.ObjectField(label, (_shader as RMMarchingCubeShader).SDFtoMeshShader, typeof(ComputeShader), true) as ComputeShader;
+        }
 
         // Display the current shader's name.
         EditorGUILayout.BeginHorizontal();
@@ -567,9 +577,12 @@ public class ShaderEditorWindow : EditorWindow
         EditorGUILayout.EndHorizontal();
 
         // Settings retrieved from a scriptable object.
-        label.text = "Settings";
-        label.tooltip = "";
-        _shader.Settings = EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
+        if (_shader.ShaderType == ShaderType.Rendering)
+        {
+            label.text = "Settings";
+            label.tooltip = "";
+            _shader.Settings = EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
+        }
 
         // Objects in the current shader's render list.
         label.text = "Render List";

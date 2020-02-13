@@ -18,8 +18,14 @@ public class RayMarchMesh : MonoBehaviour
     public bool meshify = false;
 
     [SerializeField]
-    RayMarchShader _renderShader;
+    RMMarchingCubeShader _rmShader;
 
+    [SerializeField]
+    Vector3Int _numThreads = new Vector3Int(32, 1, 1);
+    [SerializeField]
+    Vector3Int _resolution;
+    [SerializeField]
+    BoundsInt _volumeBounds;
 
     void Start()
     {
@@ -222,15 +228,15 @@ public class RayMarchMesh : MonoBehaviour
 
 
 
-        for (int x = 0; x < 5; ++x)
+        for (int x = 0; x < _volumeBounds.x; ++x)
         {
-            for (int y = 0; y < 5; ++y)
+            for (int y = 0; y < _volumeBounds.y; ++y)
             {
-                for (int z = 0; z < 4; ++z)
+                for (int z = 0; z < _volumeBounds.z; ++z)
                 {
-                    int width = 32;
-                    int height = 32;
-                    int length = 32;
+                    int width = _resolution.x;
+                    int height = _resolution.y;
+                    int length = _resolution.z;
 
                     float[] voxels = new float[width * height * length];
 
@@ -337,10 +343,10 @@ public class RayMarchMesh : MonoBehaviour
 
 
 
-        if (!_renderShader)
+        if (!_rmShader)
             return;
 
-        RMObj[] rmObjs = _renderShader.RenderList.ToArray();
+        RMObj[] rmObjs = _rmShader.RenderList.ToArray();
         // Get all ray march objects.
         //RMObj[] rmObjs = (RMObj[])FindObjectsOfType(typeof(RMObj));
         GameObject[] objs = new GameObject[rmObjs.Length];
@@ -350,6 +356,7 @@ public class RayMarchMesh : MonoBehaviour
         int[] primitiveTypes = new int[objs.Length];
         Vector4[] combineOps = new Vector4[objs.Length];
         Vector4[] primitiveGeoInfo = new Vector4[objs.Length];
+        Vector4[] boundGeoInfo = new Vector4[objs.Length];
 
         for (int i = 0; i < rmObjs.Length; ++i)
         {
@@ -366,6 +373,7 @@ public class RayMarchMesh : MonoBehaviour
             primitiveTypes[i] = (int)obj.GetComponent<RMPrimitive>().PrimitiveType;
             combineOps[i] = obj.GetComponent<RMPrimitive>().CombineOp;
             primitiveGeoInfo[i] = obj.GetComponent<RMPrimitive>().GeoInfo;
+            boundGeoInfo[i] = obj.GetComponent<RMPrimitive>().BoundGeoInfo;
         }
 
 
@@ -390,6 +398,7 @@ public class RayMarchMesh : MonoBehaviour
         _sdfCompute.SetInts("_primitiveTypes", primitiveTypes);
         _sdfCompute.SetVectorArray("_combineOps", combineOps);
         _sdfCompute.SetVectorArray("_primitiveGeoInfo", primitiveGeoInfo);
+        _sdfCompute.SetVectorArray("_boundGeoInfo", primitiveGeoInfo);
         _sdfCompute.SetVector("_volumeArea", volumeArea);
 
         //int numThreadGroups = objs.Length;
@@ -467,5 +476,11 @@ public class RayMarchMesh : MonoBehaviour
         }
 
         buffer.Release();
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = new Color(1.0f, 0.0f, 0.0f, 0.7f);
+        Gizmos.DrawCube(_volumeBounds.position, _volumeBounds.size);
     }
 }
