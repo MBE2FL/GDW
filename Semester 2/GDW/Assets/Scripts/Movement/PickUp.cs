@@ -42,7 +42,7 @@ public class PickUp : MonoBehaviour
     {
         Debug.DrawRay(transform.position, transform.forward * 1.0f, Color.white);
 
-        if (Input.GetKeyDown(KeyCode.E) && holdingObject || Input.GetButtonDown("Fire3") && holdingObject || Input.GetKeyDown(KeyCode.R) && holdingObject)
+        if (Input.GetKeyDown(KeyCode.E) && holdingObject || /*Input.GetButtonDown("Fire3") && holdingObject ||*/ Input.GetKeyDown(KeyCode.R) && holdingObject)
         {
             interactingObject.transform.SetParent(null);
             interRB.isKinematic = false;
@@ -52,7 +52,7 @@ public class PickUp : MonoBehaviour
             holdingObject = false;
             Physics.IgnoreLayerCollision(9, 11, false);
         }
-        else if (Input.GetKeyDown(KeyCode.E) && objectDetection() || Input.GetButtonDown("Fire3") && objectDetection())
+        else if (Input.GetKeyDown(KeyCode.E) && objectDetection() /*|| Input.GetButtonDown("Fire3") && objectDetection()*/)
         {
             interactingObject.transform.SetParent(transform, true);
            // interactingObject.transform.localScale = keepScale(transform);
