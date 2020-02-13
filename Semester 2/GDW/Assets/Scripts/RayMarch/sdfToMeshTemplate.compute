@@ -21,7 +21,7 @@ float3 _volumeArea;
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
     float3 rayOrigin = 0;
-    int width = 32, height = 32, length = 32; // <Insert Resolution Here>>
+	int width = 32 * _volumeArea.x, height = 32 * _volumeArea.y, length = 32 * _volumeArea.z; // <Insert Resolution Here>>
     
     // Fill voxels with values.
     for (int y = 0; y < height; y++)
@@ -33,7 +33,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             float fz = z / (length - 1.0f);
             
 			//rayOrigin = float3(id.x, y, z);
-            rayOrigin = float3(fx, fy, fz) + _volumeArea;
+            rayOrigin = float3(fx, fy, fz) * _volumeArea;
 
             int index = id.x + y * width + z * width * height;
 
@@ -46,4 +46,4 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 }
 
 
-// <Insert Maps Here>
+// <Insert Map Here>

@@ -233,18 +233,11 @@ public class ShaderBuilder : MonoBehaviour
             // Resolution
             else if (line.Contains("// <Insert Resolution Here>>"))
             {
-                file.AppendLine("\tint width = " + _resolution.x + ", height = " + _resolution.y + ", length = " + _resolution.z + ";");
+                file.AppendLine("\tint width = " + _resolution.x + " * _volumeArea.x, height = " + _resolution.y + " * _volumeArea.y, length = " + _resolution.z + " * _volumeArea.z;");
             }
             // Maps
-            else if (line.Contains("// <Insert Maps Here>"))
+            else if (line.Contains("// <Insert Map Here>"))
             {
-                file.AppendLine("\tfloat cheapMap(float3 p)");
-                file.AppendLine("\t{");
-                buildCheapMap(ref file);
-                file.AppendLine("\t}");
-                file.AppendLine();
-
-
                 file.AppendLine("\tfloat map(float3 p)");
                 file.AppendLine("\t{");
                 buildMap(ref file, false);

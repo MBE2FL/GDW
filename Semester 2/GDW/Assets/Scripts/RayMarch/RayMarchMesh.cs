@@ -383,6 +383,12 @@ public class RayMarchMesh : MonoBehaviour
         int height = RESOLUTION * (int)volumeArea.y;
         int length = RESOLUTION * (int)volumeArea.z;
 
+        width = _resolution.x * _volumeBounds.size.x;
+        height = _resolution.y * _volumeBounds.size.y;
+        length = _resolution.z * _volumeBounds.size.z;
+
+
+
         float[] voxels = new float[width * height * length];
 
 
@@ -394,15 +400,22 @@ public class RayMarchMesh : MonoBehaviour
         _sdfCompute.SetBuffer(kernel, "_voxels", buffer);
         //_collisionCompute.SetTexture(0, "Result", tex);
 
+        _sdfCompute.SetFloat("_maxDrawDist", 300.0f);
         _sdfCompute.SetMatrixArray("_invModelMats", invModelMats);
         _sdfCompute.SetInts("_primitiveTypes", primitiveTypes);
         _sdfCompute.SetVectorArray("_combineOps", combineOps);
         _sdfCompute.SetVectorArray("_primitiveGeoInfo", primitiveGeoInfo);
         _sdfCompute.SetVectorArray("_boundGeoInfo", primitiveGeoInfo);
-        _sdfCompute.SetVector("_volumeArea", volumeArea);
+        //_sdfCompute.SetVector("_volumeArea", volumeArea);
+        _sdfCompute.SetVector("_volumeArea", new Vector4(_volumeBounds.size.x, _volumeBounds.size.y, _volumeBounds.size.z));
+
+        Matrix4x4 localToWorld = new Matrix4x4();
+        localToWorld.SetTRS(_volumeBounds.position, Quaternion.identity, Vector3.one);
+        _sdfCompute.SetMatrix("_volumeLocalToWorld", localToWorld);
 
         //int numThreadGroups = objs.Length;
-        _sdfCompute.Dispatch(kernel, (int)volumeArea.x, 1, 1);
+        //_sdfCompute.Dispatch(kernel, (int)volumeArea.x, 1, 1);
+        _sdfCompute.Dispatch(kernel, _volumeBounds.size.x, 1, 1);
 
 
 
@@ -481,6 +494,7 @@ public class RayMarchMesh : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1.0f, 0.0f, 0.0f, 0.7f);
-        Gizmos.DrawCube(_volumeBounds.position, _volumeBounds.size);
+        //Gizmos.DrawCube(_volumeBounds.position, _volumeBounds.size);
+        Gizmos.DrawWireCube(_volumeBounds.position, _volumeBounds.size);
     }
 }

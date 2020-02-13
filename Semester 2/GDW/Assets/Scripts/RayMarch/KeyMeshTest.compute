@@ -14,6 +14,7 @@ float2 _combineOps[MAX_RM_OBJS];
 float4 _primitiveGeoInfo[MAX_RM_OBJS];
 float4 _boundGeoInfo[MAX_RM_OBJS];
 float3 _volumeArea;
+float4x4 _volumeLocalToWorld;
 
 //int width = 32, height = 32, length = 32;
 
@@ -21,7 +22,7 @@ float3 _volumeArea;
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
     float3 rayOrigin = 0;
-	int width = 32, height = 32, length = 32;
+	int width = 32 * _volumeArea.x, height = 32 * _volumeArea.y, length = 32 * _volumeArea.z;
     
     // Fill voxels with values.
     for (int y = 0; y < height; y++)
@@ -33,7 +34,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             float fz = z / (length - 1.0f);
             
 			//rayOrigin = float3(id.x, y, z);
-            rayOrigin = float3(fx, fy, fz) + _volumeArea;
+			rayOrigin = mul(_volumeLocalToWorld, float4(float3(fx, fy, fz) * _volumeArea, 1.0)).xyz;
 
             int index = id.x + y * width + z * width * height;
 
@@ -46,47 +47,9 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 }
 
 
-	float cheapMap(float3 p)
-	{
-		float scene = _maxDrawDist;
-
-		float4 pos = float4(0.0, 0.0, 0.0, 0.0);
-		float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
-		float radius = 0.0;
-
-		float obj;
-
-		// ######### Key Sphere #########
-		pos = mul(_invModelMats[0], float4(p, 1.0));
-		geoInfo = _boundGeoInfo[0];
-		obj = sdSphere(pos.xyz, geoInfo.x);
-
-		scene = opSmoothUnion(scene, obj, _combineOps[0].y);
-		// ######### Key Sphere #########
-
-		// ######### Key Torus #########
-		pos = mul(_invModelMats[1], float4(p, 1.0));
-		geoInfo = _boundGeoInfo[1];
-		obj = sdSphere(pos.xyz, geoInfo.x);
-
-		scene = opSmoothUnion(scene, obj, _combineOps[1].y);
-		// ######### Key Torus #########
-
-		// ######### Key Octahedron #########
-		pos = mul(_invModelMats[2], float4(p, 1.0));
-		geoInfo = _boundGeoInfo[2];
-		obj = sdSphere(pos.xyz, geoInfo.x);
-
-		scene = opSmoothUnion(scene, obj, _combineOps[2].y);
-		// ######### Key Octahedron #########
-
-		return scene;
-	}
-
 	float map(float3 p)
 	{
 		float scene = _maxDrawDist;
-		scene = 300.0;	// Wwhy
 
 		float4 pos = float4(0.0, 0.0, 0.0, 0.0);
 		float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
