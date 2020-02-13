@@ -23,8 +23,8 @@ public class ExplodingMesh : MonoBehaviour
     int[] newTris;
     
     
-    Vector3[] data;
-    Vector3[] baseData;
+    public Vector3[] data;
+    public Vector3[] baseData;
     Vector3[] output;
     bool reset = true;
     bool re = true;
@@ -39,6 +39,8 @@ public class ExplodingMesh : MonoBehaviour
         vertices = mesh.vertices;
         normals = mesh.normals;
         uvs = mesh.uv;
+        
+
 
         newNormals = new Vector3[triangles.Length];
         newUvs = new Vector2[triangles.Length];
@@ -56,52 +58,68 @@ public class ExplodingMesh : MonoBehaviour
             //baseData[i] = newVerts[i] = mesh.vertices[mesh.triangles[i]];
             //baseData[i] = mesh.vertices[mesh.triangles[i]];
             newTris[i] = i;
+
         }
 
         RunMemShader();
 
         RunDisShader();
 
+        mesh.vertices = newVerts;
+        mesh.uv2 = new Vector2[triangles.Length];
+        mesh.uv =  newUvs;
+        mesh.triangles = newTris;
+        mesh.normals = newNormals;
+
+        Vector2[] temp = new Vector2[triangles.Length];
+
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            temp[i].x = baseData[i].y;
+            temp[i].y = data[i].y;
+
+        }
+        mesh.uv2 = temp;
 
 
-        //data = new Matrix4x4[mesh.triangles.Length/3];
-        //output = new Matrix4x4[mesh.triangles.Length/3];
-        //
-        //baseData = new Matrix4x4[mesh.triangles.Length/3];
-        //
-        //int j = 0;
-        //for (int i = 0; i < data.Length; i++)
-        //{
-        //    data[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-        //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i *0.1f,
-        //        mesh.vertices[mesh.triangles[j]].z, 0));
-        //    baseData[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-        //        mesh.vertices[mesh.triangles[j]].y,
-        //        mesh.vertices[mesh.triangles[j]].z, 0));
-        //    j++;
-        //    
-        //    data[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-        //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
-        //        mesh.vertices[mesh.triangles[j]].z, 0));
-        //    baseData[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-        //        mesh.vertices[mesh.triangles[j]].y,
-        //        mesh.vertices[mesh.triangles[j]].z, 0));
-        //    j++;
-        //
-        //    data[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-        //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
-        //        mesh.vertices[mesh.triangles[j]].z, 0));
-        //    baseData[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-        //        mesh.vertices[mesh.triangles[j]].y,
-        //        mesh.vertices[mesh.triangles[j]].z, 0));
-        //    j++;
-        //
-        //    data[i].SetRow(3, new Vector4(0, 0, 0, 0));
-        //    baseData[i].SetRow(3, new Vector4(0, 0, 0, 0)); 
-        //
-        //}
-        //RunShader();
-    }
+            //data = new Matrix4x4[mesh.triangles.Length/3];
+            //output = new Matrix4x4[mesh.triangles.Length/3];
+            //
+            //baseData = new Matrix4x4[mesh.triangles.Length/3];
+            //
+            //int j = 0;
+            //for (int i = 0; i < data.Length; i++)
+            //{
+            //    data[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+            //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i *0.1f,
+            //        mesh.vertices[mesh.triangles[j]].z, 0));
+            //    baseData[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+            //        mesh.vertices[mesh.triangles[j]].y,
+            //        mesh.vertices[mesh.triangles[j]].z, 0));
+            //    j++;
+            //    
+            //    data[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+            //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
+            //        mesh.vertices[mesh.triangles[j]].z, 0));
+            //    baseData[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+            //        mesh.vertices[mesh.triangles[j]].y,
+            //        mesh.vertices[mesh.triangles[j]].z, 0));
+            //    j++;
+            //
+            //    data[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+            //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
+            //        mesh.vertices[mesh.triangles[j]].z, 0));
+            //    baseData[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+            //        mesh.vertices[mesh.triangles[j]].y,
+            //        mesh.vertices[mesh.triangles[j]].z, 0));
+            //    j++;
+            //
+            //    data[i].SetRow(3, new Vector4(0, 0, 0, 0));
+            //    baseData[i].SetRow(3, new Vector4(0, 0, 0, 0)); 
+            //
+            //}
+            //RunShader();
+        }
 
     private void RunShader()
     {
@@ -249,7 +267,7 @@ public class ExplodingMesh : MonoBehaviour
 
     private void Update()
     {
-        RunShader();
+        //RunShader();
         lerp += Time.deltaTime * 0.2f;
     }
 
