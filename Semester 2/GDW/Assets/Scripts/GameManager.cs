@@ -45,13 +45,13 @@ public class GameManager : MonoBehaviour
     {
         Instantiate(_sister);
         Instantiate(_brotherPawn);
-        _sisterPP.SetActive(true);
+        //_sisterPP.SetActive(true);
     }
 
     public void playAsBrother()
     {
         Instantiate(_sisterPawn);
         Instantiate(_brother);
-        _brotherPP.SetActive(true);
+        //_brotherPP.SetActive(true);
     }
 }
