@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Geo Tutorial Map
+  m_Name: Geo Tree 3
   m_Shader: {fileID: -6465566751694194690, guid: aad1b995a02d7694cb97cfbc2756a8c4,
     type: 3}
   m_ShaderKeywords: 
@@ -37,7 +37,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - Texture2D_32DAAF11:
-        m_Texture: {fileID: 2800000, guid: cd54a8820b7aaef49a67d176e4b204fe, type: 3}
+        m_Texture: {fileID: 2800000, guid: 13393bd807724d74388fc25565425add, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _AnisotropyMap:
