@@ -39,12 +39,6 @@ public class CSG : RMObj
     private float _nodeCombineSmoothness = 0.0f;
 
     [SerializeField]
-    private CombineOpsTypes _combineOpType = CombineOpsTypes.Union;
-    [SerializeField]
-    [Range(0.0f, 50.0f)]
-    private float _combineSmoothness = 0.0f;
-
-    [SerializeField]
     private bool _isRoot = true;
 
 
@@ -138,26 +132,6 @@ public class CSG : RMObj
         get
         {
             return new Vector4((float)_nodeCombineOpType, _nodeCombineSmoothness, (float)_combineOpType, _combineSmoothness);
-        }
-    }
-
-    public CombineOpsTypes CombineOpType
-    {
-        get
-        {
-            return _combineOpType;
-        }
-    }
-
-    public float CombineSmoothness
-    {
-        get
-        {
-            return _combineSmoothness;
-        }
-        set
-        {
-            _combineSmoothness = value;
         }
     }
 
@@ -273,8 +247,6 @@ public class CSGEditor : RMObjEditor
     SerializedProperty _isSecondNodePrim;
     SerializedProperty _nodeCombineOpType;
     SerializedProperty _nodeCombineSmoothness;
-    SerializedProperty _combineOpType;
-    SerializedProperty _combineSmoothness;
 
     SerializedProperty _isRoot;
 
@@ -293,8 +265,6 @@ public class CSGEditor : RMObjEditor
         _isSecondNodePrim = serializedObject.FindProperty("_isSecondNodePrim");
         _nodeCombineOpType = serializedObject.FindProperty("_nodeCombineOpType");
         _nodeCombineSmoothness = serializedObject.FindProperty("_nodeCombineSmoothness");
-        _combineOpType = serializedObject.FindProperty("_combineOpType");
-        _combineSmoothness = serializedObject.FindProperty("_combineSmoothness");
 
         _isRoot = serializedObject.FindProperty("_isRoot");
 
@@ -318,7 +288,6 @@ public class CSGEditor : RMObjEditor
         GUIContent label = new GUIContent("Node Combine Op", "How the two nodes will interact.");
 
         bool nodeCombineOpChanged = false;
-        bool combineOpChanged = false;
 
         serializedObject.Update();
 
@@ -368,19 +337,8 @@ public class CSGEditor : RMObjEditor
             label.tooltip = "How the CSG will interact with the scene.";
         else
             label.tooltip = "Overridden by parent CSG.";
-        EditorGUI.BeginChangeCheck();
-        EditorGUILayout.PropertyField(_combineOpType, label);
-        combineOpChanged = EditorGUI.EndChangeCheck();
-        
-        // Display the smoothness property for certain operations.
-        if (_combineOpType.intValue == (int)CombineOpsTypes.SmoothUnion ||
-            _combineOpType.intValue == (int)CombineOpsTypes.SmoothSubtraction ||
-            _combineOpType.intValue == (int)CombineOpsTypes.SmoothIntersection)
-        {
-            label.text = "Combine Smoothness";
-            EditorGUILayout.PropertyField(_combineSmoothness);
-            csg.CombineSmoothness = Mathf.Clamp(_combineSmoothness.floatValue, 0.0f, Mathf.Infinity);
-        }
+
+        displayCombineOp(label, csg);
         EditorGUI.EndDisabledGroup();
 
 

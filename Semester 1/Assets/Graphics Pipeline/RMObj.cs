@@ -32,12 +32,29 @@ public struct Alteration
     public int order;
 }
 
+public enum BoundingShapes
+{
+    Sphere,
+    Box
+}
+
 public abstract class RMObj : MonoBehaviour
 {
     [SerializeField]
     protected bool _isPrim = true;
     [SerializeField]
     protected int _drawOrder = 0;
+
+    [SerializeField]
+    protected bool _static = false;
+
+    [SerializeField]
+    protected CombineOpsTypes _combineOpType = CombineOpsTypes.Union;
+
+    [SerializeField]
+    [Range(0.0f, 50.0f)]
+    protected float _combineSmoothness = 0.0f;
+
     [SerializeField]
     protected List<Alteration> _alterations = new List<Alteration>(5);
 
@@ -49,6 +66,11 @@ public abstract class RMObj : MonoBehaviour
 
 
     protected bool _altsDirty = false;
+
+    [SerializeField]
+    protected BoundingShapes _boundShape = BoundingShapes.Sphere;
+    [SerializeField]
+    protected Vector4 _boundGeoInfo = Vector4.one;
 
     public bool IsPrim
     {
@@ -67,6 +89,34 @@ public abstract class RMObj : MonoBehaviour
         set
         {
             _drawOrder = value;
+        }
+    }
+
+    public bool Static
+    {
+        get
+        {
+            return _static;
+        }
+    }
+
+    public CombineOpsTypes CombineOpType
+    {
+        get
+        {
+            return _combineOpType;
+        }
+    }
+
+    public float CombineSmoothness
+    {
+        get
+        {
+            return _combineSmoothness;
+        }
+        set
+        {
+            _combineSmoothness = value;
         }
     }
 
@@ -114,6 +164,22 @@ public abstract class RMObj : MonoBehaviour
         }
     }
 
+    public BoundingShapes BoundShape
+    {
+        get
+        {
+            return _boundShape;
+        }
+    }
+
+    public Vector3 BoundGeoInfo
+    {
+        get
+        {
+            return _boundGeoInfo;
+        }
+    }
+
 
     private void Reset()
     {
@@ -143,6 +209,9 @@ public abstract class RMObj : MonoBehaviour
 public class RMObjEditor : Editor
 {
     private SerializedProperty _drawOrder;
+    private SerializedProperty _static;
+    private SerializedProperty _combineOpType;
+    private SerializedProperty _combineSmoothness;
 
     // Alteration variables
     private List<SerializedProperty> _alts = new List<SerializedProperty>(5);
@@ -152,10 +221,19 @@ public class RMObjEditor : Editor
     private SerializedProperty infoProperty;
     private SerializedProperty posAltProperty;
     private SerializedProperty _displaceFormula;
+    private SerializedProperty _boundShape;
+    private SerializedProperty _boundGeoInfo;
+    private RayMarcher _rayMarcher;
+
+    private int _selectedShaderIndex = 0;
+    private string[] _shaderNames;
 
     protected virtual void OnEnable()
     {
         _drawOrder = serializedObject.FindProperty("_drawOrder");
+        _static = serializedObject.FindProperty("_static");
+        _combineOpType = serializedObject.FindProperty("_combineOpType");
+        _combineSmoothness = serializedObject.FindProperty("_combineSmoothness");
 
         // Alteration stuff
         _displaceFormula = serializedObject.FindProperty("_displaceFormula");
@@ -165,18 +243,98 @@ public class RMObjEditor : Editor
         {
             _alts.Add(serializedObject.FindProperty("alt" + i));
         }
+
+        _boundShape = serializedObject.FindProperty("_boundShape");
+        _boundGeoInfo = serializedObject.FindProperty("_boundGeoInfo");
+
+        _rayMarcher = Camera.main.GetComponent<RayMarcher>();
     }
 
     public override void OnInspectorGUI()
     {
         //base.OnInspectorGUI();
 
+        RMObj rmObj = target as RMObj;
+
         serializedObject.Update();
 
-        GUIContent label = new GUIContent("Draw Order", "The order in which this object will be placed in the shader.");
+        GUIContent label = new GUIContent("Shader Options", "All ray marching shaders you can add this object to.");
+
+        // Retrieve all the ray march shaders, and display them as options to be added to.
+        List<RayMarchShader> shaders = _rayMarcher.Shaders;
+
+        if (shaders.Count > 0)
+        {
+            // Retrieve all the shaders' names.
+            _shaderNames = new string[shaders.Count];
+            for (int i = 0; i < shaders.Count; ++i)
+            {
+                _shaderNames[i] = shaders[i].ShaderName;
+            }
+
+            // Display them.
+            _selectedShaderIndex = EditorGUILayout.Popup(label, _selectedShaderIndex, _shaderNames);
+
+            if (GUILayout.Button("Add To Shader"))
+            {
+                shaders[_selectedShaderIndex].RenderList.Add(rmObj);
+            }
+        }
+        else
+        {
+            _selectedShaderIndex = EditorGUILayout.Popup(label, _selectedShaderIndex, _shaderNames);
+        }
+
+
+        label.text = "Draw Order";
+        label.tooltip = "The order in which this object will be placed in the shader.";
         EditorGUILayout.PropertyField(_drawOrder, label);
 
+        label.text = "Static";
+        label.tooltip = "Will hard code all info into the shader.";
+        EditorGUILayout.PropertyField(_static, label);
+
+        label.text = "Bound Shape";
+        label.tooltip = "";
+        EditorGUILayout.PropertyField(_boundShape, label);
+
+        label.text = "Bound Geo Info";
+        label.tooltip = "The dimensions of the bounding shape for this object.";
+        Vector4 boundGeoInfo = new Vector4(1.0f, 1.0f, 1.0f, 0.0f);
+
+        switch (_boundShape.enumValueIndex)
+        {
+            case (int)BoundingShapes.Sphere:
+                boundGeoInfo.x = EditorGUILayout.FloatField("Radius", _boundGeoInfo.vector4Value.x);
+                _boundGeoInfo.vector4Value = boundGeoInfo;
+                break;
+            case (int)BoundingShapes.Box:
+                boundGeoInfo.x = EditorGUILayout.FloatField("Length", _boundGeoInfo.vector4Value.x);
+                boundGeoInfo.z = EditorGUILayout.FloatField("Breadth", _boundGeoInfo.vector4Value.z);
+                boundGeoInfo.y = EditorGUILayout.FloatField("Height", _boundGeoInfo.vector4Value.y);
+                _boundGeoInfo.vector4Value = boundGeoInfo;
+                break;
+            default:
+                break;
+        }
+
+
         serializedObject.ApplyModifiedProperties();
+    }
+
+    public void displayCombineOp(GUIContent label, RMObj obj)
+    {
+        EditorGUILayout.PropertyField(_combineOpType, label);
+
+        label.text = "Combine Smoothness";
+
+        if (_combineOpType.intValue == (int)CombineOpsTypes.SmoothUnion ||
+            _combineOpType.intValue == (int)CombineOpsTypes.SmoothSubtraction ||
+            _combineOpType.intValue == (int)CombineOpsTypes.SmoothIntersection)
+        {
+            EditorGUILayout.PropertyField(_combineSmoothness);
+            obj.CombineSmoothness = Mathf.Clamp(_combineSmoothness.floatValue, 0.0f, Mathf.Infinity);
+        }
     }
 
     public void displayAlterations(GUIContent label, RMObj obj)

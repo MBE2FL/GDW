@@ -2,35 +2,38 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum ShaderType
+{
+    Rendering,
+    MarchingCube,
+    Collision
+}
+
 [System.Serializable]
 [ExecuteInEditMode]
-public class RayMarchShader : MonoBehaviour
+public abstract class RayMarchShader : MonoBehaviour
 {
     [SerializeField]
-    private Shader _effectShader = null;
+    protected Shader _effectShader = null;
     [SerializeField]
-    private string _shaderName;
+    protected string _shaderName = "New Shader";
     [SerializeField]
-    RayMarchShaderSettings _settings;
+    protected RayMarchShaderSettings _settings;
     [SerializeField]
-    List<RMObj> _renderList = new List<RMObj>();
-    private RMObj[] objects;                                // The array of objects to render.
+    protected ShaderType _shaderType = ShaderType.Rendering;
+    [SerializeField]
+    protected List<RMObj> _renderList = new List<RMObj>();
+    //private RMObj[] objects;                                // The array of objects to render.
 
 
-    private Matrix4x4[] _invModelMats = new Matrix4x4[32];   // The inverse transformation matrices of every object.
-    private Color[] _colours = new Color[32];                // The _colours of every object.
-    private Vector4[] _combineOps = new Vector4[32];         // The object to scene combine operations, for every object.
-    private Vector4[] _primitiveGeoInfo = new Vector4[32];   // The geometric info for every primitive object.
-    private Vector4[] _reflInfo = new Vector4[32];          // The reflection info for every primitive object.
-    private Vector4[] _refractInfo = new Vector4[32];       // The refractiin info for every primitive object.
-    private Vector4[] _altInfo = new Vector4[32];           // The alteration info for every object.
+    protected Matrix4x4[] _invModelMats = new Matrix4x4[32];   // The inverse transformation matrices of every object.
+    protected Vector4[] _combineOps = new Vector4[32];         // The object to scene combine operations, for every object.
+    protected Vector4[] _primitiveGeoInfo = new Vector4[32];   // The geometric info for every primitive object.
+    protected Vector4[] _altInfo = new Vector4[32];           // The alteration info for every object.
+    protected Vector4[] _bufferedCSGs = new Vector4[16];       // The list of node indices for a each CSG.
+    protected Vector4[] _combineOpsCSGs = new Vector4[16];     // The node to node combine operations for each CSG.
+    protected Vector4[] _boundGeoInfo = new Vector4[32];      // The geometric info for every object's bounding volume.
 
-
-    private Vector4[] _bufferedCSGs = new Vector4[16];       // The list of node indices for a each CSG.
-    private Vector4[] _combineOpsCSGs = new Vector4[16];     // The node to node combine operations for each CSG.
-
-
-    private Vector4[] _boundGeoInfo = new Vector4[32];      // The geometric info for every object's bounding volume.
 
 
     public RayMarchShaderSettings Settings
@@ -51,6 +54,22 @@ public class RayMarchShader : MonoBehaviour
         {
             return _effectShader;
         }
+        set
+        {
+            _effectShader = value;
+        }
+    }
+
+    public ShaderType ShaderType
+    {
+        get
+        {
+            return _shaderType;
+        }
+        set
+        {
+            _shaderType = value;
+        }
     }
 
     public List<RMObj> RenderList
@@ -61,11 +80,65 @@ public class RayMarchShader : MonoBehaviour
         }
     }
 
+    public bool Ready
+    {
+        get
+        {
+            return (_effectShader && _settings);
+        }
+    }
+
+    public void AddToRenderList(RMObj rmObj)
+    {
+        // Check if the object is not already in the render list.
+        if (!_renderList.Contains(rmObj))
+        {
+            // Add the object to the render list, and sort the list based on draw order.
+            _renderList.Add(rmObj);
+            _renderList.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
+        }
+    }
+
+    public void removeFromRenderList(RMObj rmObj)
+    {
+        int index = _renderList.IndexOf(rmObj);
+
+        // Check if the object is in the list, if so then remove it.
+        if (index > -1)
+        {
+            _renderList[index] = _renderList[_renderList.Count - 1];
+            _renderList.RemoveAt(index);
+        }
+        
+    }
+
+    public void removeAllFromRenderList()
+    {
+        // Also run rmObj remove actions
+        foreach (RMObj obj in _renderList)
+        {
+            obj.removeFromShaderList(this);
+        }
+
+        _renderList.Clear();
+    }
+
+    public void remove()
+    {
+        // Notify all listeners
+        removeAllFromRenderList();
+    }
+
     public string ShaderName
     {
         get
         {
             return _shaderName;
+        }
+
+        set
+        {
+            _shaderName = value;
         }
     }
 
@@ -98,138 +171,10 @@ public class RayMarchShader : MonoBehaviour
         }
     }
 
-
-    public void render(Material material, Matrix4x4 cameraInvViewMatrix, Vector3 camPos, Transform sunLight)
-    {
-       // Enable this shader's defines
-       foreach (ShaderKeywords keyword in _settings.Keywords)
-       {
-           material.EnableKeyword(keyword.ToString());
-       }
-
-       material.SetMatrix("_CameraInvViewMatrix", cameraInvViewMatrix);
-       material.SetVector("_CameraPos", camPos);
-       //material.SetMatrix("_TorusMat_InvModel", torusMat.inverse);
-       //material.SetTexture("_colourRamp", _settings.ColourRamp);
-       material.SetTexture("_performanceRamp", _settings.PerformanceRamp);
-       //material.SetTexture("_wood", _settings.Wood);
-       //material.SetTexture("_brick", _settings.Brick);
-
-       material.SetFloat("_specularExp", _settings.SpecularExp);
-       material.SetFloat("_attenuationConstant", _settings.AttenuationConstant);
-       material.SetFloat("_attenuationLinear", _settings.AttenuationLinear);
-       material.SetFloat("_attenuationQuadratic", _settings.AttenuationQuadratic);
-       material.SetVector("_LightDir", sunLight ? sunLight.forward : Vector3.down);
-       material.SetVector("_lightPos", sunLight ? sunLight.position : Vector3.zero);
-       material.SetColor("_ambientColour", _settings.AmbientColour);
-       material.SetColor("_diffuseColour", _settings.DiffuseColour);
-       material.SetColor("_specularColour", _settings.SpecualarColour);
-       material.SetVector("_lightConstants", _settings.LightConstants);
-       material.SetColor("_rimLightColour", _settings.RimLightColour);
-       material.SetFloat("_totalTime", Time.time);
-
-       // ######### Shadow Variables #########
-       material.SetFloat("_penumbraFactor", _settings.PenumbraFactor);
-       material.SetFloat("_shadowMinDist", _settings.ShadowmMinDist);
-       material.SetFloat("_shadowIntensity", _settings.ShadowIntensity);
-
-       // ######### Ray March Variables #########
-       material.SetInt("_maxSteps", _settings.MaxSteps);
-       material.SetFloat("_maxDrawDist", _settings.MaxDrawDist);
-
-       // ######### Reflection Variables #########
-       material.SetInt("_reflectionCount", _settings.ReflectionCount);
-       material.SetFloat("_reflectionIntensity", _settings.ReflectionIntensity);
-       material.SetFloat("_envReflIntensity", _settings.EnvReflIntensity);
-       material.SetTexture("_skybox", _settings.SkyBox);
-
-       // ######### Refraction Variables #########
-       material.SetVectorArray("_refractInfo", _refractInfo);
-
-       // ######### Ambient Occlusion Variables #########
-       material.SetInt("_aoMaxSteps", _settings.AOMaxSteps);
-       material.SetFloat("_aoStepSize", _settings.AOStepSize);
-       material.SetFloat("_aoIntensity", _settings.AOItensity);
-
-       // ######### Fog Variables #########
-       material.SetFloat("_fogExtinction", _settings.FogExtinction);
-       material.SetFloat("_fogInscattering", _settings.FogInscattering);
-       material.SetColor("_fogColour", _settings.FogColour);
-
-       // ######### Vignette Variables #########
-       material.SetFloat("_vignetteIntensity", _settings.VignetteIntesnity);
-
-
-       int primIndex = 0;
-       int csgIndex = 0;
-       int altIndex = 0;
-
-
-       //if (!Application.isPlaying)
-       //{
-       //    objects = FindObjectsOfType<RMObj>();
-       //    _renderList = new List<RMObj>(objects);
-
-       //    _renderList.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
-       //}
-
-       RMPrimitive prim;
-       CSG csg;
-       RMObj obj;
-
-       for (int i = 0; i < _renderList.Count; ++i)
-       {
-           obj = _renderList[i];
-
-           // Primitive
-           if (obj.IsPrim)
-           {
-               prim = obj as RMPrimitive;
-
-               // Skip any primitives belonging to a csg, as they will be rendered recursively by thier respective csgs.
-               if (prim.CSGNode)
-                   continue;
-
-               renderPrimitive(prim, ref primIndex, ref altIndex);
-           }
-           // CSG
-           else
-           {
-               csg = obj as CSG;
-
-               // Skip any non-root CSGs, as they will be rendered recursively by thier parents.
-               // Skip any CSGs which don't have two nodes.
-               if (!csg.IsRoot || !csg.IsValid)
-                   continue;
-
-               renderCSG(csg, ref primIndex, ref csgIndex, ref altIndex);
-           }
-       }
-
-       if (primIndex > 0)
-       {
-           material.SetMatrixArray("_invModelMats", _invModelMats);
-           material.SetColorArray("_rm_colours", _colours);
-           material.SetVectorArray("_combineOps", _combineOps);
-           material.SetVectorArray("_primitiveGeoInfo", _primitiveGeoInfo);
-           material.SetVectorArray("_reflInfo", _reflInfo);
-           material.SetVectorArray("_altInfo", _altInfo);
-
-           material.SetVectorArray("_bufferedCSGs", _bufferedCSGs);
-           material.SetVectorArray("_combineOpsCSGs", _combineOpsCSGs);
-
-           material.SetVectorArray("_boundGeoInfo", _boundGeoInfo);
-       }
-    }
-
-
-    private void renderPrimitive(RMPrimitive rmPrim, ref int primIndex, ref int altIndex)
+    protected virtual void renderPrimitive(RMPrimitive rmPrim, ref int primIndex, ref int altIndex)
     {
        // Homogeneous transformation matrices
        _invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix.inverse;
-
-       // Colour information
-       _colours[primIndex] = rmPrim.Colour;
 
        // Primitive to render
        //primitiveTypes[primIndex] = (float)rmPrim.PrimitiveType;
@@ -239,15 +184,6 @@ public class RayMarchShader : MonoBehaviour
 
        // Primitive Geometry Information
        _primitiveGeoInfo[primIndex] = rmPrim.GeoInfo;
-
-       // Reflection Information
-       _reflInfo[primIndex] = rmPrim.ReflectionInfo;
-
-       // Refraction Information
-       Vector4 info = rmPrim.RefractionInfo;
-       if (info.x > 0.0f)
-           info.x = 1.0f;
-       _refractInfo[primIndex] = info;
 
        // Alterations' Information
        foreach (Alteration alt in rmPrim.Alterations)
@@ -266,7 +202,7 @@ public class RayMarchShader : MonoBehaviour
        ++primIndex;
     }
 
-    private void renderCSG(CSG csg, ref int primIndex, ref int csgIndex, ref int altIndex)
+    protected void renderCSG(CSG csg, ref int primIndex, ref int csgIndex, ref int altIndex)
     {
        // TO-DO Don't let incomplete CSG children nodes be added to other CSGs.
        // Base case: Both nodes are primitives.

@@ -10,9 +10,9 @@ Shader "RayMarch/Demo One"
     #pragma multi_compile_local __ BOUND_DEBUG USE_DEPTH_TEX USE_DIST_TEX
 
     #include "Packages/com.unity.render-pipelines.high-definition/Runtime/RenderPipeline/RenderPass/CustomPass/CustomPassCommon.hlsl"
-    #include "Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
-    #include "Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
-    #include "Graphics Pipeline/Shaders/RayMarchCommonFunctions.hlsl"
+    #include "Assets/Scripts/RayMarch/Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+    #include "Assets/Scripts/RayMarch/Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+    #include "Assets/Scripts/RayMarch/Graphics Pipeline/Shaders/RayMarchCommonFunctions.hlsl"
 
     // The PositionInputs struct allow you to retrieve a lot of useful information for your fullScreenShader:
     //  struct PositionInputs

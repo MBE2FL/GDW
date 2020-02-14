@@ -7,7 +7,7 @@ float _totalTime;
 
 // Matrices
 float4x4 _FrustumCornersES;
-float4x4 _CameraInvMatrix;
+float4x4 _CameraInvViewMatrix;
 
 // Vectors
 float4 _MainTex_TexelSize;
@@ -97,6 +97,8 @@ float4 _altInfo[MAX_RM_OBJS];
 float4 _bufferedCSGs[MAX_CSG_CHILDREN];
 float4 _combineOpsCSGs[MAX_CSG_CHILDREN];
 //int _totalRootCSGs;
+
+float4 _boundGeoInfo[MAX_RM_OBJS];
 /// ######### RM OBJS Information #########
 
 sampler2D _wood;
@@ -114,6 +116,12 @@ struct VertexOutput
     float4 pos : SV_POSITION;
     float2 uv : TEXCOORD0;
     float3 ray : TEXCOORD1;
+};
+
+struct PixelOutput
+{
+    float4 sceneCol : SV_Target0;
+    float distMap : SV_Target1;
 };
 
 struct rmPixel
@@ -627,6 +635,11 @@ rmPixel opSmoothIntMat(rmPixel d1, rmPixel d2, float k)
 }
 
 
+float cheapMap(float3 p)
+{
+    //<Insert Cheap Map Here>
+}
+
 /// Distance field function.
 /// The distance field represents the closest distance to the surface of any object
 /// we put in the scene. If the given point (point p) is inside of any object, we return an negative answer.
@@ -827,13 +840,13 @@ float4 cheapLighting(float3 p, float3 normal, rmPixel distField)
 }
 
 // Raymarch along the ray
-int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField, int rayHit)
 {
-    int rayHit = 0;
+    //int rayHit = 0;
 
     //const int MAX_STEP = 100;
     //const float DRAW_DIST = 64.0;
-    float t = 0; // Current distance travaled along the ray.
+    float totalDist = distField.totalDist; // Current distance travaled along the ray.
 
     /// ### Performance Test ###
     //float performance = 0.95;
@@ -842,17 +855,23 @@ int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float m
     int2 bothCond;
     int2 breakLoop;
 
-    for (int i = 0; i < maxSteps; ++i)
+//#if BOUNDING_SPHERE_DEBUG
+//    int test = rayHit;
+//#endif
+
+
+    // Only march through actual map, iff the ray hit an object in the cheap map.
+    for (int i = 0 + ((1 - rayHit) * maxSteps); i < maxSteps; ++i)
     {
-        p = rayOrigin + (rayDir * t); // World space position of sample.
+        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
         distField.dist = map(p); // Sample of distance field. d.x: Distance field ouput, d.y: Material data.
 
         // If we run past the depth buffer, stop and return nothing (transparent pixel).
         // This way raymarched objects and traditional meshes can co-exist.
-        bothCond = when_ge_float(float4(t, t, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
         breakLoop.x = saturate(bothCond.x + bothCond.y);
         i += maxSteps * breakLoop.x;
-        //if ((t >= depth) || (t > maxDrawDist))
+        //if ((totalDist >= depth) || (totalDist > maxDrawDist))
         //{
         //    rayHit = false;
 
@@ -879,14 +898,25 @@ int raymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float m
 
         rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
 
-        // If the sample > 0, we haven't hit anything yet so we should march forward.
+        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
         // We step forward by distance d, because d is the minimum distance possible to intersect an object.
-        t += distField.dist;
+        totalDist += distField.dist;
     }
 
     //determineMaterial(distField);
     distField = mapMat();
-    distField.totalDist = t;
+    distField.totalDist = totalDist;
+
+
+
+//#if BOUNDING_SPHERE_DEBUG
+//    if (test)
+//    {
+//        distField.colour.rgb += float3(0.6, 0.0, 0.0);
+//        distField.colour.a = 1.0;
+//        rayHit = test;
+//    }
+//#endif
 
     return rayHit;
 
@@ -968,6 +998,121 @@ int unsignedRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps,
     return rayHit;
 }
 
+int cheapRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+{
+    int rayHit = 0;
+    float totalDist = distField.totalDist; // Current distance travaled along the ray.
+    int2 bothCond;
+    int2 breakLoop;
+
+
+
+    // March through the cheap map.
+    for (int i = 0; i < maxSteps; ++i)
+    {
+        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
+        distField.dist = cheapMap(p); // Sample cheap distance field.
+
+        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+        // This way raymarched objects and traditional meshes can co-exist.
+        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+
+        // If the sample <= 0, we have hit an object.
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
+        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+        totalDist += distField.dist;
+    }
+
+    distField.colour = float4(0.0, 0.0, 0.0, 0.0);
+    distField.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    distField.refractInfo = float2(0.0, 1.0);
+    distField.texID = 0;
+    distField.totalDist = totalDist;
+
+    return rayHit;
+}
+
+//int invertCheapRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+//{
+//    int rayHit = 0;
+//    float totalDist = distField.totalDist; // Current distance travaled along the ray.
+//    int2 bothCond;
+//    int2 breakLoop;
+
+
+
+//    // March through the cheap map.
+//    for (int i = 0; i < maxSteps; ++i)
+//    {
+//        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
+//        distField.dist = cheapMap(p); // Sample cheap distance field.
+//        distField.dist *= -1.0;
+
+//        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+//        // This way raymarched objects and traditional meshes can co-exist.
+//        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+//        breakLoop.x = saturate(bothCond.x + bothCond.y);
+//        i += maxSteps * breakLoop.x;
+
+//        // If the sample <= 0, we have hit an object.
+//        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+//        i += maxSteps * breakLoop.y;
+
+//        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+//        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
+//        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+//        totalDist += distField.dist;
+//    }
+
+
+//    return rayHit;
+//}
+
+int unsignedCheapRaymarch(float3 rayOrigin, float3 rayDir, float depth, int maxSteps, float maxDrawDist, inout float3 p, inout rmPixel distField)
+{
+    int rayHit = 0;
+    float totalDist = distField.totalDist; // Current distance travaled along the ray.
+    int2 bothCond;
+    int2 breakLoop;
+
+
+
+    // March through the cheap map.
+    for (int i = 0; i < maxSteps; ++i)
+    {
+        p = rayOrigin + (rayDir * totalDist); // World space position of sample.
+        distField.dist = cheapMap(p); // Sample cheap distance field.
+        distField.dist = abs(distField.dist);
+
+        // If we run past the depth buffer, stop and return nothing (transparent pixel).
+        // This way raymarched objects and traditional meshes can co-exist.
+        bothCond = when_ge_float(float4(totalDist, totalDist, 0.0, 0.0), float4(depth, maxDrawDist, 0.0, 0.0)).xy;
+        breakLoop.x = saturate(bothCond.x + bothCond.y);
+        i += maxSteps * breakLoop.x;
+
+        // If the sample <= 0, we have hit an object.
+        breakLoop.y = when_lt_float(float4(distField.dist, 0.0, 0.0, 0.0), float4(0.001, 0.0, 0.0, 0.0)).x;
+        i += maxSteps * breakLoop.y;
+
+        rayHit = saturate((1 - breakLoop.x) + breakLoop.y);
+
+        // If the sample > 0, we haven'totalDist hit anything yet so we should march forward.
+        // We step forward by distance d, because d is the minimum distance possible to intersect an object.
+        totalDist += distField.dist;
+    }
+
+
+    return rayHit;
+}
+
 // ior: Index of refraction.
 // eta (Greek letter n): Represents a refraction index.
 //  eta_i: Index of refraction for the medium we are currently in. (Incident medium)
@@ -1032,126 +1177,162 @@ float2 fresnel(float ior, float3 incidenceRay, float3 normal)
     return ratio;
 }
 
-float3 calcRefractRay(float3 i, float3 n, float etat)
-{
-    float cos_i = clamp(dot(i, n), -1.0, 1.0);
-    float etai = 1.0;
+//float3 calcRefractRay(float3 i, float3 n, float etat)
+//{
+//    float cos_i = clamp(dot(i, n), -1.0, 1.0);
+//    float etai = 1.0;
   
 
-    //if (cos_i < 0.0)
-    //{
-    //    cos_i = -cos_i;
-    //}
-    //else
-    //{
-    //    etai = etat;
-    //    n = -n;
-    //}
+//    //if (cos_i < 0.0)
+//    //{
+//    //    cos_i = -cos_i;
+//    //}
+//    //else
+//    //{
+//    //    etai = etat;
+//    //    n = -n;
+//    //}
 
 
-    float cos_i_lt_zero_true = when_lt_float(cos_i, 0);
-    float cos_i_lt_zero_false = 1.0 - cos_i_lt_zero_true;
+//    float cos_i_lt_zero_true = when_lt_float(cos_i, 0);
+//    float cos_i_lt_zero_false = 1.0 - cos_i_lt_zero_true;
 
-    // cos_i < 0
-    cos_i = (cos_i_lt_zero_true * -cos_i) + (cos_i_lt_zero_false * cos_i);
-    // cos_i >= 0
-    etai = (cos_i_lt_zero_false * etat) + (cos_i_lt_zero_true * etai);
-    n = (cos_i_lt_zero_false * -n) + (cos_i_lt_zero_true * n);
+//    // cos_i < 0
+//    cos_i = (cos_i_lt_zero_true * -cos_i) + (cos_i_lt_zero_false * cos_i);
+//    // cos_i >= 0
+//    etai = (cos_i_lt_zero_false * etat) + (cos_i_lt_zero_true * etai);
+//    n = (cos_i_lt_zero_false * -n) + (cos_i_lt_zero_true * n);
 
 
-    float eta = etai / etat;
-    float k = 1.0 - (eta * eta) * (1.0 - (cos_i * cos_i));
-    return k < 0.0 ? 0.0 : (eta * i) + ((eta * cos_i - sqrt(k)) * n);
-}
+//    float eta = etai / etat;
+//    float k = 1.0 - (eta * eta) * (1.0 - (cos_i * cos_i));
+//    return k < 0.0 ? 0.0 : (eta * i) + ((eta * cos_i - sqrt(k)) * n);
+//}
 
-void performReflection(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio, inout reflectInfo info)
+//void performReflection(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio, inout reflectInfo info)
+//{
+//    // Distance field reflection.
+//    bool rayHit = false;
+//    uint quality;
+//    float4 refl = distField.reflInfo;
+//    float prevRefl = 0;
+
+//    quality = 2;
+//    rayDir = normalize(reflect(rayDir, normal));
+//    rayOrigin = pos + (rayDir * 0.01);
+//    rayHit = unsignedRaymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl.x) / quality, _maxDrawDist / quality, pos, distField);
+
+//    if (rayHit)
+//    {
+//        normal = calcNormal(pos);
+//        add += float4(calcLighting(pos, normal, distField).rgb, 0.0) * refl.w * ratio.x;
+//    }
+
+
+//    info.pos = pos;
+//    info.normal = normal;
+//    info.dir = rayDir;
+//    info.distField = distField;
+//}
+
+//void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
+//{
+//    reflectInfo info;
+
+//    // Calculate refraction.
+//    int rayHit = 0;
+//    //float3 refractRayDir = normalize(calcRefractRay(rayDir, normal, distField.refractInfo.y));
+//    float3 refractRayDir = normalize(refract(rayDir, normal, 1.0 / distField.refractInfo.y));
+//    float3 refractRayOrigin = pos + (refractRayDir * 0.02);
+
+//    // March along refraction ray THROUGH the current object (medium).
+//    rayHit = unsignedRaymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
+
+
+//    // See inside of current object.
+//    if (rayHit)
+//    {
+//        //ratio.y = 
+//        // Add colour of any object hit inside of the current object, or the current object itself.
+//        normal = calcNormal(pos);
+//        //add += float4(calcLighting(pos, normal, distField, 1.0, 0.0).rgb, 0.0) * ratio.y;
+//        add += float4(cheapLighting(pos, normal, distField).rgb, 0.0) * ratio.y;
+
+//        // Calculate frensel ratio.
+//        ratio = fresnel(distField.refractInfo.y, refractRayDir, normal);
+//        //ratio.y = 1.0; // Ignoring total internal reflection. Just making it refract instead.
+//        // Calculate reflection.
+//        //performReflection(add, refractRayOrigin, refractRayDir, pos, -normal, distField, ratio, info);
+
+//        //if (dot(info.dir, info.normal) > 0.0)
+//        //{
+//        //    float3 dir = normalize(refract(info.dir, -info.normal, distField.refractInfo.y));
+//        //    dir = normalize(calcRefractRay(info.dir, info.normal, distField.refractInfo.y));
+//        //    float origin = info.pos + (dir * 0.05);
+
+//        //    rayHit = raymarch(origin, dir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, info.pos, info.distField);
+
+//        //    if (rayHit)
+//        //    {
+//        //        float3 norm = calcNormal(info.pos);
+//        //        add += float4(calcLighting(info.pos, norm, info.distField, 1.0, 1.0).rgb, 0.0) * 0.2;
+//        //        //add = float4(0.0, 0.0, 0.0, 1.0);
+//        //    }
+//        //}
+
+//        // Calculate refraction.
+//        // March along refraction ray EXITING the current object (medium).
+//        refractRayDir = normalize(calcRefractRay(refractRayDir, normal, distField.refractInfo.y));
+//        //refractRayDir = normalize(refract(refractRayDir, -normal, distField.refractInfo.y)); //distField.refractInfo.y / 1.0
+//        refractRayOrigin = pos + (refractRayDir * 0.02);
+
+//        rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
+
+//        // See behind the current object.
+//        if (rayHit)
+//        {
+//            // Add the colour of what is behind the current object.
+//            normal = calcNormal(pos);
+//            add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * (ratio.y * 0.6);
+//            //add = float4(ratio.yyy, 1.0);
+//        }
+//    }
+//}
+
+void reflection(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
 {
-    // Distance field reflection.
-    bool rayHit = false;
-    uint quality;
+	// Distance field reflection.
+    float quality;
     float4 refl = distField.reflInfo;
     float prevRefl = 0;
+    int rayHit = 0;
+    int maxSteps;
 
-    quality = 2;
+
+    // First reflection bounce.
+    quality = 0.5;
     rayDir = normalize(reflect(rayDir, normal));
     rayOrigin = pos + (rayDir * 0.01);
-    rayHit = unsignedRaymarch(rayOrigin, rayDir, _maxDrawDist, (_maxSteps * refl.x) / quality, _maxDrawDist / quality, pos, distField);
+    maxSteps = (_maxSteps * refl.x) * quality;
+    distField.totalDist = 0.0;
+
+    //rayHit = unsignedCheapRaymarch(rayOrigin, rayDir, _maxDrawDist, maxSteps, _maxDrawDist * quality, pos, distField);
+    //distField.totalDist += 0.2;
+    //rayHit = cheapRaymarch(rayOrigin, rayDir, _maxDrawDist, maxSteps, _maxDrawDist * quality, pos, distField);
+    rayHit = 1;
+    rayHit = raymarch(rayOrigin, rayDir, _maxDrawDist, maxSteps, _maxDrawDist * quality, pos, distField, rayHit);
 
     if (rayHit)
     {
         normal = calcNormal(pos);
-        add += float4(calcLighting(pos, normal, distField).rgb, 0.0) * refl.w * ratio.x;
+        add += float4(calcLighting(pos, normal, distField).rgb, 0.0) * refl.w * ratio.x; //_reflectionIntensity;
     }
 
 
-    info.pos = pos;
-    info.normal = normal;
-    info.dir = rayDir;
-    info.distField = distField;
-}
-
-void cheapRefract(inout float4 add, float3 rayOrigin, float3 rayDir, float3 pos, float3 normal, rmPixel distField, float2 ratio)
-{
-    reflectInfo info;
-
-    // Calculate refraction.
-    int rayHit = 0;
-    //float3 refractRayDir = normalize(calcRefractRay(rayDir, normal, distField.refractInfo.y));
-    float3 refractRayDir = normalize(refract(rayDir, normal, 1.0 / distField.refractInfo.y));
-    float3 refractRayOrigin = pos + (refractRayDir * 0.02);
-
-    // March along refraction ray THROUGH the current object (medium).
-    rayHit = unsignedRaymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
 
 
-    // See inside of current object.
-    if (rayHit)
-    {
-        //ratio.y = 
-        // Add colour of any object hit inside of the current object, or the current object itself.
-        normal = calcNormal(pos);
-        //add += float4(calcLighting(pos, normal, distField, 1.0, 0.0).rgb, 0.0) * ratio.y;
-        add += float4(cheapLighting(pos, normal, distField).rgb, 0.0) * ratio.y;
-
-        // Calculate frensel ratio.
-        ratio = fresnel(distField.refractInfo.y, refractRayDir, normal);
-        //ratio.y = 1.0; // Ignoring total internal reflection. Just making it refract instead.
-        // Calculate reflection.
-        //performReflection(add, refractRayOrigin, refractRayDir, pos, -normal, distField, ratio, info);
-
-        //if (dot(info.dir, info.normal) > 0.0)
-        //{
-        //    float3 dir = normalize(refract(info.dir, -info.normal, distField.refractInfo.y));
-        //    dir = normalize(calcRefractRay(info.dir, info.normal, distField.refractInfo.y));
-        //    float origin = info.pos + (dir * 0.05);
-
-        //    rayHit = raymarch(origin, dir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, info.pos, info.distField);
-
-        //    if (rayHit)
-        //    {
-        //        float3 norm = calcNormal(info.pos);
-        //        add += float4(calcLighting(info.pos, norm, info.distField, 1.0, 1.0).rgb, 0.0) * 0.2;
-        //        //add = float4(0.0, 0.0, 0.0, 1.0);
-        //    }
-        //}
-
-        // Calculate refraction.
-        // March along refraction ray EXITING the current object (medium).
-        refractRayDir = normalize(calcRefractRay(refractRayDir, normal, distField.refractInfo.y));
-        //refractRayDir = normalize(refract(refractRayDir, -normal, distField.refractInfo.y)); //distField.refractInfo.y / 1.0
-        refractRayOrigin = pos + (refractRayDir * 0.02);
-
-        rayHit = raymarch(refractRayOrigin, refractRayDir, _maxDrawDist, _maxSteps * (int) distField.refractInfo.x, _maxDrawDist, pos, distField);
-
-        // See behind the current object.
-        if (rayHit)
-        {
-            // Add the colour of what is behind the current object.
-            normal = calcNormal(pos);
-            add += float4(calcLighting(pos, normal, distField, 1.0, 1.0).rgb, 0.0) * (ratio.y * 0.6);
-            //add = float4(ratio.yyy, 1.0);
-        }
-    }
+    //Skybox reflection.
+    //add += float4(texCUBE(_skybox, ogNormal).rgb * _envReflIntensity * _reflectionIntensity, 0.0) * (1.0 - rayHit) * refl.x * prevRefl;
 }
 
 
@@ -1183,13 +1364,13 @@ VertexOutput vert(VertexInput input)
     output.ray /= abs(output.ray.z);
 
     // Transform the ray from eyespace to worldspace
-    output.ray = mul(_CameraInvMatrix, float4(output.ray.xyz, 0.0)).xyz;
+    output.ray = mul(_CameraInvViewMatrix, float4(output.ray.xyz, 0.0)).xyz;
 
     return output;
 }
 
 // Fragment program
-float4 frag(VertexOutput input) : SV_Target
+PixelOutput frag(VertexOutput input) : SV_Target
 {
     // Ray direction
     float3 rayDir = normalize(input.ray);
@@ -1219,7 +1400,8 @@ float4 frag(VertexOutput input) : SV_Target
     rmPixel distField;
     float4 add = float4(0.0, 0.0, 0.0, 0.0);
     float3 normal = 0.0;
-    int rayHit = raymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
+    int rayHit = cheapRaymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
+    rayHit = raymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField, rayHit);
 
     // Perform shading/lighting.
     if (rayHit)
@@ -1230,9 +1412,13 @@ float4 frag(VertexOutput input) : SV_Target
         float2 ratio = fresnel(distField.refractInfo.y, rayDir, normal);
         ratio.x = (distField.refractInfo.x > 0.0) ? ratio.x : 1.0;
 
+        // Perform refraction
         //performRefraction(add, rayOrigin, rayDir, p, normal, distField, ratio);
         //ReflectAndRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
-        cheapRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        //cheapRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+
+        // Perform reflection
+        reflection(add, rayOrigin, rayDir, p, normal, distField, ratio);
 
         //<Insert Reflection Here>
     }
@@ -1243,6 +1429,19 @@ float4 frag(VertexOutput input) : SV_Target
     //col = float4((col.xyz * (1.0 - add.w)) + (add.xyz * (add.w)), 1.0);
     col = float4(lerp(col.rgb, add.rgb, add.a), 1.0);
 
+
+#if BOUND_DEBUG
+    rayDir = normalize(input.ray);
+    rayOrigin = _CameraPos.xyz;
+    p = 0.0;
+    distField.totalDist = 0.0;
+
+    rayHit = cheapRaymarch(rayOrigin, rayDir, depth, _maxSteps, _maxDrawDist, p, distField);
+    if (rayHit)
+    {
+        col.rgb += float3(0.3 * sin(p.x * 4) + 0.2, 0.0, 0.3 * sin(p.z * 4) + 0.2);
+    }
+#endif
 
 
     // Gamma correction
@@ -1283,5 +1482,9 @@ float4 frag(VertexOutput input) : SV_Target
     //col.rgb = float3(distField.totalDist / _maxDrawDist, 0.0, 0.0);
     //col.rgb = float3(fogAmount, 0.0, 0.0);
 
-    return col;
+    PixelOutput output;
+    output.sceneCol = col;
+    output.distMap = distField.totalDist / _maxDrawDist;
+
+    return output;
 }

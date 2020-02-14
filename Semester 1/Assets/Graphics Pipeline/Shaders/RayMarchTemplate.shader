@@ -9,6 +9,7 @@
         Pass
         {
             HLSLPROGRAM
+			#pragma multi_compile_local __ BOUND_DEBUG USE_DEPTH_TEX USE_DIST_TEX
             #pragma vertex vert
             #pragma fragment frag
 			#include "UnityCG.cginc"

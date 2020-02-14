@@ -4,7 +4,7 @@ using UnityEngine;
 using MarchingCubesProject;
 
 
-
+[ExecuteInEditMode]
 public class RayMarchMesh : MonoBehaviour
 {
     public Material m_material;
@@ -18,7 +18,24 @@ public class RayMarchMesh : MonoBehaviour
     public bool meshify = false;
 
     [SerializeField]
-    RayMarchShader _renderShader;
+    RMMarchingCubeShader _rmShader;
+
+    [SerializeField]
+    Vector3Int _numThreads = new Vector3Int(32, 1, 1);
+    [SerializeField]
+    Vector3Int _resolution;
+    [SerializeField]
+    BoundsInt _volumeBounds;
+
+    Transform _transform;
+    [SerializeField]
+    Vector3 _centre;
+
+
+    private void Awake()
+    {
+        _transform = GetComponent<Transform>();
+    }
 
 
     void Start()
@@ -222,15 +239,15 @@ public class RayMarchMesh : MonoBehaviour
 
 
 
-        for (int x = 0; x < 5; ++x)
+        for (int x = 0; x < _volumeBounds.x; ++x)
         {
-            for (int y = 0; y < 5; ++y)
+            for (int y = 0; y < _volumeBounds.y; ++y)
             {
-                for (int z = 0; z < 4; ++z)
+                for (int z = 0; z < _volumeBounds.z; ++z)
                 {
-                    int width = 32;
-                    int height = 32;
-                    int length = 32;
+                    int width = _resolution.x;
+                    int height = _resolution.y;
+                    int length = _resolution.z;
 
                     float[] voxels = new float[width * height * length];
 
@@ -332,15 +349,19 @@ public class RayMarchMesh : MonoBehaviour
     {
         foreach (GameObject gameObject in meshes)
         {
+#if UNITY_EDITOR
+            DestroyImmediate(gameObject);
+#else
             Destroy(gameObject);
+#endif
         }
 
 
 
-        if (!_renderShader)
+        if (!_rmShader)
             return;
 
-        RMObj[] rmObjs = _renderShader.RenderList.ToArray();
+        RMObj[] rmObjs = _rmShader.RenderList.ToArray();
         // Get all ray march objects.
         //RMObj[] rmObjs = (RMObj[])FindObjectsOfType(typeof(RMObj));
         GameObject[] objs = new GameObject[rmObjs.Length];
@@ -350,6 +371,7 @@ public class RayMarchMesh : MonoBehaviour
         int[] primitiveTypes = new int[objs.Length];
         Vector4[] combineOps = new Vector4[objs.Length];
         Vector4[] primitiveGeoInfo = new Vector4[objs.Length];
+        Vector4[] boundGeoInfo = new Vector4[objs.Length];
 
         for (int i = 0; i < rmObjs.Length; ++i)
         {
@@ -366,6 +388,7 @@ public class RayMarchMesh : MonoBehaviour
             primitiveTypes[i] = (int)obj.GetComponent<RMPrimitive>().PrimitiveType;
             combineOps[i] = obj.GetComponent<RMPrimitive>().CombineOp;
             primitiveGeoInfo[i] = obj.GetComponent<RMPrimitive>().GeoInfo;
+            boundGeoInfo[i] = obj.GetComponent<RMPrimitive>().BoundGeoInfo;
         }
 
 
@@ -374,6 +397,12 @@ public class RayMarchMesh : MonoBehaviour
         int width = RESOLUTION * (int)volumeArea.x;
         int height = RESOLUTION * (int)volumeArea.y;
         int length = RESOLUTION * (int)volumeArea.z;
+
+        width = _resolution.x * _volumeBounds.size.x;
+        height = _resolution.y * _volumeBounds.size.y;
+        length = _resolution.z * _volumeBounds.size.z;
+
+
 
         float[] voxels = new float[width * height * length];
 
@@ -386,14 +415,31 @@ public class RayMarchMesh : MonoBehaviour
         _sdfCompute.SetBuffer(kernel, "_voxels", buffer);
         //_collisionCompute.SetTexture(0, "Result", tex);
 
+        _sdfCompute.SetFloat("_maxDrawDist", 300.0f);
         _sdfCompute.SetMatrixArray("_invModelMats", invModelMats);
         _sdfCompute.SetInts("_primitiveTypes", primitiveTypes);
         _sdfCompute.SetVectorArray("_combineOps", combineOps);
         _sdfCompute.SetVectorArray("_primitiveGeoInfo", primitiveGeoInfo);
-        _sdfCompute.SetVector("_volumeArea", volumeArea);
+        _sdfCompute.SetVectorArray("_boundGeoInfo", primitiveGeoInfo);
+        //_sdfCompute.SetVector("_volumeArea", volumeArea);
+        _sdfCompute.SetVector("_volumeArea", new Vector4(_volumeBounds.size.x, _volumeBounds.size.y, _volumeBounds.size.z));
+
+
+
+        Matrix4x4 localToWorld = new Matrix4x4();
+        Matrix4x4 local = new Matrix4x4();
+
+        //Debug.Log("Test " + localToWorld.MultiplyPoint(new Vector3(-2.5f, 0.0f, 0.0f)));
+        //Debug.Log("Test " + _transform.localToWorldMatrix);
+        local.SetTRS(_centre, Quaternion.identity, Vector3.one);
+        localToWorld = _transform.localToWorldMatrix * local;
+        //Debug.Log("Test " + localToWorld);
+        _sdfCompute.SetMatrix("_volumeLocalToWorld", localToWorld);
+        //Debug.Log("Test " + localToWorld.MultiplyPoint(new Vector3(-2.5f, 0.0f, 0.0f)));
 
         //int numThreadGroups = objs.Length;
-        _sdfCompute.Dispatch(kernel, (int)volumeArea.x, 1, 1);
+        //_sdfCompute.Dispatch(kernel, (int)volumeArea.x, 1, 1);
+        _sdfCompute.Dispatch(kernel, _volumeBounds.size.x, 1, 1);
 
 
 
@@ -451,6 +497,13 @@ public class RayMarchMesh : MonoBehaviour
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
+            List<Vector2> uvs = new List<Vector2>(4080);
+            for (int m = 0; m < 4080; ++m)
+            {
+                uvs.Add(Vector2.zero);
+            }
+            mesh.uv = uvs.ToArray();
+
             GameObject go = new GameObject("Mesh");
             go.transform.parent = transform;
             go.AddComponent<MeshFilter>();
@@ -467,5 +520,41 @@ public class RayMarchMesh : MonoBehaviour
         }
 
         buffer.Release();
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        //Gizmos.color = new Color(1.0f, 0.0f, 0.0f, 0.7f);
+        ////Gizmos.DrawCube(_volumeBounds.position, _volumeBounds.size);
+        //Gizmos.DrawWireCube(_volumeBounds.position, _volumeBounds.size);
+
+        //Gizmos.color = new Color(0.0f, 0.0f, 1.0f, 0.7f);
+        ////Gizmos.DrawWireCube(new Vector3(_volumeBounds.x, _volumeBounds.y, _volumeBounds.z), _volumeBounds.size);
+        //Gizmos.DrawWireCube(_volumeBounds.min, _volumeBounds.size);
+
+
+        //Matrix4x4 localToWorld = new Matrix4x4();
+        //localToWorld.SetTRS(_volumeBounds.min, Quaternion.identity, Vector3.one);
+
+        //Matrix4x4 local = new Matrix4x4();
+        //local.SetTRS(new Vector3(_volumeBounds.size.x, _volumeBounds.size.y, _volumeBounds.size.z) * 0.5f, Quaternion.identity, Vector3.one);
+
+        //localToWorld = localToWorld * local;
+
+        ////Debug.Log("Centre: " + _volumeBounds.center);
+        ////Debug.Log("Min: " + _volumeBounds.min);
+        ////Debug.Log("LocalToWorld: " + localToWorld);
+        //Gizmos.color = new Color(0.0f, 1.0f, 0.0f, 0.7f);
+        //Vector3 newCentre = localToWorld.MultiplyPoint(_volumeBounds.min);
+        //Gizmos.DrawWireCube(newCentre, _volumeBounds.size);
+        ////Debug.Log("Old Min: " + _volumeBounds.min);
+        ////Debug.Log("Old Centre: " + _volumeBounds.center);
+        ////Debug.Log("Centre: " + newCentre);
+
+
+        //_transform.position = _centre;
+        _transform.TransformPoint(_centre);
+        Gizmos.color = new Color(0.0f, 0.5f, 0.5f, 0.7f);
+        Gizmos.DrawWireCube(_transform.TransformPoint(_centre), _volumeBounds.size);
     }
 }

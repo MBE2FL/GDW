@@ -16,7 +16,7 @@ float3 _volumeArea;
 
 //int width = 32, height = 32, length = 32;
 
-[numthreads(32,1,1)]
+[numthreads(32, 1, 1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     float3 rayOrigin = 0;
