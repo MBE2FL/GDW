@@ -15,9 +15,10 @@ public class AddExploding : MonoBehaviour
                 meshList[i].gameObject.AddComponent(typeof(ExplodingMesh));
                 if (meshList[i].gameObject.GetComponent<MeshRenderer>().material != null)
                 {
-                    Texture tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.mainTexture;
-                    meshList[i].gameObject.GetComponent<MeshRenderer>().material.shader = Shader.Find("Shader Graphs/GeoGraph");
-                    meshList[i].gameObject.GetComponent<MeshRenderer>().material.SetTexture("BIG atlas", tex);
+                    // Texture tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.mainTexture;
+                    // meshList[i].gameObject.GetComponent<MeshRenderer>().material.shader = Shader.Find("Shader Graphs/GeoGraph");
+                    // meshList[i].gameObject.GetComponent<MeshRenderer>().material.SetTexture("BIG atlas", tex);
+                    meshList[i].gameObject.GetComponent<MeshRenderer>().material = (Material)Resources.Load("Geo atlas");
                 }
             }
            
