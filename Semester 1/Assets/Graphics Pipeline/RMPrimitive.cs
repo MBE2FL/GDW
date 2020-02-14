@@ -75,14 +75,8 @@ public class RMPrimitive : RMObj
 {
     [SerializeField]
     private Color _colour = Color.white;
-    [SerializeField]
-    private Vector4 _combineOp;
-
-    [SerializeField]
-    private CombineOpsTypes _combineOpType = CombineOpsTypes.Union;
-
-    [SerializeField]
-    private float _combineSmoothness = 0.0f;
+    //[SerializeField]
+    //private Vector4 _combineOp;
 
     [SerializeField]
     private PrimitiveTypes _primitiveType = PrimitiveTypes.Sphere;
@@ -112,9 +106,6 @@ public class RMPrimitive : RMObj
     //[SerializeField]
     //private Texture2D _texture = null;
 
-    [SerializeField]
-    private bool _static = false;
-
 
 
 
@@ -138,18 +129,6 @@ public class RMPrimitive : RMObj
         }
     }
 
-    public float CombineSmoothness
-    {
-        get
-        {
-            return _combineSmoothness;
-        }
-        set
-        {
-            _combineSmoothness = value;
-        }
-    }
-
     public PrimitiveTypes PrimitiveType
     {
         get
@@ -159,14 +138,6 @@ public class RMPrimitive : RMObj
         set
         {
             _primitiveType = value;
-        }
-    }
-
-    public CombineOpsTypes CombineOpType
-    {
-        get
-        {
-            return _combineOpType;
         }
     }
 
@@ -260,14 +231,6 @@ public class RMPrimitive : RMObj
         get
         {
             return new Vector2(_refractionCount, _refractionIndex);
-        }
-    }
-
-    public bool Static
-    {
-        get
-        {
-            return _static;
         }
     }
     
@@ -377,9 +340,7 @@ public class RMPrimitive : RMObj
 public class RMComponentEditor : RMObjEditor
 {
     SerializedProperty _primitiveType;
-    SerializedProperty _combineOpType;
     SerializedProperty _colour;
-    SerializedProperty _combineSmoothness;
     SerializedProperty _geoInfo;
     //SerializedProperty _csgNode;
     SerializedProperty _reflectionCount;
@@ -387,7 +348,6 @@ public class RMComponentEditor : RMObjEditor
     SerializedProperty _refractionCount;
     SerializedProperty _refractionIndex;
     //SerializedProperty _texture;
-    SerializedProperty _static;
 
 
 
@@ -395,9 +355,7 @@ public class RMComponentEditor : RMObjEditor
     {
         base.OnEnable();
         _primitiveType = serializedObject.FindProperty("_primitiveType");
-        _combineOpType = serializedObject.FindProperty("_combineOpType");
         _colour = serializedObject.FindProperty("_colour");
-        _combineSmoothness = serializedObject.FindProperty("_combineSmoothness");
         _geoInfo = serializedObject.FindProperty("_geoInfo");
         //_csgNode = serializedObject.FindProperty("_csgNode");
         _reflectionCount = serializedObject.FindProperty("_reflectionCount");
@@ -405,7 +363,6 @@ public class RMComponentEditor : RMObjEditor
         _refractionCount = serializedObject.FindProperty("_refractionCount");
         _refractionIndex = serializedObject.FindProperty("_refractionIndex");
         //_texture = serializedObject.FindProperty("_texture");
-        _static = serializedObject.FindProperty("_static");
     }
 
     public override void OnInspectorGUI()
@@ -414,11 +371,9 @@ public class RMComponentEditor : RMObjEditor
 
         var rmComp = target as RMPrimitive;
         bool primTypeChanged = false;
-        bool combineOpChanged = false;
 
         serializedObject.Update();
 
-        EditorGUILayout.PropertyField(_static);
 
         EditorGUI.BeginChangeCheck();
         EditorGUILayout.PropertyField(_primitiveType);
@@ -441,20 +396,7 @@ public class RMComponentEditor : RMObjEditor
         else
             label.tooltip = "How the primitive will interact with the scene.";
 
-        EditorGUI.BeginChangeCheck();
-        EditorGUILayout.PropertyField(_combineOpType, label);
-        combineOpChanged = EditorGUI.EndChangeCheck();
-
-        label.text = "Combine Smoothness";
-        //GUIContent label = new GUIContent("Combine Smoothness" ,"Overridden by CSG");
-
-        if (_combineOpType.intValue == (int)CombineOpsTypes.SmoothUnion ||
-            _combineOpType.intValue == (int)CombineOpsTypes.SmoothSubtraction ||
-            _combineOpType.intValue == (int)CombineOpsTypes.SmoothIntersection)
-        {
-            EditorGUILayout.PropertyField(_combineSmoothness);
-            rmComp.CombineSmoothness = Mathf.Clamp(_combineSmoothness.floatValue, 0.0f, Mathf.Infinity);
-        }
+        displayCombineOp(label, rmComp);
 
         EditorGUI.EndDisabledGroup();
 

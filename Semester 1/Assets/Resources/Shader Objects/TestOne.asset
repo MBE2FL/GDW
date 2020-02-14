@@ -10,31 +10,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68fc6a48569501646a8f1b291b6f4773, type: 3}
-  m_Name: RayMarchDev
+  m_Name: TestOne
   m_EditorClassIdentifier: 
-  _keywords: 
+  _keywords: 01000000
+  _effectShader: {fileID: 4800000, guid: 89b8ef59748914244b7470326c956d24, type: 3}
+  _shaderName: Howdy
   _colourRamp: {fileID: 2800000, guid: 70b1b6bc55617f74bac81d47b62500e6, type: 3}
   _performanceRamp: {fileID: 2800000, guid: 243f1b7655336f447be92d1a4f8a4994, type: 3}
-  _wood: {fileID: 0}
-  _brick: {fileID: 0}
-  _maxSteps: 200
+  _wood: {fileID: 2800000, guid: 9e4e7026e14ffbb4198c4e013cb987a3, type: 3}
+  _brick: {fileID: 2800000, guid: be0271be91289464e98e35b11785ae0f, type: 3}
+  _maxSteps: 260
   _maxDrawDist: 300
   _specularExp: 160
   _attenuationConstant: 1.5
   _attenuationLinear: 0.01
   _attenuationQuadratic: 0.001
-  _ambientColour: {r: 0.7264151, g: 0.7264151, b: 0.7264151, a: 0}
-  _diffuseColour: {r: 0.7075472, g: 0.7075472, b: 0.7075472, a: 0}
-  _specularColour: {r: 2, g: 2, b: 2, a: 0}
-  _lightConstants: {x: 0.02, y: 0.2, z: 2}
-  _rimLightColour: {r: 1.2146596, g: 0, b: 7.999999, a: 0}
+  _ambientColour: {r: 0.5003198, g: 0.5003198, b: 0.5003198, a: 0}
+  _diffuseColour: {r: 0.61136913, g: 0.61136913, b: 0.61136913, a: 0}
+  _specularColour: {r: 46.823925, g: 46.823925, b: 46.823925, a: 0}
+  _lightConstants: {x: 0.2, y: 0.2, z: 2}
+  _rimLightColour: {r: 0, g: 0, b: 0, a: 0}
   _sunLight: {fileID: 0}
-  _penumbraFactor: 15
-  _shadowMinDist: 0.05
-  _shadowIntensity: 1
-  _reflectionCount: 0
-  _reflectionIntensity: 0
-  _envReflIntensity: 0
+  _penumbraFactor: 72
+  _shadowMinDist: 0.1
+  _shadowIntensity: 2.5
+  _reflectionCount: 1
+  _reflectionIntensity: 0.3
+  _envReflIntensity: 0.5
   _skybox: {fileID: 0}
   _aoMaxSteps: 3
   _aoStepSize: 0.2

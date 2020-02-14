@@ -9,133 +9,31 @@ using UnityEditor;
 [RequireComponent(typeof(Camera))]
 [AddComponentMenu("Ray Marching/RayMarcher")]
 [DisallowMultipleComponent]
-
 public class RayMarcher : SceneViewFilter
 {
     [SerializeField]
-    private Shader _effectShader = null;
+    private List<RayMarchShader> _shaders = new List<RayMarchShader>();
+
+    [SerializeField]
+    private Transform _sunLight;
+
+    //[SerializeField]
+    //private bool _showShaderWindow = false;
+
+
     private Material _effectMaterial;
     private Camera _currentCamera;
     [SerializeField]
-    private Texture2D _colourRamp = null;
-    [SerializeField]
-    private Texture2D _performanceRamp = null;
-    [SerializeField]
-    private Texture2D _wood = null;
-    [SerializeField]
-    private Texture2D _brick = null;
+    private RenderTexture _distTex;
 
-    [Header("Ray March")]
-    [SerializeField]
-    [Range(0.0f, 600.0f)]
-    private int _maxSteps = 100;
-    [SerializeField]
-    [Range(0.0f, 600.0f)]
-    private float _maxDrawDist = 64.0f;
-
-    // ######### Light Variables #########
-    [Header("Light")]
-    // Floats
-    [SerializeField]
-    private float _specularExp = 160.0f;
-    [SerializeField]
-    private float _attenuationConstant = 1.5f;
-    [SerializeField]
-    private float _attenuationLinear = 0.01f;
-    [SerializeField]
-    private float _attenuationQuadratic = 0.001f;
-
-    // Vectors
-    [SerializeField]
-    private Color _ambientColour = new Color(137.0f, 137.0f, 137.0f, 0.0f);
-    [SerializeField]
-    private Color _diffuseColour = new Color(130.0f, 130.0f, 130.0f, 0.0f);
-    [SerializeField]
-    private Color _specularColour = new Color(255.0f, 255.0f, 255.0f, 0.0f);
-    [SerializeField]
-    private Vector3 _lightConstants = new Vector3(0.2f, 0.2f, 2.0f);
-    [SerializeField]
-    private Color _rimLightColour = new Color(255.0f, 0.0f, 219.0f, 0.0f);
-    public Transform sunLight;
-    // ######### Light Variables #########
-
-
-    [Header("Shadow")]
-    // ######### Shadow Variables #########
-    [SerializeField]
-    [Range(1.0f, 140.0f)]
-    private float _penumbraFactor = 15.0f;
-    [SerializeField]
-    [Range(0.01f, 5.0f)]
-    private float _shadowMinDist = 0.01f;
-    [SerializeField]
-    [Range(0.0f, 10.0f)]
-    private float _shadowIntensity = 1.0f;
-    // ######### Shadow Variables #########
-
-
-    // ######### Reflection Variables #########
-    [Header("Reflection")]
-    [SerializeField]
-    [Range(0.0f, 3.0f)]
-    private int _reflectionCount = 0;
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    private float _reflectionIntensity = 0.0f;
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    private float _envReflIntensity = 0.0f;
-    [SerializeField]
-    private Texture _skybox = null;
-    // ######### Reflection Variables #########
-
-    // ######### Ambient Occlusion Variables #########
-    [Header("Ambient Occlusion")]
-    [SerializeField]
-    [Range(0.0f, 5.0f)]
-    int _aoMaxSteps = 3;
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    float _aoStepSize = 0.2f;
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    float _aoIntensity = 0.3f;
-    // ######### Ambient Occlusion Variables #########
-
-    [Header("Vignette")]
-    [SerializeField]
-    [Range(0.0f, 2.0f)]
-    public float _vignetteIntensity = 0.0f;
-
-    [Header("Fog")]
-    [SerializeField]
-    [Range(0.0f, 0.04f)]
-    private float _fogExtinction = 0.0f;
-    [SerializeField]
-    [Range(0.0f, 0.04f)]
-    private float _fogInscattering = 0.0f;
-    [SerializeField]
-    private Color _fogColour = Color.grey;
-
-    public Shader EffectShader
-    {
-        get
-        {
-            return _effectShader;
-        }
-        set
-        {
-            _effectShader = value;
-        }
-    }
 
     public Material EffectMaterial
     {
         get
         {
-            if (!_effectMaterial && _effectShader)
+            if (!_effectMaterial)
             {
-                _effectMaterial = new Material(_effectShader);
+                _effectMaterial = new Material(Shader.Find("Standard"));
                 _effectMaterial.hideFlags = HideFlags.HideAndDontSave;
             }
 
@@ -158,36 +56,10 @@ public class RayMarcher : SceneViewFilter
         }
     }
 
-    public int ReflectionCount
-    {
-        get
-        {
-            return _reflectionCount;
-        }
-    }
 
 
-    // ######### Ray Marcher Inspector Variables #########
-    //private const int MAX_PRIMS = 128;
-    //static private RMPrimitive[] _prims = new RMPrimitive[MAX_PRIMS];
-    //static private List<RMPrimitive> _prims = new List<RMPrimitive>(MAX_PRIMS);
-    //static private uint _currentObjs = 0;
-    // ######### Ray Marcher Inspector Variables #########
 
-
-    private Matrix4x4[] invModelMats = new Matrix4x4[32];
-    private Color[] colours = new Color[32];
-    //private float[] primitiveTypes = new float[32];
-    private Vector4[] combineOps = new Vector4[32];
-    private Vector4[] primitiveGeoInfo = new Vector4[32];
-    private Vector4[] _reflInfo = new Vector4[32];
-    private Vector4[] _refractInfo = new Vector4[32];
-    private Vector4[] _altInfo = new Vector4[32];
-
-
-    private Vector4[] bufferedCSGs = new Vector4[16];
-    private Vector4[] combineOpsCSGs = new Vector4[16];
-    //private float[] csgNodesPerRoot = new float[16];
+    
 
 
     RMObj[] objects;
@@ -201,15 +73,92 @@ public class RayMarcher : SceneViewFilter
         }
     }
 
+    public List<RayMarchShader> Shaders
+    {
+        get
+        {
+            return _shaders;
+        }
+    }
+
+    //public bool ShowShaderWindow
+    //{
+    //    get
+    //    {
+    //        return _showShaderWindow;
+    //    }
+    //    set
+    //    {
+    //        _showShaderWindow = value;
+    //    }
+    //}
+
     private void Start()
     {
-        if (Application.isPlaying)
-        {
-            objects = FindObjectsOfType<RMObj>();
-            objs = new List<RMObj>(objects);
+        _shaders = new List<RayMarchShader>(GetComponents<RayMarchShader>());
+        _distTex = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+    }
 
-            objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
-        }
+
+    public void addShader()
+    {
+        //RayMarchShader shader = gameObject.AddComponent<RayMarchShader>();
+        //shader.hideFlags = HideFlags.HideInInspector;
+        //shader.ShaderName = "New Shader";
+        //_shaders.Add(shader);
+
+        // RayMarchShader shader = ScriptableObject.CreateInstance<RayMarchShader>();
+        // shader.ShaderName = "New Shader";
+        // _shaders.Add(shader);
+
+        // ShaderEditorWindow.rebuildNames();
+
+        //RayMarchShader shader = new RayMarchShader();
+        //_shaders.Add(shader);
+
+
+        RayMarchShader shader = gameObject.AddComponent<RayMarchShader>();
+        _shaders.Add(shader);
+    }
+
+    public void removeShader(RayMarchShader shader)
+    {
+
+        // if (_shaders.Count > 0)
+        // {
+        //     int index = _shaders.IndexOf(shader);
+        //     _shaders[index] = _shaders[_shaders.Count - 1];
+        // }
+
+        // _shaders.RemoveAt(_shaders.Count - 1);
+
+        // ShaderEditorWindow.rebuildNames();
+    }
+
+    public void removeShader(int index)
+    {
+
+        // if (_shaders.Count > 0)
+        // {
+        //     _shaders[index] = _shaders[_shaders.Count - 1];
+        // }
+
+        // _shaders.RemoveAt(_shaders.Count - 1);
+
+        // ShaderEditorWindow.rebuildNames();
+    }
+
+    public void removeAllShaders()
+    {
+        _shaders.Clear();
+    }
+
+    public void moveUp(RayMarchShader shader)
+    {
+        // int index = _shaders.IndexOf(shader);
+        // RayMarchShader temp = _shaders[index];
+
+        // ShaderEditorWindow.rebuildNames();
     }
 
 
@@ -221,7 +170,8 @@ public class RayMarcher : SceneViewFilter
             Graphics.Blit(source, destination); // Do Nothing
             return;
         }
-
+        //EffectMaterial.EnableKeyword("BOUND_DEBUG");  // TO-DO Perform this only when debug is enabled.
+        //EffectMaterial.shaderKeywords = new string[1] { "BOUNDING_SPHERE_DEBUG" };
         //Matrix4x4 torusMat = Matrix4x4.TRS(
         //                                    Vector3.right * Mathf.Sin(Time.time) * 5.0f,
         //                                    Quaternion.identity,
@@ -231,240 +181,36 @@ public class RayMarcher : SceneViewFilter
         //                           Quaternion.Euler(new Vector3(0.0f, 0.0f, (Time.time * 200.0f) % 360.0f)),
         //                           Vector3.one);
 
-        EffectMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
-        EffectMaterial.SetMatrix("_CameraInvMatrix", CurrentCamera.cameraToWorldMatrix);
-        EffectMaterial.SetVector("_CameraPos", CurrentCamera.transform.position);
         //EffectMaterial.SetMatrix("_TorusMat_InvModel", torusMat.inverse);
-        EffectMaterial.SetTexture("_colourRamp", _colourRamp);
-        EffectMaterial.SetTexture("_performanceRamp", _performanceRamp);
-        EffectMaterial.SetTexture("_wood", _wood);
-        EffectMaterial.SetTexture("_brick", _brick);
-
-        EffectMaterial.SetFloat("_specularExp", _specularExp);
-        EffectMaterial.SetFloat("_attenuationConstant", _attenuationConstant);
-        EffectMaterial.SetFloat("_attenuationLinear", _attenuationLinear);
-        EffectMaterial.SetFloat("_attenuationQuadratic", _attenuationQuadratic);
-        EffectMaterial.SetFloat("_attenuationQuadratic", _attenuationQuadratic);
-        EffectMaterial.SetVector("_LightDir", sunLight ? sunLight.forward : Vector3.down);
-        EffectMaterial.SetVector("_lightPos", sunLight ? sunLight.position : Vector3.zero);
-        EffectMaterial.SetColor("_ambientColour", _ambientColour);
-        EffectMaterial.SetColor("_diffuseColour", _diffuseColour);
-        EffectMaterial.SetColor("_specularColour", _specularColour);
-        EffectMaterial.SetVector("_lightConstants", _lightConstants);
-        EffectMaterial.SetColor("_rimLightColour", _rimLightColour);
-        EffectMaterial.SetFloat("_totalTime", Time.time);
-
-        // ######### Shadow Variables #########
-        EffectMaterial.SetFloat("_penumbraFactor", _penumbraFactor);
-        EffectMaterial.SetFloat("_shadowMinDist", _shadowMinDist);
-        EffectMaterial.SetFloat("_shadowIntensity", _shadowIntensity);
-
-        // ######### Ray March Variables #########
-        EffectMaterial.SetInt("_maxSteps", _maxSteps);
-        EffectMaterial.SetFloat("_maxDrawDist", _maxDrawDist);
-
-        // ######### Reflection Variables #########
-        EffectMaterial.SetInt("_reflectionCount", _reflectionCount);
-        EffectMaterial.SetFloat("_reflectionIntensity", _reflectionIntensity);
-        EffectMaterial.SetFloat("_envReflIntensity", _envReflIntensity);
-        EffectMaterial.SetTexture("_skybox", _skybox);
-
-        // ######### Refraction Variables #########
-        EffectMaterial.SetVectorArray("_refractInfo", _refractInfo);
-
-        // ######### Ambient Occlusion Variables #########
-        EffectMaterial.SetInt("_aoMaxSteps", _aoMaxSteps);
-        EffectMaterial.SetFloat("_aoStepSize", _aoStepSize);
-        EffectMaterial.SetFloat("_aoIntensity", _aoIntensity);
-
-        // ######### Fog Variables #########
-        EffectMaterial.SetFloat("_fogExtinction", _fogExtinction);
-        EffectMaterial.SetFloat("_fogInscattering", _fogInscattering);
-        EffectMaterial.SetColor("_fogColour", _fogColour);
-
-        // ######### Vignette Variables #########
-        EffectMaterial.SetFloat("_vignetteIntensity", _vignetteIntensity);
 
 
-        int primIndex = 0;
-        int csgIndex = 0;
-        int altIndex = 0;
-        invModelMats = new Matrix4x4[32];
-        colours = new Color[32];
-        _reflInfo = new Vector4[32];
-        combineOps = new Vector4[32];
-        bufferedCSGs = new Vector4[32];
-        _altInfo = new Vector4[32];
+        Matrix4x4 frustomCorners = GetFrustumCorners(CurrentCamera);
+        Matrix4x4 cameraInvViewMatrix = CurrentCamera.cameraToWorldMatrix;
+        Vector3 camPos = CurrentCamera.transform.position;
 
-        if (!Application.isPlaying)
+        if (!_distTex)
         {
-            objects = FindObjectsOfType<RMObj>();
-            objs = new List<RMObj>(objects);
-
-            objs.Sort((obj1, obj2) => obj1.DrawOrder.CompareTo(obj2.DrawOrder));
+            _distTex = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.RFloat);
         }
-
-        RMPrimitive prim;
-        CSG csg;
-        RMObj obj;
-
-        for (int i = 0; i < objs.Count; ++i)
+        // Render all shaders.
+        RayMarchShader shader;
+        for (int i = 0; i < _shaders.Count; ++i)
         {
-            obj = objs[i];
+            shader = _shaders[i];
+            EffectMaterial.shader = shader.EffectShader;
+            shader.render(EffectMaterial, frustomCorners, cameraInvViewMatrix, camPos, _sunLight);
 
-            // Primitive
-            if (obj.IsPrim)
-            {
-                prim = obj as RMPrimitive;
+            CustomGraphicsBlit(source, destination, EffectMaterial, 0, i == (_shaders.Count - 1), ref _distTex);
 
-                // Skip any primitives belonging to a csg, as they will be rendered recursively by thier respective csgs.
-                if (prim.CSGNode)
-                    continue;
-
-                renderPrimitive(prim, ref primIndex, ref altIndex);
-            }
-            // CSG
-            else
-            {
-                csg = obj as CSG;
-
-                // Skip any non-root CSGs, as they will be rendered recursively by thier parents.
-                // Skip any CSGs which don't have two nodes.
-                if (!csg.IsRoot || !csg.IsValid)
-                    continue;
-
-                renderCSG(csg, ref primIndex, ref csgIndex, ref altIndex);
-            }
+            shader.disableKeywords(EffectMaterial);
         }
-
-        if (primIndex > 0)
-        {
-            EffectMaterial.SetMatrixArray("_invModelMats", invModelMats);
-            EffectMaterial.SetColorArray("_rm_colours", colours);
-            EffectMaterial.SetVectorArray("_combineOps", combineOps);
-            EffectMaterial.SetVectorArray("_primitiveGeoInfo", primitiveGeoInfo);
-            EffectMaterial.SetVectorArray("_reflInfo", _reflInfo);
-            EffectMaterial.SetVectorArray("_altInfo", _altInfo);
-
-            EffectMaterial.SetVectorArray("_bufferedCSGs", bufferedCSGs);
-            EffectMaterial.SetVectorArray("_combineOpsCSGs", combineOpsCSGs);
-        }
+        
 
 
         //Graphics.Blit(source, destination, EffectMaterial, 0); // Use given effect shader as an image effect
-        CustomGraphicsBlit(source, destination, EffectMaterial, 0);
-
-
-        // Cleanup arrays
+        //CustomGraphicsBlit(source, destination, EffectMaterial, 0);
     }
 
-    private void renderPrimitive(RMPrimitive rmPrim, ref int primIndex, ref int altIndex)
-    {
-        // Homogeneous transformation matrices
-        invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix.inverse;
-
-        // Colour information
-        colours[primIndex] = rmPrim.Colour;
-
-        // Primitive to render
-        //primitiveTypes[primIndex] = (float)rmPrim.PrimitiveType;
-
-        // Combine Operation
-        combineOps[primIndex] = rmPrim.CombineOp;
-
-        // Primitive Geometry Information
-        primitiveGeoInfo[primIndex] = rmPrim.GeoInfo;
-
-        // Reflection Information
-        _reflInfo[primIndex] = rmPrim.ReflectionInfo;
-
-        // Refraction Information
-        Vector4 info = rmPrim.RefractionInfo;
-        if (info.x > 0.0f)
-            info.x = 1.0f;
-        _refractInfo[primIndex] = info;
-
-        // Alterations' Information
-        foreach (Alteration alt in rmPrim.Alterations)
-        {
-            _altInfo[altIndex] = alt.info;
-            ++altIndex;
-        }
-        //foreach(Vector4 altInfo in rmPrim.AlterationInfo)
-        //{
-        //    _altInfo[altIndex] = altInfo;
-        //    ++altIndex;
-        //}
-
-        ++primIndex;
-    }
-
-    private void renderCSG(CSG csg, ref int primIndex, ref int csgIndex, ref int altIndex)
-    {
-        // TO-DO Don't let incomplete CSG children nodes be added to other CSGs.
-        // Base case: Both nodes are primitives.
-        if (csg.AllPrimNodes)
-        {
-            // Render both nodes.
-            renderPrimitive(csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
-            renderPrimitive(csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex);
-
-            // Buffer this CSG.
-            bufferedCSGs[csgIndex] = new Vector4(primIndex - 1, primIndex, -1, -1);
-            combineOpsCSGs[csgIndex] = csg.CombineOp;
-            ++csgIndex;
-            return;
-        }
-        // Only first node is a primitive.
-        else if (csg.IsFirstPrim)
-        {
-            // Recurse through second node (Must be a CSG).
-            renderCSG(csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
-
-            // Render first node.
-            renderPrimitive(csg.FirstNode as RMPrimitive, ref primIndex, ref altIndex);
-
-            // Buffer this CSG.
-            bufferedCSGs[csgIndex] = new Vector4(primIndex, -1, -1, csgIndex - 1);
-            combineOpsCSGs[csgIndex] = csg.CombineOp;
-            ++csgIndex;
-            return;
-        }
-        // Only second node is a primitive.
-        else if (csg.IsSecondPrim)
-        {
-            // Recurse through first node (Must be a csg).
-            renderCSG(csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
-
-            // Render second node.
-            renderPrimitive(csg.SecondNode as RMPrimitive, ref primIndex, ref altIndex);
-
-            // Buffer this CSG.
-            bufferedCSGs[csgIndex] = new Vector4(-1, primIndex, csgIndex - 1, -1);
-            combineOpsCSGs[csgIndex] = csg.CombineOp;
-            ++csgIndex;
-            return;
-        }
-        // Both nodes are CSGs.
-        else
-        {
-            Vector4 tempCSG = new Vector4(-1, -1, -1, -1);
-
-            // Recurse through first node.
-            renderCSG(csg.FirstNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
-            tempCSG.z = csgIndex;
-
-            // Recurse through second node.
-            renderCSG(csg.SecondNode as CSG, ref primIndex, ref csgIndex, ref altIndex);
-            tempCSG.w = csgIndex;
-
-            // Buffer this CSG.
-            bufferedCSGs[csgIndex] = tempCSG;
-            combineOpsCSGs[csgIndex] = csg.CombineOp;
-            ++csgIndex;
-            return;
-        }
-    }
 
     /// <summary>
     /// Custom version of Graphics.Blit that encodes frustum indices into the input vertices.
@@ -474,12 +220,25 @@ public class RayMarcher : SceneViewFilter
     /// Bottom Right vertex:    z=2, u=1, v=1
     /// Bottom Left vertex:     z=3, u=1, v=0
     /// </summary>
-    static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNum)
+    static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNum, bool finalPass, ref RenderTexture distTex)
     {
-        RenderTexture.active = dest;
+        //RenderTexture.active = dest;
+
+        RenderTexture distanceMap = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.RFloat);
+        RenderTexture sceneTex = RenderTexture.GetTemporary(source.width, source.height, 0, source.format);
+        RenderBuffer[] buffers = new RenderBuffer[2] { sceneTex.colorBuffer, distanceMap.colorBuffer };
+        //RenderBuffer[] buffers = new RenderBuffer[2] { sceneTex.colorBuffer, distTex.colorBuffer };
+        Graphics.SetRenderTarget(buffers, dest.depthBuffer);
 
 
         fxMaterial.SetTexture("_MainTex", source);
+
+        if (fxMaterial.IsKeywordEnabled("USE_DIST_TEX"))
+        {
+            fxMaterial.SetTexture("_distTex", distTex);
+        }
+
+
 
         GL.PushMatrix();
         GL.LoadOrtho();
@@ -502,6 +261,31 @@ public class RayMarcher : SceneViewFilter
 
         GL.End();
         GL.PopMatrix();
+
+
+        //Graphics.Blit(distanceMap, dest);
+
+        if (finalPass)
+        {
+            Graphics.Blit(sceneTex, dest);
+        }
+        else
+        {
+            Graphics.Blit(sceneTex, source);
+        }
+
+        Graphics.Blit(distanceMap, distTex);
+
+        //if (distTex)
+        //{
+        //    distTex.Release();
+        //    distTex = new RenderTexture(distanceMap);
+        //}
+
+        //sceneTex.Release();
+        //distanceMap.Release();
+        RenderTexture.ReleaseTemporary(sceneTex);
+        RenderTexture.ReleaseTemporary(distanceMap);
     }
 
 
@@ -572,31 +356,327 @@ public class RayMarcher : SceneViewFilter
 public class RayMarcherEditor : Editor
 {
 
+    private bool _boundDebug = false;
 
+    private List<RayMarchShader> shaders;
+    private List<RMObj> _renderList;
+    private bool _renderListFoldout = false;
+    private SerializedProperty _shaders;
+    private SerializedProperty _sunLight;
+    private SerializedProperty _distTex;
 
     private void OnEnable()
     {
-
+        _shaders = serializedObject.FindProperty("_shaders");
+        _sunLight = serializedObject.FindProperty("_sunLight");
+        _distTex = serializedObject.FindProperty("_distTex");
     }
 
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
+        //base.OnInspectorGUI();
 
         var rayMarcher = target as RayMarcher;
 
         serializedObject.Update();
 
+        EditorGUILayout.PropertyField(_distTex);
+        EditorGUILayout.PropertyField(_sunLight);
+
+
+        GUIContent label = new GUIContent("Shaders", "");
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+        if (GUILayout.Button("Remove All Shaders"))
+        {
+            rayMarcher.removeAllShaders();
+        }
+
+        shaders = rayMarcher.Shaders;
+        for (int i = 0; i < shaders.Count; ++i)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            //string textBuffer = shaders[i].ShaderName;
+            //shaders[i].ShaderName = EditorGUILayout.TextField(textBuffer);
+            //shaders[i].ShaderName = EditorGUILayout.TextField(shaders[i].ShaderName);
+
+            //EditorGUILayout.TextField(shaders[i].ShaderName);
+            label.text = "Settings";
+            label.tooltip = "";
+            shaders[i].Settings = EditorGUILayout.ObjectField(label, shaders[i].Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
+
+            label.text = "Render List";
+            _renderListFoldout = EditorGUILayout.Foldout(_renderListFoldout, "Render List");
+            if (_renderListFoldout)
+            {
+                _renderList = shaders[i].RenderList;
+                foreach (RMObj obj in _renderList)
+                {
+                    EditorGUILayout.TextField(obj.name);
+                }
+            }
+
+           GUILayout.BeginHorizontal();
+           if (GUILayout.Button("Remove Shader"))
+           {
+               rayMarcher.removeShader(i);
+               break;
+           }
+           GUILayout.EndHorizontal();
+        }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
+        if (GUILayout.Button("Add Shader"))
+        {
+           rayMarcher.addShader();
+        }
+
+
+
+
+
+        //if (GUILayout.Button("Shader Editor"))
+        //{
+        //    //rayMarcher.ShowShaderWindow = !rayMarcher.ShowShaderWindow;
+        //    ShaderEditorWindow.Init();
+        //}
+
 
 
         serializedObject.ApplyModifiedProperties();
 
-        if (GUILayout.Button("Reload shader"))
-        {
-            //rayMarcher.EffectMaterial.shader = rayMarcher.EffectShader;
-            rayMarcher.EffectMaterial = new Material(rayMarcher.EffectShader);
-            rayMarcher.EffectMaterial.hideFlags = HideFlags.HideAndDontSave;
-        }
+
+        //if (GUILayout.Button("Bound Debug"))
+        //{
+        //    _boundDebug = !_boundDebug;
+
+        //    if (_boundDebug)
+        //        rayMarcher.EffectMaterial.EnableKeyword("BOUND_DEBUG");
+        //    else
+        //        rayMarcher.EffectMaterial.DisableKeyword("BOUND_DEBUG");
+        //}
     }
 }
+
+
+/* public class ShaderEditorWindow : EditorWindow
+{
+    string myString = "Hello World";
+    bool groupEnabled;
+    bool myBool = true;
+    float myFloat = 1.23f;
+    static Camera _camera;
+    static RayMarcher _rayMarcher;
+    static List<RayMarchShader> _shaders;
+
+    static List<string> _toolbarNames = new List<string>();
+    static int _toolbarSelected = 0;
+    Vector2 scrollPos;
+
+
+    // Add menu named "Shader Editor" to the Window menu
+    [MenuItem("Window/Shader Editor")]
+    public static void Init()
+    {
+        // Get existing open window or if none, make a new one:
+        ShaderEditorWindow window = (ShaderEditorWindow)EditorWindow.GetWindow(typeof(ShaderEditorWindow));
+        window.Show();
+
+        _camera = Camera.main;
+        _rayMarcher = _camera.GetComponent<RayMarcher>();
+    }
+
+    public static void rebuildNames()
+    {
+        _toolbarNames.Clear();
+
+        _shaders = _rayMarcher.Shaders;
+
+        foreach (RayMarchShader shader in _shaders)
+        {
+            _toolbarNames.Add(shader.ShaderName);
+        }
+    }
+
+    void OnGUI()
+    {
+        GUILayout.BeginHorizontal();
+        _toolbarSelected = GUILayout.Toolbar(_toolbarSelected, _toolbarNames.ToArray());
+        GUILayout.EndHorizontal();
+
+
+        scrollPos = GUILayout.BeginScrollView(scrollPos);
+
+
+        GUIContent label = new GUIContent();
+
+        _shaders = _rayMarcher.Shaders;
+        foreach (RayMarchShader shader in _shaders)
+        {
+            // ######### General Variables #########
+            label.text = "General Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Shader Name";
+            shader.ShaderName = EditorGUILayout.TextField(label, shader.ShaderName);
+
+            label.text = "Max Steps";
+            label.tooltip = "The maximum number of steps each ray can take.";
+            shader.MaxSteps = EditorGUILayout.IntField(label, shader.MaxSteps);
+
+            label.text = "Max Draw Dist";
+            label.tooltip = "The maximum distance each pixel can travel.";
+            shader.MaxDrawDist = EditorGUILayout.FloatField(label, shader.MaxDrawDist);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            // ######### Light Variables #########
+            label.text = "Light Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Specular Exp";
+            label.tooltip = "Affects the size of the specular highlight";
+            shader.SpecularExp = EditorGUILayout.FloatField(label, shader.SpecularExp);
+
+            label.text = "Attenuation Constant";
+            label.tooltip = "";
+            shader.AttenuationConstant = EditorGUILayout.FloatField(label, shader.AttenuationConstant);
+
+            label.text = "Attenuation Linear";
+            label.tooltip = "";
+            shader.AttenuationLinear = EditorGUILayout.FloatField(label, shader.AttenuationLinear);
+
+            label.text = "Attenuation Quadratic";
+            label.tooltip = "";
+            shader.AttenuationQuadratic = EditorGUILayout.FloatField(label, shader.AttenuationQuadratic);
+
+            label.text = "Ambient Colour";
+            label.tooltip = "";
+            shader.AmbientColour = EditorGUILayout.ColorField(label, shader.AmbientColour);
+
+            label.text = "Diffuse Colour";
+            label.tooltip = "";
+            shader.DiffuseColour = EditorGUILayout.ColorField(label, shader.DiffuseColour);
+
+            label.text = "Specular Colour";
+            label.tooltip = "";
+            shader.SpecualarColour = EditorGUILayout.ColorField(label, shader.SpecualarColour);
+
+            label.text = "Light Constants";
+            label.tooltip = "";
+            shader.LightConstants = EditorGUILayout.Vector3Field(label, shader.LightConstants);
+
+            label.text = "Rim Light Colour";
+            label.tooltip = "";
+            shader.RimLightColour = EditorGUILayout.ColorField(label, shader.RimLightColour);
+
+            label.text = "Sun Light";
+            label.tooltip = "Directional light representing the sun.";
+            shader.sunLight = EditorGUILayout.ObjectField(label, shader.sunLight, typeof(Transform), true) as Transform;
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            // ######### Shadow Variables #########
+            label.text = "Shadow Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Penumbra Factor";
+            label.tooltip = "How soft the shadows appear, the further away they are from the occluder.";
+            shader.PenumbraFactor = EditorGUILayout.FloatField(label, shader.PenumbraFactor);
+
+            label.text = "Shadow Min Dist";
+            label.tooltip = "A bias to prevent the shadow rays from getting stuck inside of their origin surface.";
+            shader.ShadowmMinDist = EditorGUILayout.FloatField(label, shader.ShadowmMinDist);
+
+            label.text = "Shadow Intensity";
+            label.tooltip = "How strong the shadows appear.";
+            shader.ShadowIntensity = EditorGUILayout.FloatField(label, shader.ShadowIntensity);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            // ######### Reflection Variables #########
+            label.text = "Reflection Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Reflection Count";
+            label.tooltip = "The maximum amount of reflection rays sllowed.";
+            shader.ReflectionCount = EditorGUILayout.IntField(label, shader.ReflectionCount);
+
+            label.text = "Reflection Intensity";
+            label.tooltip = "The strength of the reflection.";
+            shader.ReflectionIntensity = EditorGUILayout.FloatField(label, shader.ReflectionIntensity);
+
+            label.text = "Env Refl Intensity";
+            label.tooltip = "The strength of the environment (skybox) reflection.";
+            shader.ReflectionIntensity = EditorGUILayout.FloatField(label, shader.ReflectionIntensity);
+
+            label.text = "Skybox";
+            label.tooltip = "";
+            shader.SkyBox = EditorGUILayout.ObjectField(label, shader.SkyBox, typeof(Texture), true) as Texture;
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            // ######### Ambient Occlusion Variables #########
+            label.text = "Ambient Occlusion Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "AO Max Steps";
+            label.tooltip = "The maximum number of steps each AO ray can take.";
+            shader.AOMaxSteps = EditorGUILayout.IntField(label, shader.AOMaxSteps);
+
+            label.text = "AO Step Size";
+            label.tooltip = "The size of each step an AO ray marches.";
+            shader.AOStepSize = EditorGUILayout.FloatField(label, shader.AOStepSize);
+
+            label.text = "AO Intensity";
+            label.tooltip = "The intensity of the AO effect.";
+            shader.AOItensity = EditorGUILayout.FloatField(label, shader.AOItensity);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            // ######### Vignette Variables #########
+            label.text = "Vignette Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Vignette Intensity";
+            label.tooltip = "";
+            shader.VignetteIntesnity = EditorGUILayout.FloatField(label, shader.VignetteIntesnity);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            // ######### Fog Variables #########
+            label.text = "Fog Settings";
+            label.tooltip = "";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Fog Extinction";
+            label.tooltip = "TO-DO";
+            shader.FogExtinction = EditorGUILayout.FloatField(label, shader.FogExtinction);
+
+            label.text = "Fog Inscattering";
+            label.tooltip = "TO-DO";
+            shader.FogInscattering = EditorGUILayout.FloatField(label, shader.FogInscattering);
+
+            label.text = "Fog Colour";
+            label.tooltip = "";
+            shader.FogColour = EditorGUILayout.ColorField(label, shader.FogColour);
+
+            GUILayout.EndScrollView();
+        }
+    }
+} */
 #endif

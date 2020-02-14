@@ -1,0 +1,51 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+#include "Graphics Pipeline/Shaders/RayMarchEssentialFunctions.hlsl"
+
+RWStructuredBuffer<float> _voxels;
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+float4x4 _invModelMats[MAX_RM_OBJS];
+int _primitiveTypes[MAX_RM_OBJS];
+float2 _combineOps[MAX_RM_OBJS];
+float4 _primitiveGeoInfo[MAX_RM_OBJS];
+float4 _boundGeoInfo[MAX_RM_OBJS];
+float3 _volumeArea;
+float4x4 _volumeLocalToWorld;
+
+//int width = 32, height = 32, length = 32;
+
+[numthreads(32, 1, 1)]  // <Insert Number Of Threads Here>>
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    float3 rayOrigin = 0;
+	int width = 32 * _volumeArea.x, height = 32 * _volumeArea.y, length = 32 * _volumeArea.z; // <Insert Resolution Here>>
+    
+    // Fill voxels with values.
+    for (int y = 0; y < height; y++)
+    {
+        for (int z = 0; z < length; z++)
+        {
+            float fx = id.x / (width - 1.0f);
+            float fy = y / (height - 1.0f);
+            float fz = z / (length - 1.0f);
+            
+			//rayOrigin = float3(id.x, y, z);
+            //rayOrigin = float3(fx, fy, fz) * _volumeArea;
+            rayOrigin = mul(_volumeLocalToWorld, float4((float3(fx, fy, fz) - 0.5) * _volumeArea, 1.0)).xyz;
+
+            int index = id.x + y * width + z * width * height;
+
+            _voxels[index] = map(rayOrigin);
+            
+            //if (abs(_voxels[index]) < 1.0)
+            //    _voxels[index] = 0.0;
+        }
+    }
+}
+
+
+// <Insert Map Here>
