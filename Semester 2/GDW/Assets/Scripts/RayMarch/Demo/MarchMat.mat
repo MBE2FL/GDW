@@ -21,9 +21,9 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MarchMat
-  m_Shader: {fileID: -6465566751694194690, guid: aad1b995a02d7694cb97cfbc2756a8c4,
+  m_Shader: {fileID: -6465566751694194690, guid: 84d6fd3ba38c5784094db983f2be8c61,
     type: 3}
-  m_ShaderKeywords: _DOUBLESIDED_ON _NORMALMAP_TANGENT_SPACE
+  m_ShaderKeywords: _DOUBLESIDED_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
@@ -250,6 +250,8 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
+    - Color_115FD006: {r: 0.7490196, g: 0.38039216, b: 0.08235294, a: 1}
+    - Color_539D68DC: {r: 50.94902, g: 25.85098, b: 5.521569, a: 1}
     - _BaseColor: {r: 0.7490196, g: 0.38039216, b: 0.08235294, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 0.7490196, g: 0.3803921, b: 0.082352914, a: 1}
