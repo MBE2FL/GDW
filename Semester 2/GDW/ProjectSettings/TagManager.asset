@@ -10,6 +10,7 @@ TagManager:
   - Brother
   - Sister
   - RM_Primitive
+  - memory trigger
   layers:
   - Default
   - TransparentFX
