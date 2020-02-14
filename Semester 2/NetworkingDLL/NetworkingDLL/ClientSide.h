@@ -22,20 +22,24 @@
 using std::cout;
 using std::endl;
 using std::string;
+using std::to_string;
 
 class PLUGIN_API ClientSide
 {
 public:
 	ClientSide();
-	bool initNetwork(const string& ip);
+	bool initNetwork(const char* ip, const char* id);
 	bool connectToServer(const char* id);
 	void sendData(const Vector3& position, const Quaternion& rotation);//from unity to here
 	void receiveData(Vector3& position, Quaternion& rotation);//from here to unity
+	void parseData(const string& buf, Vector3& pos, Quaternion& rot);
 
 private:
 	Transform _transform;
+	Transform _otherTransform;
 
 	SOCKET client_socket;
 	struct addrinfo* ptr = NULL;
 	string _serverIP = "";
+	string _networkID = "";
 };

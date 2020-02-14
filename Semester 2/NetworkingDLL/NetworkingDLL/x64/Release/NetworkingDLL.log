@@ -1,15 +1,6 @@
-﻿  Wrapper.cpp
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(40,23): warning C4251:  'ClientSide::_serverIP': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'ClientSide'
-  clientSide.cpp
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.21.27702\include\xstring(4231): message :  see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(40,23): warning C4251:  'ClientSide::_serverIP': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'ClientSide'
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.21.27702\include\xstring(4231): message :  see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(66,5): warning C4267:  'argument': conversion from 'size_t' to 'int', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(128,5): warning C4267:  'argument': conversion from 'size_t' to 'int', possible loss of data
-     Creating library D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.lib and object D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.exp
+﻿     Creating library D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.lib and object D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.exp
   Generating code
-  6 of 152 functions ( 3.9%) were compiled, the rest were copied from previous compilation.
-    1 functions were new in current compilation
-    8 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB not found, fall back to full compilation.
+  All 180 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   NetworkingDLL.vcxproj -> D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.dll

@@ -67,7 +67,9 @@ public class ShaderBuilder : MonoBehaviour
     {
         //_path = Application.dataPath + "/Graphics Pipeline/Shaders/";
         //_shaderTemplatePath = Application.dataPath + "/Graphics Pipeline/Shaders/RayMarchTemplate.shader";
+#if UNITY_EDITOR
         _shaderTemplatePath = AssetDatabase.GetAssetPath(shaderTemplate);
+#endif
     }
 
     // Start is called before the first frame update
@@ -1214,12 +1216,13 @@ public class ShaderBuilder : MonoBehaviour
 
 
 
-
+#if UNITY_EDITOR
     [MenuItem("Shader Builder/Build Command _F6")]
     static void BuildCommand()
     {
         //Camera.main.GetComponent<ShaderBuilder>().build();
     }
+#endif
 }
 
 
