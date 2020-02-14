@@ -4,7 +4,7 @@ using UnityEngine;
 using MarchingCubesProject;
 
 
-
+[ExecuteInEditMode]
 public class RayMarchMesh : MonoBehaviour
 {
     public Material m_material;
@@ -26,6 +26,17 @@ public class RayMarchMesh : MonoBehaviour
     Vector3Int _resolution;
     [SerializeField]
     BoundsInt _volumeBounds;
+
+    Transform _transform;
+    [SerializeField]
+    Vector3 _centre;
+
+
+    private void Awake()
+    {
+        _transform = GetComponent<Transform>();
+    }
+
 
     void Start()
     {
@@ -338,7 +349,11 @@ public class RayMarchMesh : MonoBehaviour
     {
         foreach (GameObject gameObject in meshes)
         {
+#if UNITY_EDITOR
+            DestroyImmediate(gameObject);
+#else
             Destroy(gameObject);
+#endif
         }
 
 
@@ -409,9 +424,18 @@ public class RayMarchMesh : MonoBehaviour
         //_sdfCompute.SetVector("_volumeArea", volumeArea);
         _sdfCompute.SetVector("_volumeArea", new Vector4(_volumeBounds.size.x, _volumeBounds.size.y, _volumeBounds.size.z));
 
+
+
         Matrix4x4 localToWorld = new Matrix4x4();
-        localToWorld.SetTRS(_volumeBounds.position, Quaternion.identity, Vector3.one);
+        Matrix4x4 local = new Matrix4x4();
+
+        //Debug.Log("Test " + localToWorld.MultiplyPoint(new Vector3(-2.5f, 0.0f, 0.0f)));
+        //Debug.Log("Test " + _transform.localToWorldMatrix);
+        local.SetTRS(_centre, Quaternion.identity, Vector3.one);
+        localToWorld = _transform.localToWorldMatrix * local;
+        //Debug.Log("Test " + localToWorld);
         _sdfCompute.SetMatrix("_volumeLocalToWorld", localToWorld);
+        //Debug.Log("Test " + localToWorld.MultiplyPoint(new Vector3(-2.5f, 0.0f, 0.0f)));
 
         //int numThreadGroups = objs.Length;
         //_sdfCompute.Dispatch(kernel, (int)volumeArea.x, 1, 1);
@@ -493,8 +517,37 @@ public class RayMarchMesh : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = new Color(1.0f, 0.0f, 0.0f, 0.7f);
-        //Gizmos.DrawCube(_volumeBounds.position, _volumeBounds.size);
-        Gizmos.DrawWireCube(_volumeBounds.position, _volumeBounds.size);
+        //Gizmos.color = new Color(1.0f, 0.0f, 0.0f, 0.7f);
+        ////Gizmos.DrawCube(_volumeBounds.position, _volumeBounds.size);
+        //Gizmos.DrawWireCube(_volumeBounds.position, _volumeBounds.size);
+
+        //Gizmos.color = new Color(0.0f, 0.0f, 1.0f, 0.7f);
+        ////Gizmos.DrawWireCube(new Vector3(_volumeBounds.x, _volumeBounds.y, _volumeBounds.z), _volumeBounds.size);
+        //Gizmos.DrawWireCube(_volumeBounds.min, _volumeBounds.size);
+
+
+        //Matrix4x4 localToWorld = new Matrix4x4();
+        //localToWorld.SetTRS(_volumeBounds.min, Quaternion.identity, Vector3.one);
+
+        //Matrix4x4 local = new Matrix4x4();
+        //local.SetTRS(new Vector3(_volumeBounds.size.x, _volumeBounds.size.y, _volumeBounds.size.z) * 0.5f, Quaternion.identity, Vector3.one);
+
+        //localToWorld = localToWorld * local;
+
+        ////Debug.Log("Centre: " + _volumeBounds.center);
+        ////Debug.Log("Min: " + _volumeBounds.min);
+        ////Debug.Log("LocalToWorld: " + localToWorld);
+        //Gizmos.color = new Color(0.0f, 1.0f, 0.0f, 0.7f);
+        //Vector3 newCentre = localToWorld.MultiplyPoint(_volumeBounds.min);
+        //Gizmos.DrawWireCube(newCentre, _volumeBounds.size);
+        ////Debug.Log("Old Min: " + _volumeBounds.min);
+        ////Debug.Log("Old Centre: " + _volumeBounds.center);
+        ////Debug.Log("Centre: " + newCentre);
+
+
+        //_transform.position = _centre;
+        _transform.TransformPoint(_centre);
+        Gizmos.color = new Color(0.0f, 0.5f, 0.5f, 0.7f);
+        Gizmos.DrawWireCube(_transform.TransformPoint(_centre), _volumeBounds.size);
     }
 }
