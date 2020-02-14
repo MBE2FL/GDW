@@ -273,8 +273,8 @@ public class ExplodingMesh : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        mesh.triangles = triangles;
         mesh.vertices = vertices;
+        mesh.triangles = triangles;
         mesh.normals = normals;
         mesh.uv = uvs;
     }
