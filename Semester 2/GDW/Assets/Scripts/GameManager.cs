@@ -9,9 +9,13 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     GameObject _sisterPawn;
     [SerializeField]
+    GameObject _sisterPP;
+    [SerializeField]
     GameObject _brother;
     [SerializeField]
     GameObject _brotherPawn;
+    [SerializeField]
+    GameObject _brotherPP;
 
     [SerializeField]
     bool _levelInProgress = false;
@@ -41,11 +45,13 @@ public class GameManager : MonoBehaviour
     {
         Instantiate(_sister);
         Instantiate(_brotherPawn);
+        _sisterPP.SetActive(true);
     }
 
     public void playAsBrother()
     {
         Instantiate(_sisterPawn);
         Instantiate(_brother);
+        _brotherPP.SetActive(true);
     }
 }
