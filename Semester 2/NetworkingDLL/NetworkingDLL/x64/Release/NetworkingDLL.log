@@ -1,6 +1,6 @@
-﻿     Creating library D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.lib and object D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.exp
+﻿     Creating library ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.lib and object ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.exp
   Generating code
   Previous IPDB not found, fall back to full compilation.
-  All 180 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  All 201 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
-  NetworkingDLL.vcxproj -> D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\x64\Release\NetworkingDLL.dll
+  NetworkingDLL.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\..\..\GDW\Assets\Plugins\Release\NetworkingDLL.dll

@@ -121,13 +121,13 @@ void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
 
 	char message[BUF_LEN];
 
-	string msg = _networkID + " X " + to_string(position.x)
-							+ " Y " + to_string(position.y)
-							+ " Z " + to_string(position.z);
-	msg += " X " + to_string(rotation.x) 
-			+ " Y " + to_string(rotation.y)
-			+ " Z " + to_string(rotation.z)
-			+ " W " + to_string(rotation.w);
+	string msg = _networkID + " X " + to_string(position._x)
+							+ " Y " + to_string(position._y)
+							+ " Z " + to_string(position._z);
+	msg += " X " + to_string(rotation._x) 
+			+ " Y " + to_string(rotation._y)
+			+ " Z " + to_string(rotation._z)
+			+ " W " + to_string(rotation._w);
 
 	//Vector3 pos = position;
 	//Quaternion rot = rotation;
@@ -178,14 +178,14 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 	{
 		//printf("ioctlsocket failed with error: %ld\n", iResult);
 		Vector3 tempPos;
-		tempPos.x = -6.0f;
-		tempPos.y = 0.0f;
-		tempPos.z = 6.0f;
+		tempPos._x = -6.0f;
+		tempPos._y = 0.0f;
+		tempPos._z = 6.0f;
 		Quaternion tempRot;
-		tempRot.x = 0.0f;
-		tempRot.y = 0.0f;
-		tempRot.z = 0.0f;
-		tempRot.w = 1.0f;
+		tempRot._x = 0.0f;
+		tempRot._y = 0.0f;
+		tempRot._z = 0.0f;
+		tempRot._w = 1.0f;
 
 		position = tempPos;
 		rotation = tempRot;
@@ -283,16 +283,16 @@ void ClientSide::parseData(const string& buf, Vector3& pos, Quaternion& rot)
 
 	} while (endPos != string::npos);
 
-	pos.x = data[0];
-	pos.y = data[1];
-	pos.z = data[2];
+	pos._x = data[0];
+	pos._y = data[1];
+	pos._z = data[2];
 
-	rot.x = data[3];
-	rot.y = data[4];
-	rot.z = data[5];
-	rot.w = data[6];
+	rot._x = data[3];
+	rot._y = data[4];
+	rot._z = data[5];
+	rot._w = data[6];
 
 
-	cout << pos.x << " " << pos.y << " " << pos.z << endl;
-	cout << rot.x << " " << rot.y << " " << rot.z << " " << rot.w << endl;
+	cout << pos._x << " " << pos._y << " " << pos._z << endl;
+	cout << rot._x << " " << rot._y << " " << rot._z << " " << rot._w << endl;
 }

@@ -16,13 +16,13 @@ public class NetworkObject : MonoBehaviour
 
     NetworkManager _networkManager;
 
-    const string DLL_NAME = "NETWORKINGDLL";
+    //const string DLL_NAME = "NETWORKINGDLL";
 
-    [DllImport(DLL_NAME)]
-    public static extern void sendData(ref Vector3 position, ref Quaternion rotation);
+    //[DllImport(DLL_NAME)]
+    //public static extern void sendData(ref Vector3 position, ref Quaternion rotation);
 
-    [DllImport(DLL_NAME)]
-    public static extern void receiveData(ref Vector3 position, ref Quaternion rotation);
+    //[DllImport(DLL_NAME)]
+    //public static extern void receiveData(ref Vector3 position, ref Quaternion rotation);
 
     // Start is called before the first frame update
     void Start()
@@ -76,7 +76,7 @@ public class NetworkObject : MonoBehaviour
         Vector3 position = transform.position;
         Quaternion rotation = transform.rotation;
 
-        sendData(ref position, ref rotation);
+        _networkManager.sendData(ref position, ref rotation);
     }
 
     void receiveData()
@@ -84,7 +84,7 @@ public class NetworkObject : MonoBehaviour
         Vector3 position = Vector3.zero;
         Quaternion rotation = Quaternion.identity;
 
-        receiveData(ref position, ref rotation);
+        _networkManager.receiveData(ref position, ref rotation);
 
         transform.position = position;
         transform.rotation = rotation;

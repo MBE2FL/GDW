@@ -24,7 +24,7 @@ using std::endl;
 using std::string;
 using std::to_string;
 
-class PLUGIN_API ClientSide
+class PLUGIN_OUT ClientSide
 {
 public:
 	ClientSide();
