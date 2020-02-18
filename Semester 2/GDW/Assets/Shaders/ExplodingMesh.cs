@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class ExplodingMesh : MonoBehaviour
 {
+    public bool useNormals = true;
+
+    private ComputeShader explosiveShader;
     private ComputeShader shader;
     private ComputeShader displacementShader;
     private ComputeShader memoryShader;
@@ -31,6 +34,7 @@ public class ExplodingMesh : MonoBehaviour
     void Start()
     {
         shader = (ComputeShader)Resources.Load("GeoCompute Shader");
+        explosiveShader = (ComputeShader)Resources.Load("Explosive Shader");
         displacementShader = (ComputeShader)Resources.Load("Displacement Shader");
         memoryShader = (ComputeShader)Resources.Load("Memory Allocation Shader");
 
@@ -63,23 +67,41 @@ public class ExplodingMesh : MonoBehaviour
 
         RunMemShader();
 
-        RunDisShader();
+        if (useNormals)
+        {
+            RunExpShader();
+        }
+        else
+        {
+            RunDisShader();
+        }
 
         mesh.vertices = newVerts;
         mesh.uv2 = new Vector2[triangles.Length];
+        mesh.uv3 = new Vector2[triangles.Length];
+        mesh.uv4 = new Vector2[triangles.Length];
         mesh.uv =  newUvs;
         mesh.triangles = newTris;
         mesh.normals = newNormals;
 
-        Vector2[] temp = new Vector2[triangles.Length];
+        Vector2[] temp1 = new Vector2[triangles.Length];
+        Vector2[] temp2 = new Vector2[triangles.Length];
+        Vector2[] temp3 = new Vector2[triangles.Length];
 
         for (int i = 0; i < triangles.Length; i++)
         {
-            temp[i].x = baseData[i].y;
-            temp[i].y = data[i].y;
+            temp1[i].x = baseData[i].x;
+            temp1[i].y = data[i].x;
 
+            temp2[i].x = baseData[i].y;
+            temp2[i].y = data[i].y;
+
+            temp3[i].x = baseData[i].z;
+            temp3[i].y = data[i].z;
         }
-        mesh.uv2 = temp;
+        mesh.uv2 = temp1;
+        mesh.uv3 = temp2;
+        mesh.uv4 = temp3;
 
 
             //data = new Matrix4x4[mesh.triangles.Length/3];
@@ -185,6 +207,68 @@ public class ExplodingMesh : MonoBehaviour
             buffer.GetData(data);
 
             buffer.Dispose();
+        }
+
+    }
+
+    private void RunExpShader()
+    {
+        if (newVerts.Length > 0)
+        {
+
+            Matrix4x4[] triangle = new Matrix4x4[newVerts.Length / 3];
+            Matrix4x4[] normals = new Matrix4x4[newVerts.Length / 3];
+            int j = 0;
+            for (int i = 0; i < triangle.Length; i++)
+            {
+                triangle[i].SetRow(0, new Vector4(newVerts[j].x, newVerts[j].y, newVerts[j].z, 0));
+                normals[i].SetRow(0, new Vector4(newNormals[j].x, newNormals[j].y, newNormals[j].z, 0));
+                j++;
+
+                triangle[i].SetRow(1, new Vector4(newVerts[j].x, newVerts[j].y, newVerts[j].z, 0));
+                normals[i].SetRow(1, new Vector4(newNormals[j].x, newNormals[j].y, newNormals[j].z, 0));
+                j++;
+
+                triangle[i].SetRow(2, new Vector4(newVerts[j].x, newVerts[j].y, newVerts[j].z, 0));
+                normals[i].SetRow(2, new Vector4(newNormals[j].x, newNormals[j].y, newNormals[j].z, 0));
+                j++;
+
+                triangle[i].SetRow(3, new Vector4(0, 0, 0, 0));
+                normals[i].SetRow(3, new Vector4(0, 0, 0, 0));
+            }
+
+            ComputeBuffer buffer = new ComputeBuffer(triangle.Length, 16 * 4);
+            buffer.SetData(triangle);
+
+            ComputeBuffer normBuffer = new ComputeBuffer(normals.Length, 16 * 4);
+            normBuffer.SetData(normals);
+
+            int kernelHandle = displacementShader.FindKernel("Main");
+            explosiveShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
+            explosiveShader.Dispatch(kernelHandle, triangle.Length, 1, 1);
+            explosiveShader.SetBuffer(kernelHandle, "normBuffer", normBuffer);
+            explosiveShader.Dispatch(kernelHandle, normals.Length, 1, 1);
+
+
+            buffer.GetData(triangle);
+
+            j = 0;
+            for (int i = 0; i < triangle.Length; i++)
+            {
+                Vector4 temp = triangle[i].GetRow(0);
+                data[j] = new Vector3(temp.x, temp.y, temp.z);
+                j++;
+
+                temp = triangle[i].GetRow(1);
+                data[j] = new Vector3(temp.x, temp.y, temp.z);
+                j++;
+
+                temp = triangle[i].GetRow(2);
+                data[j] = new Vector3(temp.x, temp.y, temp.z);
+                j++;
+            }
+
+                buffer.Dispose();
         }
 
     }
