@@ -237,15 +237,17 @@ public class ExplodingMesh : MonoBehaviour
                 normals[i].SetRow(3, new Vector4(0, 0, 0, 0));
             }
 
+            int kernelHandle = explosiveShader.FindKernel("Main");
+
             ComputeBuffer buffer = new ComputeBuffer(triangle.Length, 16 * 4);
             buffer.SetData(triangle);
+
+            explosiveShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
+            explosiveShader.Dispatch(kernelHandle, triangle.Length, 1, 1);
 
             ComputeBuffer normBuffer = new ComputeBuffer(normals.Length, 16 * 4);
             normBuffer.SetData(normals);
 
-            int kernelHandle = displacementShader.FindKernel("Main");
-            explosiveShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
-            explosiveShader.Dispatch(kernelHandle, triangle.Length, 1, 1);
             explosiveShader.SetBuffer(kernelHandle, "normBuffer", normBuffer);
             explosiveShader.Dispatch(kernelHandle, normals.Length, 1, 1);
 
@@ -284,7 +286,7 @@ public class ExplodingMesh : MonoBehaviour
             //baseData[i] = mesh.vertices[mesh.triangles[i]];
             newTris[i] = i;
         }
-        if (newVerts.Length > 0)
+        if (newVerts.Length < 0)
         {
             ComputeBuffer triBuffer = new ComputeBuffer(mesh.triangles.Length, sizeof(int));
             triBuffer.SetData(mesh.triangles);
