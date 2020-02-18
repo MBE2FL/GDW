@@ -33,7 +33,11 @@ public class NetworkManager : MonoBehaviour
 {
     //const string DLL_NAME = "NETWORKINGDLL";
     // Path to the DLL
+#if UNITY_EDITOR
     private const string PATH = "/Plugins/Release/NetworkingDLL.dll";
+#else
+    private const string PATH = "/Plugins/NetworkingDLL.dll";
+#endif
 
     // Handle for the DLL 
     private IntPtr _pluginHandle;
@@ -59,10 +63,10 @@ public class NetworkManager : MonoBehaviour
 
 
     // Network manager functions
-    public delegate bool connectToServerDelegate(string id);
+    public delegate bool connectToServerDelegate(ref int id);
     public connectToServerDelegate connectToServer;
 
-    public delegate bool initNetworkDelegate(string ip, string id);
+    public delegate bool initNetworkDelegate(string ip);
     public initNetworkDelegate initNetwork;
 
     //[DllImport(DLL_NAME)]
@@ -90,7 +94,7 @@ public class NetworkManager : MonoBehaviour
     string _ip = "127.0.0.1";
 
     [SerializeField]
-    string _id = "1";
+    int _id = 0;
 
 
     public event Action onServerConnect;
@@ -139,8 +143,9 @@ public class NetworkManager : MonoBehaviour
         InitConsole();
 
         // Output a message to the console, using a C++ function
-        IntPtr result = OutputConsoleMessage("This is a test.");
-        Debug.Log(Marshal.PtrToStringAnsi(result));
+        //IntPtr result = OutputConsoleMessage("This is a test.");
+        //Debug.Log(Marshal.PtrToStringAnsi(result));
+        OutputConsoleMessage("This is a test.");
     }
 
     private void OnApplicationQuit()
@@ -195,28 +200,33 @@ public class NetworkManager : MonoBehaviour
 
     void initializeNetworkManager()
     {
-        _initialized = initNetwork(_ip, _id);
+        _initialized = initNetwork(_ip);
     }
 
     public void connect()
     {
-        // Establish connection to server.
+        // Only attempt to establish a connection to the server iff, no connection has already been made.
         if (!_connected)
         {
-            _connected = connectToServer(_id);
-            Debug.Log("Attemp to connect to server failed!");
+            // Attempt to establish a connection to the server.
+            _connected = connectToServer(ref _id);
+
+            // Connection to server established.
+            if (_connected)
+            {
+                Debug.Log("Successfully connected to server.");
+
+                // Notify all listeners.
+                if (onServerConnect != null)
+                    onServerConnect.Invoke();
+            }
+            // Failed to establish a connection to the server.
+            else
+                Debug.Log("Attemp to connect to server failed!");
         }
 
 
-        // Connection to server established.
-        if (_connected)
-        {
-            Debug.Log("Successfully connected to server.");
-
-            // Notify all listeners.
-            if (onServerConnect != null)
-                onServerConnect.Invoke();
-        }
+        
     }
 }
 

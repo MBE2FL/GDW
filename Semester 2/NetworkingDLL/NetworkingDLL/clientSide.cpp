@@ -10,10 +10,8 @@ ClientSide::ClientSide()
 
 }
 
-bool ClientSide::initNetwork(const char* ip, const char* id)
+bool ClientSide::initNetwork(const char* ip)
 {
-	_networkID = id;
-
 	//Initialize winsock
 	WSADATA wsa;
 	_serverIP = ip;
@@ -56,20 +54,25 @@ bool ClientSide::initNetwork(const char* ip, const char* id)
 	return 1;
 }
 
-bool ClientSide::connectToServer(const char* id)
+bool ClientSide::connectToServer(int& id)
 {
 	// Attempt to connect to the server.
 	char message[BUF_LEN];
+	//char* message = new char[BUF_LEN];
+	memset(message, 0, BUF_LEN);
 
-	string msg = "connect";
-	msg += id;
+	//string msg = "connect";
+
+	MessageTypes msgType = MessageTypes::ConnectionAttempt;
+	//message[0] = reinterpret_cast<char&>(msgType);
+	message[0] = msgType;
 
 
-	strcpy_s(message, (char*)msg.c_str());
+	//strcpy_s(message, (char*)msg.c_str());
 
 	if (sendto(client_socket, message, BUF_LEN, 0, ptr->ai_addr, ptr->ai_addrlen) == SOCKET_ERROR)
 	{
-		cout << "Sendto() failed...\n" << endl;
+		cout << "Connection attempt failed to send!" << endl;
 		return false;
 	}
 
@@ -94,7 +97,7 @@ bool ClientSide::connectToServer(const char* id)
 	{
 		//std::cout << "Received: " << buf << std::endl;
 
-		string temp = message;
+		//string temp = message;
 		//std::size_t pos = temp.find('@');
 		//temp = temp.substr(0, pos - 1);
 		//tx = std::stof(temp);
@@ -102,16 +105,35 @@ bool ClientSide::connectToServer(const char* id)
 		//temp = temp.substr(pos + 1);
 		//ty = std::stof(temp);
 
-		cout << temp << endl;
+		//msgType = reinterpret_cast<MessageTypes&>(message[0]);
+		msgType = static_cast<MessageTypes>(message[0]);
 
-		// Client connected.
-		if (temp == "connected")
+		switch (msgType)
 		{
+		case MessageTypes::ConnectionAccepted:
+		{
+			cout << "Connection successful" << endl;
+
+			//_networkID = reinterpret_cast<INT8&>(message[1]);
+			_networkID = message[1];
+			cout << "ID: " << _networkID << endl;
+			char msg = _networkID;
+			cout << "ID: " << msg << endl;
+			cout << "ID: " << message[1] << endl;
+			id = _networkID;
+			cout << "ID: " << id << endl;
+
 			return true;
+		}
+			break;
+		default:
+			cout << "Incorrect message type receieved! " << msgType << endl;
+			break;
 		}
 	}
 
 	// Client failed to connect.
+	cout << "Failed to connect" << endl;
 	return false;
 }
 
@@ -119,42 +141,77 @@ void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
 {
 	_transform.send(position, rotation);
 
-	char message[BUF_LEN];
+	Vector3 pos = position;
+	Quaternion rot = rotation;
 
-	string msg = _networkID + " X " + to_string(position._x)
-							+ " Y " + to_string(position._y)
-							+ " Z " + to_string(position._z);
-	msg += " X " + to_string(rotation._x) 
-			+ " Y " + to_string(rotation._y)
-			+ " Z " + to_string(rotation._z)
-			+ " W " + to_string(rotation._w);
+	char buf[BUF_LEN];
+	memset(buf, 0, BUF_LEN);
 
-	//Vector3 pos = position;
-	//Quaternion rot = rotation;
-	//string msg = reinterpret_cast<char*>(&_networkID);
-	//msg += reinterpret_cast<char*>(&pos.x);
-	//msg += reinterpret_cast<char*>(&pos.y);
-	//msg += reinterpret_cast<char*>(&pos.z);
-	//msg += reinterpret_cast<char*>(&rot.w);
-	//msg += reinterpret_cast<char*>(&rot.x);
-	//msg += reinterpret_cast<char*>(&rot.y);
-	//msg += reinterpret_cast<char*>(&rot.z);
+	buf[0] = MessageTypes::TransformData;
+	buf[1] = _networkID;
 
-	strcpy_s(message, (char*)msg.c_str());
+	size_t posSize = sizeof(float) * 3;
+	size_t rotSize = sizeof(float) * 4;
+	//buf[1] = reinterpret_cast<char*>(&pos._x);
+	memcpy(&buf[2], reinterpret_cast<char*>(&pos._x), posSize);
+	memcpy(&buf[2 + posSize], reinterpret_cast<char*>(&rot._x), rotSize);
 
 	// Failed to send message.
-	if (sendto(client_socket, message, BUF_LEN, 0, ptr->ai_addr, ptr->ai_addrlen) == SOCKET_ERROR)
+	if (sendto(client_socket, buf, BUF_LEN, 0, ptr->ai_addr, ptr->ai_addrlen) == SOCKET_ERROR)
 	{
 		cout << "Sendto() failed...\n" << endl;
 	}
 	// Successfully sent message.
 	else
 	{
-		cout << "sent: " << message << endl;
-	}
-	
+		cout << "sent: " << buf << endl;
+		string bufStr = buf;
+		cout << "sent:" << bufStr << endl;
 
-	memset(message, 0, BUF_LEN);
+		Vector3 posDebug;
+		Quaternion rotDebug;
+		memcpy(&posDebug._x, reinterpret_cast<float*>(&buf[2]), posSize);
+		memcpy(&rotDebug._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
+		cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
+		cout << posDebug.toString() << rotDebug.toString();
+	}
+
+
+
+	//string msg = _networkID + " X " + to_string(position._x)
+	//						+ " Y " + to_string(position._y)
+	//						+ " Z " + to_string(position._z);
+	//msg += " X " + to_string(rotation._x) 
+	//		+ " Y " + to_string(rotation._y)
+	//		+ " Z " + to_string(rotation._z)
+	//		+ " W " + to_string(rotation._w);
+
+	//Vector3 pos = position;
+	//Quaternion rot = rotation;
+	//string msg = reinterpret_cast<char*>(&_networkID);
+	//msg += reinterpret_cast<char*>(&pos._x);
+	//msg += reinterpret_cast<char*>(&pos._y);
+	//msg += reinterpret_cast<char*>(&pos._z);
+	//msg += reinterpret_cast<char*>(&rot._w);
+	//msg += reinterpret_cast<char*>(&rot._x);
+	//msg += reinterpret_cast<char*>(&rot._y);
+	//msg += reinterpret_cast<char*>(&rot._z);
+
+	//strcpy_s(buf, (char*)msg.c_str());
+
+	//// Failed to send message.
+	//if (sendto(client_socket, buf, BUF_LEN, 0, ptr->ai_addr, ptr->ai_addrlen) == SOCKET_ERROR)
+	//{
+	//	cout << "Sendto() failed...\n" << endl;
+	//}
+	//// Successfully sent message.
+	//else
+	//{
+	//	cout << "sent: " << buf << endl;
+	//}
+	//
+
+	//memset(buf, 0, BUF_LEN);
 }
 
 void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
@@ -202,50 +259,51 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 	{
 		//std::cout << "Received: " << buf << std::endl;
 
-		string temp = buf;
+		MessageTypes msgType = static_cast<MessageTypes>(buf[0]);
 
-
-		// Retrieve network id of incomming message.
-		temp = temp.substr(0, 1);
-
-		Vector3 pos;
-		Quaternion rot;
-
-
-		// Server sent other client's transform data.
-		if (temp != _networkID)
+		switch (msgType)
 		{
-			cout << "Network ID: " << temp << endl;
-			temp = buf;
-
-			parseData(temp, pos, rot);
-		}
-		// Server sent client their own transform data.
-		else
+		case TransformData:
 		{
-			cout << "Own network ID!" << endl;
-			return;
+			Vector3 pos;
+			Quaternion rot;
+
+			// Retrieve network ID of incomming message.
+			INT8 networkID = buf[1];
+
+			if (networkID != _networkID)
+			{
+
+				size_t posSize = sizeof(float) * 3;
+				size_t rotSize = sizeof(float) * 4;
+
+				memcpy(&position._x, reinterpret_cast<float*>(&buf[2]), posSize);
+				memcpy(&rotation._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
+
+				cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
+				cout << pos.toString() << rot.toString();
+
+				position = pos;
+				rotation = rot;
+
+				_otherTransform._position = pos;
+				_otherTransform._rotation = rot;
+
+				return;
+			}
+			else
+			{
+				cout << "Own network ID!" << endl;
+				return;
+			}
 		}
-
-
-		position = pos;
-		rotation = rot;
-		//Vector3 tempPos;
-		//tempPos.x = 3.0f;
-		//tempPos.y = 3.0f;
-		//tempPos.z = 3.0f;
-		//Quaternion tempRot;
-		//tempRot.x = 0.0f;
-		//tempRot.y = 0.0f;
-		//tempRot.z = 0.0f;
-		//tempRot.w = 1.0f;
-
-		//position = tempPos;
-		//rotation = tempRot;
-		_otherTransform._position = pos;
-		_otherTransform._rotation = rot;
-
-		return;
+			break;
+			// Use previous transform data.
+		default:
+			position = _otherTransform._position;
+			rotation = _otherTransform._rotation;
+			break;
+		}
 	}
 	// Use previous transform data.
 	else

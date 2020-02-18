@@ -24,12 +24,22 @@ using std::endl;
 using std::string;
 using std::to_string;
 
+enum MessageTypes : INT8
+{
+	ConnectionAttempt,
+	ConnectionAccepted,
+	ConnectionFailed,
+	ServerFull,
+	TransformData
+};
+
+
 class PLUGIN_OUT ClientSide
 {
 public:
 	ClientSide();
-	bool initNetwork(const char* ip, const char* id);
-	bool connectToServer(const char* id);
+	bool initNetwork(const char* ip);
+	bool connectToServer(int& id);
 	void sendData(const Vector3& position, const Quaternion& rotation);//from unity to here
 	void receiveData(Vector3& position, Quaternion& rotation);//from here to unity
 	void parseData(const string& buf, Vector3& pos, Quaternion& rot);
@@ -41,5 +51,5 @@ private:
 	SOCKET client_socket;
 	struct addrinfo* ptr = NULL;
 	string _serverIP = "";
-	string _networkID = "";
+	INT8 _networkID = NULL;
 };

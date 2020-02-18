@@ -30,8 +30,8 @@ extern "C"
 
 	PLUGIN_OUT void sendData(const Vector3& position, const Quaternion& rotation);//from unity to here
 	PLUGIN_OUT void receiveData(Vector3& position, Quaternion& rotation);//from here to unity
-	PLUGIN_OUT bool connectToServer(const char* id);
-	PLUGIN_OUT bool initNetwork(const char* ip, const char* id);
+	PLUGIN_OUT bool connectToServer(int& id);
+	PLUGIN_OUT bool initNetwork(const char* ip);
 
 
 #ifdef __cplusplus

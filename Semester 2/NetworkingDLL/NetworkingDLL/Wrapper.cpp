@@ -52,12 +52,12 @@ void receiveData(Vector3& position, Quaternion& rotation)
 	return cs.receiveData(position, rotation);
 }
 
-bool connectToServer(const char* id)
+bool connectToServer(int& id)
 {
 	return cs.connectToServer(id);
 }
 
-bool initNetwork(const char* ip, const char* id)
+bool initNetwork(const char* ip)
 {
-	return cs.initNetwork(ip, id);
+	return cs.initNetwork(ip);
 }

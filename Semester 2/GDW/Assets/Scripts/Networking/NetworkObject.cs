@@ -29,6 +29,7 @@ public class NetworkObject : MonoBehaviour
     {
         _networkManager = GameObject.Find("Game Manager").GetComponent<NetworkManager>();
 
+        _networkManager.onServerConnect += onServerConnect;
 
         switch (_networkOp)
         {
