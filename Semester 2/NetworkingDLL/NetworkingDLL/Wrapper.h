@@ -4,15 +4,7 @@
 #include "ClientSide.h"
 
 
-// This struct also needs to be the same as in C#, if you want more functions just add it here and there.
-// Syntax is return_type(*function_name)(parameters)
-// To call just call it regularly [function_name(parameters)]
-struct CS_to_Plugin_Functions
-{
-	Vector3(*multiplyVectors)(Vector3 v1, Vector3 v2);
-	int(*multiplyInts)(int i1, int i2);
-	float(*GetFloat)();
-};
+
 
 
 #ifdef __cplusplus
@@ -28,11 +20,11 @@ extern "C"
 	PLUGIN_OUT void FreeTheConsole();
 	PLUGIN_OUT const char* OutputMessageToConsole(const char* msg);
 
+	PLUGIN_OUT bool initNetwork(const char* ip);
+	PLUGIN_OUT bool connectToServer();
+	PLUGIN_OUT bool queryConnectAttempt(int& id);
 	PLUGIN_OUT void sendData(const Vector3& position, const Quaternion& rotation);//from unity to here
 	PLUGIN_OUT void receiveData(Vector3& position, Quaternion& rotation);//from here to unity
-	PLUGIN_OUT bool connectToServer(int& id);
-	PLUGIN_OUT bool initNetwork(const char* ip);
-
 
 #ifdef __cplusplus
 }

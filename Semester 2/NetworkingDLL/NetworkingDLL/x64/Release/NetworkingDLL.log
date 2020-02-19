@@ -1,11 +1,11 @@
 ﻿  clientSide.cpp
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(53,23): warning C4251: 'ClientSide::_serverIP': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'ClientSide'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(80,23): warning C4251: 'ClientSide::_serverIP': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'ClientSide'
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\xstring(4448): message : see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(73,5): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(160,5): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(249,5): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(345,5): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
      Creating library ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.lib and object ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.exp
   Generating code
-  2 of 188 functions ( 1.1%) were compiled, the rest were copied from previous compilation.
+  2 of 226 functions ( 0.9%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     6 functions had inline decision re-evaluated but remain unchanged
   Finished generating code

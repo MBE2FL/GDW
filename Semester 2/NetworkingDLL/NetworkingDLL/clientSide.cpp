@@ -24,6 +24,28 @@ bool ClientSide::initNetwork(const char* ip)
 		return 0;
 	}
 
+	//Create a client sockets.
+	if (!initUDP(ip))
+	{
+		printf("UDP socket failed to initialize! %d\n", WSAGetLastError());
+		return false;
+	}
+
+	if (!initTCP(ip))
+	{
+		printf("TCP socket failed to initialize! %d\n", WSAGetLastError());
+		return false;
+	}
+
+
+	printf("Client is initialized!\n");
+
+
+	return 1;
+}
+
+bool ClientSide::initUDP(const char* ip)
+{
 	//Create a client socket
 
 	struct addrinfo hints;
@@ -33,29 +55,183 @@ bool ClientSide::initNetwork(const char* ip)
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;
 
-	if (getaddrinfo(_serverIP.c_str(), PORT, &hints, &ptr) != 0) 
+	if (getaddrinfo(_serverIP.c_str(), PORT, &hints, &_ptr) != 0)
 	{
 		printf("Getaddrinfo failed!! %d\n", WSAGetLastError());
 		WSACleanup();
-		return 0;
+		return false;
 	}
 
-	
-	client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	if (client_socket == INVALID_SOCKET) 
+	_clientUDPsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+	if (_clientUDPsocket == INVALID_SOCKET)
 	{
 		printf("Failed creating a socket %d\n", WSAGetLastError());
 		WSACleanup();
-		return 0;
+		return false;
+	}
+
+	// Turn off blocking.
+	u_long iMode = 1;
+	int iResult = ioctlsocket(_clientUDPsocket, FIONBIO, &iMode);
+	if (iResult != NO_ERROR)
+	{
+		printf("ioctlsocket failed with error: %ld\n", iResult);
+	}
+
+	printf("UDP socket is ready!\n");
+
+	return true;
+}
+
+bool ClientSide::initTCP(const char* ip)
+{
+	//Create a client socket
+
+	struct addrinfo hints;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	if (getaddrinfo(_serverIP.c_str(), PORT, &hints, &_ptr) != 0)
+	{
+		printf("Getaddrinfo failed!! %d\n", WSAGetLastError());
+		WSACleanup();
+		return false;
 	}
 
 
-	return 1;
+	_clientTCPsocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	if (_clientTCPsocket == INVALID_SOCKET)
+	{
+		printf("Failed creating a socket %d\n", WSAGetLastError());
+		WSACleanup();
+		return false;
+	}
+
+	printf("TCP socket is ready!\n");
+
+	return true;
 }
 
-bool ClientSide::connectToServer(int& id)
+void ClientSide::connectToServerTCP()
 {
+	//Connect to the server
+	if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
+		printf("Unable to connect to server: %d\n", WSAGetLastError());
+		closesocket(_clientTCPsocket);
+		freeaddrinfo(_ptr);
+		WSACleanup();
+		system("pause");
+		//return false;
+		return;
+	}
+
+
+	char buf[BUF_LEN];
+	memset(buf, 0, BUF_LEN);
+
+	MessageTypes msgType;
+
+
+	if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
+	{
+		msgType = static_cast<MessageTypes>(buf[0]);
+		switch (msgType)
+		{
+		case MessageTypes::ConnectionAccepted:
+		{
+			_networkID = buf[1];
+			//id = _networkID;
+			//cout << "ID: " << id << endl;
+			cout << "ID: " << int(_networkID) << endl;
+			_connected = true;
+		}
+		break;
+		default:
+			cout << "Unexpected message type receieved for connection attempt!" << endl;
+			//return false;
+			return;
+			break;
+		}
+	}
+	else 
+		printf("recv() error: %d\n", WSAGetLastError());
+
+	// Call c# function.
+	//_funcs.connectedToServer();
+
+	//return true;
+	return;
+
+
+
+	//bool result = false;
+
+	//thread([&id, &result, this]
+	//	{
+	//		//Connect to the server
+	//		if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
+	//			printf("Unable to connect to server: %d\n", WSAGetLastError());
+	//			closesocket(_clientTCPsocket);
+	//			freeaddrinfo(_ptr);
+	//			WSACleanup();
+	//			system("pause");
+	//			return;
+	//		}
+
+
+	//		char buf[BUF_LEN];
+	//		memset(buf, 0, BUF_LEN);
+
+	//		MessageTypes msgType;
+
+
+	//		if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
+	//		{
+	//			msgType = static_cast<MessageTypes>(buf[0]);
+	//			switch (msgType)
+	//			{
+	//			case MessageTypes::ConnectionAccepted:
+	//			{
+	//				_networkID = buf[1];
+	//				id = _networkID;
+	//				cout << "ID: " << id << endl;
+	//			}
+	//				break;
+	//			default:
+	//				cout << "Unexpected message type receieved for connection attempt!" << endl;
+	//				return;
+	//				break;
+	//			}
+	//		}
+	//		else printf("recv() error: %d\n", WSAGetLastError());
+
+	//		result = true;
+
+	//		// Call c# function.
+	//		_funcs.connectedToServer();
+
+	//		return;
+	//	}
+	//);
+}
+
+bool ClientSide::connectToServer()
+{
+	thread tcpConnect(&ClientSide::connectToServerTCP, this);
+	//connectToServerTCP();
+	tcpConnect.detach();
+
+	return false;
+
+
+#pragma region OLD_UDP_CONNECT
+	INT8 id = 0;
 	// Attempt to connect to the server.
 	char message[BUF_LEN];
 	//char* message = new char[BUF_LEN];
@@ -70,7 +246,7 @@ bool ClientSide::connectToServer(int& id)
 
 	//strcpy_s(message, (char*)msg.c_str());
 
-	if (sendto(client_socket, message, BUF_LEN, 0, ptr->ai_addr, ptr->ai_addrlen) == SOCKET_ERROR)
+	if (sendto(_clientUDPsocket, message, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
 	{
 		cout << "Connection attempt failed to send!" << endl;
 		return false;
@@ -89,7 +265,7 @@ bool ClientSide::connectToServer(int& id)
 	int sError = -1;
 
 
-	bytes_received = recvfrom(client_socket, message, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
+	bytes_received = recvfrom(_clientUDPsocket, message, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
 
 	sError = WSAGetLastError();
 
@@ -135,6 +311,15 @@ bool ClientSide::connectToServer(int& id)
 	// Client failed to connect.
 	cout << "Failed to connect" << endl;
 	return false;
+#pragma endregion
+}
+
+bool ClientSide::queryConnectAttempt(int& id)
+{
+	if (_connected)
+		id = _networkID;
+
+	return _connected;
 }
 
 void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
@@ -157,23 +342,19 @@ void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
 	memcpy(&buf[2 + posSize], reinterpret_cast<char*>(&rot._x), rotSize);
 
 	// Failed to send message.
-	if (sendto(client_socket, buf, BUF_LEN, 0, ptr->ai_addr, ptr->ai_addrlen) == SOCKET_ERROR)
+	if (sendto(_clientUDPsocket, buf, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
 	{
 		cout << "Sendto() failed...\n" << endl;
 	}
 	// Successfully sent message.
 	else
 	{
-		cout << "sent: " << buf << endl;
-		string bufStr = buf;
-		cout << "sent:" << bufStr << endl;
-
 		Vector3 posDebug;
 		Quaternion rotDebug;
 		memcpy(&posDebug._x, reinterpret_cast<float*>(&buf[2]), posSize);
 		memcpy(&rotDebug._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
-		cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
-		cout << posDebug.toString() << rotDebug.toString();
+		//cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
+		//cout << posDebug.toString() << rotDebug.toString();
 	}
 
 
@@ -228,36 +409,15 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 
 
 	// Reveive transform updates from the server.
-	// Turn off blocking.
-	u_long iMode = 1;
-	int iResult = ioctlsocket(client_socket, FIONBIO, &iMode);
-	if (iResult != NO_ERROR)
-	{
-		//printf("ioctlsocket failed with error: %ld\n", iResult);
-		Vector3 tempPos;
-		tempPos._x = -6.0f;
-		tempPos._y = 0.0f;
-		tempPos._z = 6.0f;
-		Quaternion tempRot;
-		tempRot._x = 0.0f;
-		tempRot._y = 0.0f;
-		tempRot._z = 0.0f;
-		tempRot._w = 1.0f;
-
-		position = tempPos;
-		rotation = tempRot;
-
-		return;
-	}
-
-	bytes_received = recvfrom(client_socket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, &fromLen);
+	bytes_received = recvfrom(_clientUDPsocket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, &fromLen);
 
 	sError = WSAGetLastError();
+
 
 	// Received transform data from server.
 	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
 	{
-		//std::cout << "Received: " << buf << std::endl;
+		std::cout << "Received: " << bytes_received << std::endl;
 
 		MessageTypes msgType = static_cast<MessageTypes>(buf[0]);
 
@@ -277,8 +437,8 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 				size_t posSize = sizeof(float) * 3;
 				size_t rotSize = sizeof(float) * 4;
 
-				memcpy(&position._x, reinterpret_cast<float*>(&buf[2]), posSize);
-				memcpy(&rotation._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
+				memcpy(&pos._x, reinterpret_cast<float*>(&buf[2]), posSize);
+				memcpy(&rot._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
 
 				cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
 				cout << pos.toString() << rot.toString();
@@ -308,6 +468,7 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 	// Use previous transform data.
 	else
 	{
+		cout << sError << "Bytes Recieved: " << bytes_received <<  endl;
 		position = _otherTransform._position;
 		rotation = _otherTransform._rotation;
 	}
@@ -353,4 +514,9 @@ void ClientSide::parseData(const string& buf, Vector3& pos, Quaternion& rot)
 
 	cout << pos._x << " " << pos._y << " " << pos._z << endl;
 	cout << rot._x << " " << rot._y << " " << rot._z << " " << rot._w << endl;
+}
+
+void ClientSide::setFuncs(const CS_to_Plugin_Functions& funcs)
+{
+	_funcs = funcs;
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using System;
+using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -15,13 +16,18 @@ public struct CS_to_Plugin_Functions
     public IntPtr MultiplyInts;
     public IntPtr RandomFloat;
 
+    public IntPtr ConnectedToServer;
+
     // The functions don't need to be the same though
     // Init isn't in C++
-    public bool Init(IntPtr pluginHandle)
+    public bool Init(IntPtr pluginHandle, NetworkManager networkManager)
     {
         MultiplyVectors = Marshal.GetFunctionPointerForDelegate(new Func<Vector3, Vector3, Vector3>(NetworkManager.multiplyVectors));
         MultiplyInts = Marshal.GetFunctionPointerForDelegate(new Func<int, int, int>(NetworkManager.MultiplyInts));
+        //RandomFloat = Marshal.GetFunctionPointerForDelegate(new Func<float>(NetworkManager.GetFloat));
         RandomFloat = Marshal.GetFunctionPointerForDelegate(new Func<float>(NetworkManager.GetFloat));
+
+        ConnectedToServer = Marshal.GetFunctionPointerForDelegate(new Func<bool>(NetworkManager.connectedToServer));
 
         return true;
     }
@@ -63,7 +69,7 @@ public class NetworkManager : MonoBehaviour
 
 
     // Network manager functions
-    public delegate bool connectToServerDelegate(ref int id);
+    public delegate bool connectToServerDelegate();
     public connectToServerDelegate connectToServer;
 
     public delegate bool initNetworkDelegate(string ip);
@@ -77,6 +83,9 @@ public class NetworkManager : MonoBehaviour
 
 
     // Network object functions
+    public delegate bool queryConnectAttemptDelegate(ref int id);
+    public queryConnectAttemptDelegate queryConnectAttempt;
+
     public delegate void sendDataDelegate(ref Vector3 position, ref Quaternion rotation);
     public sendDataDelegate sendData;
 
@@ -89,6 +98,8 @@ public class NetworkManager : MonoBehaviour
 
     [SerializeField]
     bool _connected = false;
+    [SerializeField]
+    bool _connecting = false;
 
     [SerializeField]
     string _ip = "127.0.0.1";
@@ -96,13 +107,25 @@ public class NetworkManager : MonoBehaviour
     [SerializeField]
     int _id = 0;
 
+    [SerializeField]
+    GameObject _connectButton;
 
-    public event Action onServerConnect;
+    [SerializeField]
+    GameObject _testObj;
+
+
+    public static event Action onServerConnect;
     public event Action onDataSend;
     public event Action onDataReceive;
 
 
     GameManager _gameManager;
+
+    [SerializeField]
+    float _timeSinceLastUpdate = 0.0f;
+    float _time = 0.0f;
+    [SerializeField]
+    float _updateInterval = 0.167f;
 
 
 
@@ -121,6 +144,7 @@ public class NetworkManager : MonoBehaviour
         initNetwork = ManualPluginImporter.GetDelegate<initNetworkDelegate>(_pluginHandle, "initNetwork");
 
         // Network object functions
+        queryConnectAttempt = ManualPluginImporter.GetDelegate<queryConnectAttemptDelegate>(_pluginHandle, "queryConnectAttempt");
         sendData = ManualPluginImporter.GetDelegate<sendDataDelegate>(_pluginHandle, "sendData");
         receiveData = ManualPluginImporter.GetDelegate<receiveDataDelegate>(_pluginHandle, "receiveData");
     }
@@ -131,7 +155,7 @@ public class NetworkManager : MonoBehaviour
         _pluginHandle = ManualPluginImporter.OpenLibrary(Application.dataPath + PATH);
 
         // Init the C# functions
-        _pluginFunctions.Init(_pluginHandle);
+        _pluginFunctions.Init(_pluginHandle, this);
 
         // Init the plugin functions 
         // Always call this before calling any C++ functions
@@ -146,6 +170,8 @@ public class NetworkManager : MonoBehaviour
         //IntPtr result = OutputConsoleMessage("This is a test.");
         //Debug.Log(Marshal.PtrToStringAnsi(result));
         OutputConsoleMessage("This is a test.");
+
+        onServerConnect += connectServerSuccess;
     }
 
     private void OnApplicationQuit()
@@ -156,6 +182,8 @@ public class NetworkManager : MonoBehaviour
         // close the plugin
         // This will allow you to rebuild the dll while unity is open (but not while playing)
         ManualPluginImporter.CloseLibrary(_pluginHandle);
+
+        onServerConnect -= connectServerSuccess;
     }
 
     // Start is called before the first frame update
@@ -185,17 +213,41 @@ public class NetworkManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Connecting to server
+        if (!_connected && _connecting)
+        {
+            // Connected to server
+            if (queryConnectAttempt(ref _id))
+            {
+                // Notify all listeners.
+                if (onServerConnect != null)
+                    onServerConnect.Invoke();
+            }
+        }
+
         if (!_connected || !_gameManager.LevelInProgress)
             return;
 
-        // Send this player's transform data to server.
-        if (onDataSend != null)
-            onDataSend.Invoke();
+
+        float deltaTime = Time.time - _timeSinceLastUpdate;
+        _timeSinceLastUpdate = deltaTime;
+
+        _time -= deltaTime;
+
+        if (_time <= 0.0f)
+        {
+
+            // Send this player's transform data to server.
+            if (onDataSend != null)
+                onDataSend.Invoke();
 
 
-        // Retrieve server interpolated transform data of other player.
-        if (onDataReceive != null)
-            onDataReceive.Invoke();
+            // Retrieve server interpolated transform data of other player.
+            if (onDataReceive != null)
+                onDataReceive.Invoke();
+
+            _time = _updateInterval;
+        }
     }
 
     void initializeNetworkManager()
@@ -205,28 +257,62 @@ public class NetworkManager : MonoBehaviour
 
     public void connect()
     {
+        //// Only attempt to establish a connection to the server iff, no connection has already been made.
+        //if (!_connected)
+        //{
+        //    // Attempt to establish a connection to the server.
+        //    _connected = connectToServer(ref _id);
+
+        //    // Connection to server established.
+        //    if (_connected)
+        //    {
+        //        Debug.Log("Successfully connected to server.");
+
+        //        // Notify all listeners.
+        //        if (onServerConnect != null)
+        //            onServerConnect.Invoke();
+        //    }
+        //    // Failed to establish a connection to the server.
+        //    else
+        //        Debug.Log("Attemp to connect to server failed!");
+        //}
+
+
         // Only attempt to establish a connection to the server iff, no connection has already been made.
-        if (!_connected)
+        if (!_connected && !_connecting)
         {
             // Attempt to establish a connection to the server.
-            _connected = connectToServer(ref _id);
+            connectToServer();
 
-            // Connection to server established.
-            if (_connected)
-            {
-                Debug.Log("Successfully connected to server.");
+            _connecting = true;
 
-                // Notify all listeners.
-                if (onServerConnect != null)
-                    onServerConnect.Invoke();
-            }
-            // Failed to establish a connection to the server.
-            else
-                Debug.Log("Attemp to connect to server failed!");
+            _testObj.SetActive(true);
+
+            _connectButton.GetComponent<Button>().interactable = false;
+            _connectButton.GetComponentInChildren<Text>().text = "Connecting...";
         }
+    }
+
+    public void connectServerSuccess()
+    {
+        _connected = true;
+        _connecting = false;
 
 
-        
+        _connectButton.SetActive(false);
+        // For some reason won't turn on/off game objects.
+        //_connectingButton.SetActive(false);
+
+        _testObj.SetActive(false);
+
+        Debug.Log("Successfully connected to server.");
+    }
+
+    public static bool connectedToServer()
+    {
+
+
+        return true;
     }
 }
 
@@ -239,6 +325,8 @@ public class NetworkManagerEditor : Editor
     SerializedProperty _connected;
     SerializedProperty _ip;
     SerializedProperty _id;
+    SerializedProperty _connectButton;
+    SerializedProperty _testObj;
 
     private void OnEnable()
     {
@@ -246,6 +334,8 @@ public class NetworkManagerEditor : Editor
         _connected = serializedObject.FindProperty("_connected");
         _ip = serializedObject.FindProperty("_ip");
         _id = serializedObject.FindProperty("_id");
+        _connectButton = serializedObject.FindProperty("_connectButton");
+        _testObj = serializedObject.FindProperty("_testObj");
     }
 
     public override void OnInspectorGUI()
@@ -268,6 +358,14 @@ public class NetworkManagerEditor : Editor
 
         label.text = "Network ID";
         EditorGUILayout.PropertyField(_id, label);
+
+        label.text = "Connect Button";
+        EditorGUILayout.PropertyField(_connectButton, label);
+
+        label.text = "_testObj";
+        EditorGUILayout.PropertyField(_testObj, label);
+
+        //EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
 
 
 

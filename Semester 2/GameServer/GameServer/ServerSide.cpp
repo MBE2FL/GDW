@@ -1,62 +1,13 @@
-#include <iostream>
-#include <fstream>
-#include <string> 
-
-///// Networking //////
-#include <WinSock2.h>
-#include <ws2tcpip.h>
-#include <stdio.h>
-#pragma comment(lib, "Ws2_32.lib")
-///////////////////////
-
-#include "Transform.h"
-#include <vector>
+#include "Server.h"
 
 
-using std::cout;
-using std::endl;
-using std::string;
-using std::stof;
-using std::vector;
-
-//INPUT handling
-struct Client
+Server::Server()
 {
-	Transform _transform;
-	string _ip = "";
-	bool connected = false;
-	INT8 _id = NULL;
-	sockaddr* _sockAddr;
-	int _sockAddrLen;
-	sockaddr_in fromAddr;
-};
+	_clients.reserve(MAX_CLIENTS);
+	_clientTCPSockets.reserve(MAX_CLIENTS);
+}
 
-
-enum MessageTypes : INT8
-{
-	ConnectionAttempt,
-	ConnectionAccepted,
-	ConnectionFailed,
-	ServerFull,
-	TransformData
-};
-
-
-#define MAX_CLIENTS 2
-Client _player1;
-Client _player2;
-vector<Client*> _clients;
-// Networking
-SOCKET server_socket;
-struct addrinfo* ptr = NULL;
-#define PORT "5000"
-#define BUF_LEN 512
-#define UPDATE_INTERVAL 0.100 //seconds
-
-
-void parseData(const string& buf, Vector3& pos, Quaternion& rot);
-
-bool initNetwork() {
+bool Server::initNetwork() {
 	//Initialize winsock
 	WSADATA wsa;
 	int error;
@@ -67,6 +18,27 @@ bool initNetwork() {
 		return 0;
 	}
 
+	//Create a server sockets
+	if (!initUDP())
+	{
+		printf("UDP socket failed to initialize! %d\n", WSAGetLastError());
+		return false;
+	}
+
+	if (!initTCP())
+	{
+		printf("TCP socket failed to initialize! %d\n", WSAGetLastError());
+		return false;
+	}
+
+
+	printf("Server is ready!\n");
+
+	return true;
+}
+
+bool Server::initUDP()
+{
 	//Create a server socket
 
 	struct addrinfo hints;
@@ -77,41 +49,85 @@ bool initNetwork() {
 	hints.ai_protocol = IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
 
-	if (getaddrinfo(NULL, PORT, &hints, &ptr) != 0) {
+	if (getaddrinfo(NULL, PORT, &hints, &_ptr) != 0) {
 		printf("Getaddrinfo failed!! %d\n", WSAGetLastError());
 		WSACleanup();
-		return 0;
+		return false;
 	}
 
-	
-	server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	if (server_socket == INVALID_SOCKET) {
+	_serverUDP_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+	if (_serverUDP_socket == INVALID_SOCKET) {
 		printf("Failed creating a socket %d\n", WSAGetLastError());
 		WSACleanup();
-		return 0;
+		return false;
 	}
 
 	// Bind socket
 
-	if (bind(server_socket, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR) {
+	if (bind(_serverUDP_socket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
 		printf("Bind failed: %d\n", WSAGetLastError());
-		closesocket(server_socket);
-		freeaddrinfo(ptr);
+		closesocket(_serverUDP_socket);
+		freeaddrinfo(_ptr);
 		WSACleanup();
-		return 1;
+		return false;
 	}
 
 	/// Change to non-blocking mode
-	u_long mode = 1;// 0 for blocking mode
-	ioctlsocket(server_socket, FIONBIO, &mode);
+	//u_long mode = 1;// 0 for blocking mode
+	//ioctlsocket(_serverUDP_socket, FIONBIO, &mode);
+	u_long mode = 0;// 0 for blocking mode
+	ioctlsocket(_serverUDP_socket, FIONBIO, &mode);
 
-	printf("Server is ready!\n");
+	printf("UDP socket is ready!\n");
 
-	return 1;
+	return true;
 }
 
-void connectPlayer(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen)
+bool Server::initTCP()
+{
+	//Create a server socket
+
+	struct addrinfo hints;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_flags = AI_PASSIVE;
+
+	if (getaddrinfo(NULL, PORT, &hints, &_ptr) != 0) {
+		printf("Getaddrinfo failed!! %d\n", WSAGetLastError());
+		WSACleanup();
+		return false;
+	}
+
+
+	_serverTCP_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	if (_serverTCP_socket == INVALID_SOCKET) {
+		printf("Failed creating a socket %d\n", WSAGetLastError());
+		WSACleanup();
+		return false;
+	}
+
+	// Bind socket
+
+	if (bind(_serverTCP_socket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
+		printf("Bind failed: %d\n", WSAGetLastError());
+		closesocket(_serverTCP_socket);
+		freeaddrinfo(_ptr);
+		WSACleanup();
+		return false;
+	}
+
+	printf("TCP socket is ready!\n");
+
+	return true;
+}
+
+void Server::connectPlayer(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen)
 {
 	//char buf[BUF_LEN];
 
@@ -188,13 +204,118 @@ void connectPlayer(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fr
 
 
 	// Tell client they have connected to the server.
-	if (sendto(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, fromLen) == SOCKET_ERROR)
+	if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, fromLen) == SOCKET_ERROR)
 	{
 		printf("Failed to send connection packet. %d\n", WSAGetLastError());
 	}
 }
 
-#pragma region OLD_TRANFORM
+void Server::listenForConnections()
+{
+	// Only listen for connections while the server is not full.
+	while (_clients.size() != MAX_CLIENTS)
+	{
+		cout << "Listening for clients..." << endl;
+
+		// Listen on socket
+		if (listen(_serverTCP_socket, SOMAXCONN) == SOCKET_ERROR)
+		{
+			printf("Listen failed: %d\n", WSAGetLastError());
+			closesocket(_serverTCP_socket);
+			freeaddrinfo(_ptr);
+			WSACleanup();
+			system("pause");
+		}
+
+
+		// Accept a connection (multiple clients --> threads)
+		SOCKET client_socket;
+		sockaddr_in fromAddr;
+		int fromLen = sizeof(fromAddr);
+
+		client_socket = accept(_serverTCP_socket, (sockaddr*)&fromAddr, &fromLen);
+
+		if (client_socket == INVALID_SOCKET)
+		{
+			printf("Accept() failed %d\n", WSAGetLastError());
+			closesocket(_serverTCP_socket);
+			freeaddrinfo(_ptr);
+			WSACleanup();
+			system("pause");
+		}
+
+		char ip[BUF_LEN];
+		inet_ntop(AF_INET, &fromAddr.sin_addr, ip, fromLen);
+		cout << "IP: " << ip << endl;
+
+		//u_long mode = 1;// 0 for blocking mode
+		//ioctlsocket(client_socket, FIONBIO, &mode);
+
+		// Make sure only one thread writes to the vector at a time.
+		mutex socketSaveMutex;
+		lock_guard<mutex> guard(socketSaveMutex);
+		//thread::id threadID = std::this_thread::get_id();
+
+		// Find first available index.
+		INT8 index = 0;
+		vector<SOCKET*>::const_iterator it;
+		for (it = _clientTCPSockets.cbegin(); it != _clientTCPSockets.cend(); ++it)
+		{
+			if (*it == nullptr)
+			{
+				break;
+			}
+
+			++index;
+		}
+
+		char buf[BUF_LEN];
+		memset(buf, 0, BUF_LEN);
+		//buf[0] = reinterpret_cast<char&>(msgType);
+		buf[0] = MessageTypes::ConnectionAccepted;
+		//buf[1] = reinterpret_cast<char&>(client->_id);
+		buf[1] = index;
+
+		if (send(client_socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			printf("Failed to send msg to client %d\n", WSAGetLastError());
+			closesocket(client_socket);
+			freeaddrinfo(_ptr);
+			WSACleanup();
+			system("pause");
+			return;
+		}
+
+
+		cout << "Player connected" << endl;
+
+		char ipbuf[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
+
+		Client* client = new Client();
+		client->_ip = ipbuf;
+		client->connected = true;
+		client->_id = index;
+		client->_sockAddr = (sockaddr*)&fromAddr;
+		client->_sockAddrLen = fromLen;
+		client->fromAddr = fromAddr;
+		_clients.insert(_clients.begin() + index, client);
+
+
+		if (_clients.size() == MAX_CLIENTS)
+		{
+			cout << "Both players have connected" << endl;
+
+		}
+
+
+		// Connection successfuly established.
+		_clientTCPSockets.insert(_clientTCPSockets.begin() + index, &client_socket);
+
+	}
+}
+
+#pragma region OLD_TRANSFORM
 //void updateTransform()
 //{
 //	char buf[BUF_LEN];
@@ -324,7 +445,7 @@ void parseData(const string& buf, Vector3& pos, Quaternion& rot)
 }
 #pragma endregion
 
-void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen)
+void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen)
 {
 
 	// Reveive transform updates from players.
@@ -341,8 +462,8 @@ void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int&
 	Quaternion rotDebug;
 	memcpy(&posDebug._x, reinterpret_cast<float*>(&buf[2]), posSize);
 	memcpy(&rotDebug._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
-	cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
-	cout << posDebug.toString() << rotDebug.toString();
+	//cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
+	//cout << posDebug.toString() << rotDebug.toString();
 
 
 	// Send data too all other clients.
@@ -354,32 +475,58 @@ void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int&
 
 		// Don't send back to the same client who sent the data.
 		if (client->_id == networkID)
+		{
+			//if (client->_id == 0)
+			//{
+			//	cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
+			//	cout << posDebug.toString() << rotDebug.toString();
+			//}
 			continue;
+		}
+
+		//cout << client->_ip << endl;
+
 
 		// Send data to other client.
-		if (sendto(server_socket, buf, BUF_LEN, 0, (sockaddr*)&(client->fromAddr), fromLen) == SOCKET_ERROR)
+		//if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&(client->fromAddr), client->_sockAddrLen) == SOCKET_ERROR)
+		if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, client->_sockAddrLen) == SOCKET_ERROR)
 		{
 			printf("Failed to send transform data. %d\n", WSAGetLastError());
 		}
+		//else
+		//{
+		//	cout << "Sent Transform" << endl;
+		//}
 	}
 }
 
-int main() 
+void Server::update()
 {
-	//Initialize Network
-	if (!initNetwork())
-		return 1;
+	////////////////////
+	/*
+	CODE TO RECEIVE UPDATES FROM CLIENT GOES HERE...
+	*/
+	//thread udpThread(&Server::udpUpdate, this);
+	//thread tcpThread(&tcpUpdate);
 
-	_clients.reserve(MAX_CLIENTS);
-	
-	///// Game loop /////
-	while (true) 
+	//udpThread.join();
+	//tcpThread.join();
+
+	//cout << "Update thread done" << endl;
+}
+
+void Server::initUpdateThreads()
+{
+	_udpThread = thread(&Server::udpUpdate, this);
+	_tcpThread = thread(&Server::tcpUpdate, this);
+}
+
+void Server::udpUpdate()
+{
+	cout << "UDP Listening" << endl;
+
+	while (true)
 	{
-		
-		////////////////////
-		/*
-		CODE TO RECEIVE UPDATES FROM CLIENT GOES HERE...
-		*/
 		char buf[BUF_LEN];
 		//char* buf = new char[BUF_LEN];
 		struct sockaddr_in fromAddr;
@@ -392,25 +539,18 @@ int main()
 		int sError = -1;
 
 		// Receive message from a client.
-		bytes_received = recvfrom(server_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, &fromLen);
+		bytes_received = recvfrom(_serverUDP_socket, buf, BUF_LEN, 0, (struct sockaddr*) & fromAddr, &fromLen);
 
 		sError = WSAGetLastError();
 
-
 		// Packet recieved
-		if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+		// sError != WSAEWOULDBLOCK && 
+		if (bytes_received > 0)
 		{
 			MessageTypes msgType = static_cast<MessageTypes>(buf[0]);
 
 			switch (msgType)
 			{
-			case ConnectionAttempt:
-				// Only check for incoming connections while there is still room.
-				if (_clients.size() != MAX_CLIENTS)
-				{
-					connectPlayer(buf, fromAddr, fromLen);
-				}
-				break;
 			case TransformData:
 				processTransform(buf, fromAddr, fromLen);
 				break;
@@ -418,17 +558,38 @@ int main()
 				cout << "Unexpected message type received!" << endl;
 				break;
 			}
+		}
+	}
+}
 
+void Server::tcpUpdate()
+{
+	cout << "TCP Listening" << endl;
 
-
-
-
-			//updateTransform();
+	while (true)
+	{
+		while (_clientTCPSockets.empty())
+		{
+			
 		}
 
+		char buf[BUF_LEN];
+		memset(buf, '\0', BUF_LEN);
 
-		////////////////////
+		int bytes_received = -1;
+		int sError = -1;
+
+		// Receive message from a client.
+		//vector<SOCKET*>::const_iterator it;
+		//for (it = _clientTCPSockets.cbegin(); it != _clientTCPSockets.cend(); ++it)
+		//{
+		//	bytes_received = recv(*(*it), buf, BUF_LEN, 0);
+		//}
+
+		//sError = WSAGetLastError();
+
+		//cout << sError << endl;
+
+		// Packet recieved
 	}
-
-	return 0;
 }

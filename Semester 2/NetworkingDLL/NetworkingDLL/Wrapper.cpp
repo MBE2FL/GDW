@@ -27,6 +27,8 @@ PLUGIN_OUT void InitConsole()
 	std::cout << CS_Functions.multiplyVectors(Vector3(1, 2, 4), Vector3(2, 1, 2)).toString() << std::endl;
 	std::cout << CS_Functions.multiplyInts(1, 2) << std::endl;
 	std::cout << CS_Functions.GetFloat() << std::endl;
+
+	cs.setFuncs(CS_Functions);
 }
 
 // This may or may not work, it's not tested yet
@@ -42,22 +44,28 @@ PLUGIN_OUT const char* OutputMessageToConsole(const char* msg)
 	return msg;
 }
 
-void sendData(const Vector3& position, const Quaternion& rotation)
+
+PLUGIN_OUT bool initNetwork(const char* ip)
+{
+	return cs.initNetwork(ip);
+}
+
+PLUGIN_OUT bool connectToServer()
+{
+	return cs.connectToServer();
+}
+
+PLUGIN_OUT bool queryConnectAttempt(int& id)
+{
+	return cs.queryConnectAttempt(id);
+}
+
+PLUGIN_OUT void sendData(const Vector3& position, const Quaternion& rotation)
 {
 	return cs.sendData(position, rotation);
 }
 
-void receiveData(Vector3& position, Quaternion& rotation)
+PLUGIN_OUT void receiveData(Vector3& position, Quaternion& rotation)
 {
 	return cs.receiveData(position, rotation);
-}
-
-bool connectToServer(int& id)
-{
-	return cs.connectToServer(id);
-}
-
-bool initNetwork(const char* ip)
-{
-	return cs.initNetwork(ip);
 }
