@@ -1,8 +1,14 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel Main
 
-RWStructuredBuffer<float3x3> dataBuffer;
-RWStructuredBuffer<float3x3> normBuffer;
+struct tri{
+    float3 p1;
+    float3 p2;
+    float3 p3;
+};
+
+RWStructuredBuffer<tri> dataBuffer;
+RWStructuredBuffer<tri> normBuffer;
 
 float3 GetNormal(float3 a, float3 b, float3 c)
 {
@@ -33,41 +39,16 @@ float3 MakeNormal(float3 a, float3 b, float3 c)
 [numthreads(1024,1,1)]
 void Main (uint3 id : SV_DispatchThreadID)
 {
-    float3x3 input;
-
-    input = normBuffer[id.x];
-
-    float3 n1 = float3(input[0][0], input[0][1], input[0][2]);
-    float3 n2 = float3(input[1][0], input[1][1], input[1][2]);
-    float3 n3 = float3(input[2][0], input[2][1], input[2][2]);
-
-    float3x3 input2;
-    input2 = dataBuffer[id.x];
-
-    float3 p1 = float3(input[0][0], input[0][1], input[0][2]);
-    float3 p2 = float3(input[1][0], input[1][1], input[1][2]);
-    float3 p3 = float3(input[2][0], input[2][1], input[2][2]);
-
+    tri normals = normBuffer[id.x];
     
+    tri positions = dataBuffer[id.x];
 
-    float3 norm = MakeNormal(n1,n2,n3);
-    //norm = n1;
+    float3 norm = MakeNormal(normals.p1, normals.p2, normals.p3);
+    //norm = GetNormal(positions.p1, positions.p2, positions.p3);
 
-    p1 = Explode(p1,norm);
-    p2 = Explode(p2,norm);
-    p3 = Explode(p3,norm);
-    
-    input[0][0] = p1.x;
-    input[0][1] = p1.y;
-    input[0][2] = p1.z;
+    positions.p1 = Explode(positions.p1, norm);
+    positions.p2 = Explode(positions.p2, norm);
+    positions.p3 = Explode(positions.p3, norm);
 
-    input[1][0] = p1.x;
-    input[1][1] = p1.y;
-    input[1][2] = p1.z;
-
-    input[2][0] = p1.x;
-    input[2][1] = p1.y;
-    input[2][2] = p1.z;
-
-    dataBuffer[id.x] = input;
+    dataBuffer[id.x] = positions;
 }

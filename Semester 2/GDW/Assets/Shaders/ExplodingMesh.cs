@@ -15,6 +15,13 @@ public class ExplodingMesh : MonoBehaviour
 
     Mesh mesh;
 
+    struct Tri
+    {
+        public Vector3 p1;
+        public Vector3 p3;
+        public Vector3 p2;
+    }
+
     int[] triangles;
     Vector3[] vertices;
     Vector3[] normals;
@@ -57,16 +64,17 @@ public class ExplodingMesh : MonoBehaviour
 
         for(int i = 0; i < triangles.Length; i++)
         {
-            //newNormals[i] = mesh.normals[mesh.triangles[i]];
-            //newUvs[i] = mesh.uv[mesh.triangles[i]];
-            //baseData[i] = newVerts[i] = mesh.vertices[mesh.triangles[i]];
-            //baseData[i] = mesh.vertices[mesh.triangles[i]];
             newTris[i] = i;
-
         }
 
         RunMemShader();
-
+        mesh.vertices = newVerts;
+        mesh.uv2 = new Vector2[triangles.Length];
+        mesh.uv3 = new Vector2[triangles.Length];
+        mesh.uv4 = new Vector2[triangles.Length];
+        mesh.uv = newUvs;
+        mesh.triangles = newTris;
+        mesh.normals = newNormals;
         if (useNormals)
         {
             RunExpShader();
@@ -76,13 +84,7 @@ public class ExplodingMesh : MonoBehaviour
             RunDisShader();
         }
 
-        mesh.vertices = newVerts;
-        mesh.uv2 = new Vector2[triangles.Length];
-        mesh.uv3 = new Vector2[triangles.Length];
-        mesh.uv4 = new Vector2[triangles.Length];
-        mesh.uv =  newUvs;
-        mesh.triangles = newTris;
-        mesh.normals = newNormals;
+        
 
         Vector2[] temp1 = new Vector2[triangles.Length];
         Vector2[] temp2 = new Vector2[triangles.Length];
@@ -91,13 +93,13 @@ public class ExplodingMesh : MonoBehaviour
         for (int i = 0; i < triangles.Length; i++)
         {
             temp1[i].x = baseData[i].x;
-            temp1[i].y = data[i].x;
+            temp1[i].y = newVerts[i].x;
 
             temp2[i].x = baseData[i].y;
-            temp2[i].y = data[i].y;
+            temp2[i].y = newVerts[i].y;
 
             temp3[i].x = baseData[i].z;
-            temp3[i].y = data[i].z;
+            temp3[i].y = newVerts[i].z;
         }
         mesh.uv2 = temp1;
         mesh.uv3 = temp2;
@@ -106,9 +108,9 @@ public class ExplodingMesh : MonoBehaviour
 
             //data = new Matrix4x4[mesh.triangles.Length/3];
             //output = new Matrix4x4[mesh.triangles.Length/3];
-            //
+            
             //baseData = new Matrix4x4[mesh.triangles.Length/3];
-            //
+            
             //int j = 0;
             //for (int i = 0; i < data.Length; i++)
             //{
@@ -119,7 +121,7 @@ public class ExplodingMesh : MonoBehaviour
             //        mesh.vertices[mesh.triangles[j]].y,
             //        mesh.vertices[mesh.triangles[j]].z, 0));
             //    j++;
-            //    
+                
             //    data[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
             //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
             //        mesh.vertices[mesh.triangles[j]].z, 0));
@@ -127,7 +129,7 @@ public class ExplodingMesh : MonoBehaviour
             //        mesh.vertices[mesh.triangles[j]].y,
             //        mesh.vertices[mesh.triangles[j]].z, 0));
             //    j++;
-            //
+            
             //    data[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
             //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
             //        mesh.vertices[mesh.triangles[j]].z, 0));
@@ -135,10 +137,10 @@ public class ExplodingMesh : MonoBehaviour
             //        mesh.vertices[mesh.triangles[j]].y,
             //        mesh.vertices[mesh.triangles[j]].z, 0));
             //    j++;
-            //
+            
             //    data[i].SetRow(3, new Vector4(0, 0, 0, 0));
             //    baseData[i].SetRow(3, new Vector4(0, 0, 0, 0)); 
-            //
+            
             //}
             //RunShader();
         }
@@ -169,7 +171,7 @@ public class ExplodingMesh : MonoBehaviour
             shader.SetBuffer(kernelHandle, "dataBuffer", buffer);
             shader.SetFloat("t", lerp);
 
-            shader.Dispatch(kernelHandle, data.Length, 1, 1);
+            //shader.Dispatch(kernelHandle, data.Length, 1, 1);
             shader.SetBuffer(kernelHandle, "baseBuffer", baseBuffer);
             shader.Dispatch(kernelHandle, baseData.Length, 1, 1);
 
@@ -204,7 +206,7 @@ public class ExplodingMesh : MonoBehaviour
 
             displacementShader.Dispatch(kernelHandle, newVerts.Length, 1, 1);
 
-            buffer.GetData(data);
+            buffer.GetData(newVerts);
 
             buffer.Dispose();
         }
@@ -216,38 +218,33 @@ public class ExplodingMesh : MonoBehaviour
         if (newVerts.Length > 0)
         {
 
-            Matrix4x4[] triangle = new Matrix4x4[newVerts.Length / 3];
-            Matrix4x4[] normals = new Matrix4x4[newVerts.Length / 3];
+            Tri[] triangle = new Tri[newVerts.Length / 3];
+            Tri[] normals = new Tri[newVerts.Length / 3];
             int j = 0;
             for (int i = 0; i < triangle.Length; i++)
             {
-                triangle[i].SetRow(0, new Vector4(newVerts[j].x, newVerts[j].y, newVerts[j].z, 0));
-                normals[i].SetRow(0, new Vector4(newNormals[j].x, newNormals[j].y, newNormals[j].z, 0));
+                triangle[i].p1 = newVerts[j];
+                normals[i].p1 = newNormals[j];
                 j++;
 
-                triangle[i].SetRow(1, new Vector4(newVerts[j].x, newVerts[j].y, newVerts[j].z, 0));
-                normals[i].SetRow(1, new Vector4(newNormals[j].x, newNormals[j].y, newNormals[j].z, 0));
+                triangle[i].p2 = newVerts[j];
+                normals[i].p2 = newNormals[j];
                 j++;
 
-                triangle[i].SetRow(2, new Vector4(newVerts[j].x, newVerts[j].y, newVerts[j].z, 0));
-                normals[i].SetRow(2, new Vector4(newNormals[j].x, newNormals[j].y, newNormals[j].z, 0));
+                triangle[i].p3 = newVerts[j];
+                normals[i].p3 = newNormals[j];
                 j++;
-
-                triangle[i].SetRow(3, new Vector4(0, 0, 0, 0));
-                normals[i].SetRow(3, new Vector4(0, 0, 0, 0));
             }
 
-            int kernelHandle = explosiveShader.FindKernel("Main");
-
-            ComputeBuffer buffer = new ComputeBuffer(triangle.Length, 16 * 4);
+            ComputeBuffer buffer = new ComputeBuffer(triangle.Length, 9 * 4);
             buffer.SetData(triangle);
 
-            explosiveShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
-            explosiveShader.Dispatch(kernelHandle, triangle.Length, 1, 1);
-
-            ComputeBuffer normBuffer = new ComputeBuffer(normals.Length, 16 * 4);
+            ComputeBuffer normBuffer = new ComputeBuffer(normals.Length, 9 * 4);
             normBuffer.SetData(normals);
 
+            int kernelHandle = explosiveShader.FindKernel("Main");
+            explosiveShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
+            
             explosiveShader.SetBuffer(kernelHandle, "normBuffer", normBuffer);
             explosiveShader.Dispatch(kernelHandle, normals.Length, 1, 1);
 
@@ -257,16 +254,14 @@ public class ExplodingMesh : MonoBehaviour
             j = 0;
             for (int i = 0; i < triangle.Length; i++)
             {
-                Vector4 temp = triangle[i].GetRow(0);
-                data[j] = new Vector3(temp.x, temp.y, temp.z);
+
+                newVerts[j] = triangle[i].p1;
                 j++;
 
-                temp = triangle[i].GetRow(1);
-                data[j] = new Vector3(temp.x, temp.y, temp.z);
+                newVerts[j] = triangle[i].p2;
                 j++;
 
-                temp = triangle[i].GetRow(2);
-                data[j] = new Vector3(temp.x, temp.y, temp.z);
+                newVerts[j] = triangle[i].p3;
                 j++;
             }
 
@@ -278,15 +273,15 @@ public class ExplodingMesh : MonoBehaviour
     private void RunMemShader()
     {
 
-        for (int i = 0; i < newNormals.Length; i++)
-        {
-            newNormals[i] = mesh.normals[mesh.triangles[i]];
-            newUvs[i] = mesh.uv[mesh.triangles[i]];
-            baseData[i] = newVerts[i] = mesh.vertices[mesh.triangles[i]];
-            //baseData[i] = mesh.vertices[mesh.triangles[i]];
-            newTris[i] = i;
-        }
-        if (newVerts.Length < 0)
+        //for (int i = 0; i < newNormals.Length; i++)
+        //{
+        //    newNormals[i] = mesh.normals[mesh.triangles[i]];
+        //    newUvs[i] = mesh.uv[mesh.triangles[i]];
+        //    baseData[i] = newVerts[i] = mesh.vertices[mesh.triangles[i]];
+        //    //baseData[i] = mesh.vertices[mesh.triangles[i]];
+        //    newTris[i] = i;
+        //}
+        if (newVerts.Length > 0)
         {
             ComputeBuffer triBuffer = new ComputeBuffer(mesh.triangles.Length, sizeof(int));
             triBuffer.SetData(mesh.triangles);
@@ -315,25 +310,25 @@ public class ExplodingMesh : MonoBehaviour
             int kernelHandle = memoryShader.FindKernel("Main");
 
             memoryShader.SetBuffer(kernelHandle, "tris", triBuffer);
-            memoryShader.Dispatch(kernelHandle, mesh.triangles.Length, 1, 1);
+            //memoryShader.Dispatch(kernelHandle, mesh.triangles.Length, 1, 1);
 
             memoryShader.SetBuffer(kernelHandle, "normals", normBuffer);
-            memoryShader.Dispatch(kernelHandle, mesh.normals.Length, 1, 1);
+            //memoryShader.Dispatch(kernelHandle, mesh.normals.Length, 1, 1);
             memoryShader.SetBuffer(kernelHandle, "newNormals", newNormBuffer);
-            memoryShader.Dispatch(kernelHandle, newNormals.Length, 1, 1);
+            //memoryShader.Dispatch(kernelHandle, newNormals.Length, 1, 1);
 
             memoryShader.SetBuffer(kernelHandle, "uvs", uvBuffer);
-            memoryShader.Dispatch(kernelHandle, mesh.uv.Length, 1, 1);
+            //memoryShader.Dispatch(kernelHandle, mesh.uv.Length, 1, 1);
             memoryShader.SetBuffer(kernelHandle, "newUvs", newUVBuffer);
-            memoryShader.Dispatch(kernelHandle, newUvs.Length, 1, 1);
+            //memoryShader.Dispatch(kernelHandle, newUvs.Length, 1, 1);
 
-            memoryShader.SetBuffer(kernelHandle, "vertices", vertBuffer);
-            memoryShader.Dispatch(kernelHandle, mesh.vertices.Length, 1, 1);
+            memoryShader.SetBuffer(kernelHandle, "Vertices", vertBuffer);
+            //memoryShader.Dispatch(kernelHandle, mesh.vertices.Length, 1, 1);
             memoryShader.SetBuffer(kernelHandle, "baseData", baseBuffer);
-            memoryShader.Dispatch(kernelHandle, baseData.Length, 1, 1);
+            //memoryShader.Dispatch(kernelHandle, baseData.Length, 1, 1);
             memoryShader.SetBuffer(kernelHandle, "newVerts", newVertBuffer);
-            memoryShader.Dispatch(kernelHandle, newVerts.Length, 1, 1);
 
+            memoryShader.Dispatch(kernelHandle, newVerts.Length, 1, 1);
 
             newNormBuffer.GetData(newNormals);
             newNormBuffer.Dispose();
@@ -359,9 +354,15 @@ public class ExplodingMesh : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.normals = normals;
-        mesh.uv = uvs;
+        if (mesh != null)
+        {
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.normals = normals;
+            mesh.uv = uvs;
+            mesh.uv2 = null;
+            mesh.uv3 = null;
+            mesh.uv4 = null;
+        }
     }
 }
