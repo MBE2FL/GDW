@@ -238,18 +238,94 @@ void Server::listenForConnections()
 		if (client_socket == INVALID_SOCKET)
 		{
 			printf("Accept() failed %d\n", WSAGetLastError());
-			closesocket(_serverTCP_socket);
-			freeaddrinfo(_ptr);
-			WSACleanup();
+			closesocket(client_socket);
+			//freeaddrinfo(_ptr);
+			//WSACleanup();
 			system("pause");
 		}
 
-		char ip[BUF_LEN];
-		inet_ntop(AF_INET, &fromAddr.sin_addr, ip, fromLen);
-		cout << "IP: " << ip << endl;
-
 		//u_long mode = 1;// 0 for blocking mode
 		//ioctlsocket(client_socket, FIONBIO, &mode);
+
+
+		// Wait for udp connection as well.
+		unsigned int timeouts = 0;
+		while (timeouts < MAX_TIMEOUTS)
+		{
+			timeval timeout;
+			timeout.tv_sec = 5;
+			timeout.tv_usec = 0;
+
+			fd_set fds;
+			FD_ZERO(&fds);
+			FD_SET(_serverUDP_socket, &fds);
+
+			int wsaError = -1;
+
+			wsaError = select(NULL, &fds, NULL, NULL, &timeout);
+
+			if (_udpListenInfo)
+			{
+				char ipbuf[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, _udpListenInfo, ipbuf, sizeof(ipbuf));
+				cout << "UDP Socket Address: " << ipbuf << endl;
+
+				char ip[BUF_LEN];
+				inet_ntop(AF_INET, &_udpListenInfo->sin_addr, ip, sizeof(ip));
+				cout << "IP: " << ip << endl;
+				break;
+			}
+
+			switch (wsaError)
+			{
+			case SOCKET_ERROR:
+				printf("Select() failed %d\n", WSAGetLastError());
+				closesocket(client_socket);
+				//freeaddrinfo(_ptr);
+				//WSACleanup();
+				break;
+			case 0:
+				cout << "UDP connect attempt timeout!" << endl;
+				++timeouts;
+				continue;
+			default:
+			{
+				// UDP connection received. Store sockaddr info, and notify client on TCP socket.
+				sockaddr_in fromUDPAddr;
+				int fromUDPLen = sizeof(fromUDPAddr);
+				char buf[BUF_LEN];
+				memset(buf, 0, BUF_LEN);
+				int bytesReceived = -1;
+
+				bytesReceived = recvfrom(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&fromUDPAddr, &fromUDPLen);
+
+				if (bytesReceived >= 0)
+				{
+					char ipbuf[INET_ADDRSTRLEN];
+					inet_ntop(AF_INET, &fromUDPAddr, ipbuf, sizeof(ipbuf));
+					cout << "UDP Socket Address: " << ipbuf << endl;
+
+					char ip[BUF_LEN];
+					inet_ntop(AF_INET, &fromUDPAddr.sin_addr, ip, sizeof(ip));
+					cout << "IP: " << ip << endl;
+				}
+			}
+				break;
+			}
+			
+
+			break;
+		}
+
+
+		// Client UDP connection could not be established.
+		if (timeouts >= MAX_TIMEOUTS)
+		{
+			closesocket(client_socket);
+			cout << "Client UDP connection could not be established." << endl;
+			continue;
+		}
+
 
 		// Make sure only one thread writes to the vector at a time.
 		mutex socketSaveMutex;
@@ -291,6 +367,11 @@ void Server::listenForConnections()
 
 		char ipbuf[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
+		cout << "Socket Address: " << ipbuf << endl;
+
+		char ip[BUF_LEN];
+		inet_ntop(AF_INET, &fromAddr.sin_addr, ip, sizeof(ip));
+		cout << "IP: " << ip << endl;
 
 		Client* client = new Client();
 		client->_ip = ipbuf;
@@ -481,6 +562,17 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 			//	cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
 			//	cout << posDebug.toString() << rotDebug.toString();
 			//}
+
+			cout << "Client Socket Address: " << client->_ip << endl;
+
+			char ipbuf[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
+			cout << "Socket Address: " << ipbuf << endl;
+
+			char ip[BUF_LEN];
+			inet_ntop(AF_INET, &fromAddr.sin_addr, ip, sizeof(ip));
+			cout << "IP: " << ip << endl;
+
 			continue;
 		}
 
@@ -553,6 +645,11 @@ void Server::udpUpdate()
 			{
 			case TransformData:
 				processTransform(buf, fromAddr, fromLen);
+				break;
+			case ConnectionAttempt:
+			{
+				_udpListenInfo = new sockaddr_in(fromAddr);
+			}
 				break;
 			default:
 				cout << "Unexpected message type received!" << endl;

@@ -20,6 +20,7 @@
 #define PORT "5000"
 #define BUF_LEN 512
 #define UPDATE_INTERVAL 0.100 //seconds
+#define MAX_TIMEOUTS 8
 
 using std::cout;
 using std::endl;

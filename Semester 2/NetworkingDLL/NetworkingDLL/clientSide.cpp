@@ -122,21 +122,84 @@ void ClientSide::connectToServerTCP()
 {
 	//Connect to the server
 	if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
-		printf("Unable to connect to server: %d\n", WSAGetLastError());
+		printf("Unable to connect TCP to server: %d\n", WSAGetLastError());
 		closesocket(_clientTCPsocket);
 		freeaddrinfo(_ptr);
 		WSACleanup();
-		system("pause");
-		//return false;
 		return;
 	}
-
 
 	char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
 
 	MessageTypes msgType;
 
+	buf[0] = MessageTypes::ConnectionAttempt;
+
+	unsigned int timeouts = 0;
+	while (timeouts < MAX_TIMEOUTS)
+	{
+		// Send udp socket info over to server.
+		if (sendto(_clientUDPsocket, buf, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
+		{
+			printf("Unable to connect UDP to server: %d\n", WSAGetLastError());
+			closesocket(_clientUDPsocket);
+			freeaddrinfo(_ptr);
+			WSACleanup();
+			system("pause");
+			return;
+		}
+
+		// Wait for reply from server of UDP acception.
+		timeval timeout;
+		timeout.tv_sec = 2;
+		timeout.tv_usec = 500000;
+
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(_clientTCPsocket, &fds);
+
+		int wsaError = -1;
+
+		wsaError = select(NULL, &fds, NULL, NULL, &timeout);
+
+		
+
+		// Socker error
+		if (wsaError == SOCKET_ERROR)
+		{
+			printf("Select() failed %d\n", WSAGetLastError());
+			closesocket(_clientTCPsocket);
+			freeaddrinfo(_ptr);
+			WSACleanup();
+			return;
+		}
+		// Timeout
+		else if (wsaError == 0)
+		{
+			cout << "UDP connect attempt timeout!" << endl;
+			++timeouts;
+			continue;
+		}
+		// Socket ready for reading.
+		else
+		{
+			cout << "UDP Connected: " << wsaError << endl;
+			cout << WSAGetLastError() << endl;
+			break;
+		}
+	}
+
+
+	// Client UDP connection could not be established.
+	if (timeouts >= MAX_TIMEOUTS)
+	{
+		cout << "Server UDP connection could not be established." << endl;
+		return;
+	}
+
+
+	memset(buf, 0, BUF_LEN);
 
 	if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
 	{

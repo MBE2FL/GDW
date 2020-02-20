@@ -15,6 +15,8 @@
 #include <thread>
 #include <mutex>
 
+#include "../../CommonNetworking/Packet.h"
+
 
 using std::cout;
 using std::endl;
@@ -30,6 +32,7 @@ using std::lock_guard;
 #define BUF_LEN 512
 #define UPDATE_INTERVAL 0.100 //seconds
 #define MAX_CLIENTS 2
+#define MAX_TIMEOUTS 4
 
 
 struct Client
@@ -44,14 +47,14 @@ struct Client
 };
 
 
-enum MessageTypes : INT8
-{
-	ConnectionAttempt,
-	ConnectionAccepted,
-	ConnectionFailed,
-	ServerFull,
-	TransformData
-};
+//enum MessageTypes : INT8
+//{
+//	ConnectionAttempt,
+//	ConnectionAccepted,
+//	ConnectionFailed,
+//	ServerFull,
+//	TransformData
+//};
 
 
 
@@ -87,4 +90,6 @@ private:
 	SOCKET _serverTCP_socket = NULL;
 	struct addrinfo* _ptr = NULL;
 	vector<SOCKET*> _clientTCPSockets;
+
+	sockaddr_in* _udpListenInfo;
 };
