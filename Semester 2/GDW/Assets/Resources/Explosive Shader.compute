@@ -1,0 +1,54 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Main
+
+struct tri{
+    float3 p1;
+    float3 p2;
+    float3 p3;
+};
+
+RWStructuredBuffer<tri> dataBuffer;
+RWStructuredBuffer<tri> normBuffer;
+
+float3 GetNormal(float3 a, float3 b, float3 c)
+{
+   float3 d = a-b;
+   float3 e = c-b;
+   return normalize(cross(d, e));
+}
+
+float3 Explode(float3 position, float3 normal)
+{
+    return position + normal;
+}
+
+float3 Move(float3 pos, int i)
+{
+    pos.y = pos.y - i * 0.01;
+    return pos;
+}
+
+float3 MakeNormal(float3 a, float3 b, float3 c)
+{
+    float3 result = lerp(a, b, 0.5);
+    result = lerp(result, c, 0.5);
+    //result = normalize(a+b+c);
+    return result;
+}
+
+[numthreads(1024,1,1)]
+void Main (uint3 id : SV_DispatchThreadID)
+{
+    tri normals = normBuffer[id.x];
+    
+    tri positions = dataBuffer[id.x];
+
+    float3 norm = MakeNormal(normals.p1, normals.p2, normals.p3);
+    //norm = GetNormal(positions.p1, positions.p2, positions.p3);
+
+    positions.p1 = Explode(positions.p1, norm);
+    positions.p2 = Explode(positions.p2, norm);
+    positions.p3 = Explode(positions.p3, norm);
+
+    dataBuffer[id.x] = positions;
+}
