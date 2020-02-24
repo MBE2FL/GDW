@@ -131,6 +131,31 @@ Shader "RayMarch/SkeletonTest"
 		scene = opU(scene, obj);
 		// ######### three #########
 
+		// ######### CSG ONE #########
+		pos = mul(_invModelMats[6], float4(p, 1.0));
+		geoInfo = _boundGeoInfo[6];
+		obj = sdBox(pos.xyz, geoInfo.xyz);
+
+
+		pos = mul(_invModelMats[7], float4(p, 1.0));
+		geoInfo = _boundGeoInfo[7];
+		obj2 = sdSphere(pos.xyz, geoInfo.x);
+
+
+		storedCSGs[1] = opU(obj, obj2);
+
+		obj = storedCSGs[1];
+
+		pos = mul(_invModelMats[8], float4(p, 1.0));
+		geoInfo = _boundGeoInfo[8];
+		obj2 = sdSphere(pos.xyz, geoInfo.x);
+
+
+		storedCSGs[2] = opSmoothUnion(obj, obj2, _combineOpsCSGs[2].y);
+
+		scene = opSmoothUnion(scene, storedCSGs[2], _combineOpsCSGs[2].w);
+		// ######### CSG ONE #########
+
 		return scene;
 	}
 
@@ -202,6 +227,34 @@ Shader "RayMarch/SkeletonTest"
 
 		scene = opU(scene, obj);
 		// ######### three #########
+
+		// ######### CSG ONE #########
+		pos = mul(_invModelMats[6], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[6];
+		obj = sdBox(pos.xyz, geoInfo.xyz);
+		distBuffer[6] = obj;
+
+
+		pos = mul(_invModelMats[7], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[7];
+		obj2 = sdSphere(pos.xyz, geoInfo.x);
+		distBuffer[7] = obj2;
+
+
+		storedCSGs[1] = opI(obj, obj2);
+
+		obj = storedCSGs[1];
+
+		pos = mul(_invModelMats[8], float4(p, 1.0));
+		geoInfo = _primitiveGeoInfo[8];
+		obj2 = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+		distBuffer[8] = obj2;
+
+
+		storedCSGs[2] = opSmoothInt(obj, obj2, _combineOpsCSGs[2].y);
+
+		scene = opSmoothSub(storedCSGs[2], scene, _combineOpsCSGs[2].w);
+		// ######### CSG ONE #########
 
 		return scene;
 	}
@@ -282,6 +335,31 @@ Shader "RayMarch/SkeletonTest"
 		obj.refractInfo = _refractInfo[5];
 		scene = opUMat(scene, obj);
 		// ######### three #########
+
+		// ######### CSG ONE #########
+		obj.dist = distBuffer[6];
+		obj.colour = _rm_colours[6];
+		obj.reflInfo = _reflInfo[6];
+		obj.refractInfo = _refractInfo[6];
+
+		obj2.dist = distBuffer[7];
+		obj2.colour = _rm_colours[7];
+		obj2.reflInfo = _reflInfo[7];
+		obj2.refractInfo = _refractInfo[7];
+
+		storedCSGs[1] = opIMat(obj, obj2);
+
+		obj = storedCSGs[1];
+
+		obj2.dist = distBuffer[8];
+		obj2.colour = _rm_colours[8];
+		obj2.reflInfo = _reflInfo[8];
+		obj2.refractInfo = _refractInfo[8];
+
+		storedCSGs[2] = opSmoothIntMat(obj, obj2, _combineOpsCSGs[2].y);
+
+		scene = opSmoothSubMat(storedCSGs[2], scene, _combineOpsCSGs[2].w);
+		// ######### CSG ONE #########
 
 		return scene;
 	}

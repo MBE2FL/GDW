@@ -1,0 +1,27 @@
+<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
+  <TemplateData>
+    <Name>RayTracing_t5</Name>
+    <Description>&lt;No description available&gt;</Description>
+    <ProjectType>VC</ProjectType>
+    <ProjectSubType>
+    </ProjectSubType>
+    <SortOrder>1000</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>RayTracing_t5</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <Icon>__TemplateIcon.ico</Icon>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="RayTracing_5.vcxproj" File="RayTracing_5.vcxproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="false" TargetFileName="$projectname$.vcxproj.filters">RayTracing_5.vcxproj.filters</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="RayTracing1.cpp">RayTracing1.cpp</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="camera.h">camera.h</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="CImg.h">CImg.h</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="ray.h">ray.h</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="utils.h">utils.h</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName="vec3.h">vec3.h</ProjectItem>
+    </Project>
+  </TemplateContent>
+</VSTemplate>
