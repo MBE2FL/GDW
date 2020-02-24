@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class RMRenderShader : RayMarchShader
 {
     Color[] _colours = new Color[32];                // The _colours of every object.
@@ -136,7 +137,12 @@ public class RMRenderShader : RayMarchShader
     protected override void renderPrimitive(RMPrimitive rmPrim, ref int primIndex, ref int altIndex)
     {
         // Homogeneous transformation matrices
-        _invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix.inverse;
+        //_invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix.inverse;
+        _invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix;
+        _invModelMats[primIndex].m00 = 1.0f;
+        _invModelMats[primIndex].m11 = 1.0f;
+        _invModelMats[primIndex].m22 = 1.0f;
+        _invModelMats[primIndex] = _invModelMats[primIndex].inverse;
 
         // Colour information
         _colours[primIndex] = rmPrim.Colour;

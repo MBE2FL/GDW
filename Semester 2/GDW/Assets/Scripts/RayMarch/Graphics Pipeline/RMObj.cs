@@ -42,7 +42,7 @@ public enum BoundingShapes
 }
 
 
-
+[System.Serializable]
 public abstract class RMObj : MonoBehaviour
 {
     [SerializeField]

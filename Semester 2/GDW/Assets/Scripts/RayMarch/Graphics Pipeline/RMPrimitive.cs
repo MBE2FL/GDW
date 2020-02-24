@@ -67,7 +67,7 @@ public enum PrimitiveTypes
 //}
 
 
-
+[System.Serializable]
 [AddComponentMenu("Ray Marching/RMPrimitive")]
 [DisallowMultipleComponent]
 [ExecuteInEditMode]

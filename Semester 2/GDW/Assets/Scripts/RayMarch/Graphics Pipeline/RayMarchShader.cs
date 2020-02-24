@@ -78,6 +78,12 @@ public abstract class RayMarchShader : MonoBehaviour
         {
             return _renderList;
         }
+        set
+        {
+            // WARNING!!
+            // For deserializing only!!
+            _renderList = value;
+        }
     }
 
     public bool Ready
@@ -215,7 +221,7 @@ public abstract class RayMarchShader : MonoBehaviour
            // Buffer this CSG.
            _bufferedCSGs[csgIndex] = new Vector4(primIndex - 1, primIndex, -1, -1);
            _combineOpsCSGs[csgIndex] = csg.CombineOp;
-           _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
+           //_boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
            ++csgIndex;
            return;
        }
@@ -231,7 +237,7 @@ public abstract class RayMarchShader : MonoBehaviour
            // Buffer this CSG.
            _bufferedCSGs[csgIndex] = new Vector4(primIndex, -1, -1, csgIndex - 1);
            _combineOpsCSGs[csgIndex] = csg.CombineOp;
-           _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
+           //_boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
            ++csgIndex;
            return;
        }
@@ -247,7 +253,7 @@ public abstract class RayMarchShader : MonoBehaviour
            // Buffer this CSG.
            _bufferedCSGs[csgIndex] = new Vector4(-1, primIndex, csgIndex - 1, -1);
            _combineOpsCSGs[csgIndex] = csg.CombineOp;
-           _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
+           //_boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
            ++csgIndex;
            return;
        }
@@ -267,7 +273,7 @@ public abstract class RayMarchShader : MonoBehaviour
            // Buffer this CSG.
            _bufferedCSGs[csgIndex] = tempCSG;
            _combineOpsCSGs[csgIndex] = csg.CombineOp;
-           _boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
+           //_boundGeoInfo[csgIndex] = csg.BoundGeoInfo;
            ++csgIndex;
            return;
        }

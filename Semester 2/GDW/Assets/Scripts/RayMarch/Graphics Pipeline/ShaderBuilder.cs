@@ -261,6 +261,10 @@ public class ShaderBuilder : MonoBehaviour
         map.AppendLine("\t\tfloat radius = 0.0;");
         map.AppendLine();
         map.AppendLine("\t\tfloat obj;");
+        map.AppendLine("\t\tfloat obj2;");
+        map.AppendLine();
+        map.AppendLine("\t\tfloat csg;");
+        map.AppendLine("\t\tfloat storedCSGs[MAX_CSG_CHILDREN];");
         map.AppendLine();
 
         uint primIndex = 0;
@@ -272,6 +276,7 @@ public class ShaderBuilder : MonoBehaviour
         CSG csg;
         foreach (RMObj obj in objs)
         {
+            map.AppendLine("\t\t// ######### " + obj.gameObject.name + " #########");
             // Primitive
             if (obj.IsPrim)
             {
@@ -282,6 +287,7 @@ public class ShaderBuilder : MonoBehaviour
                     continue;
 
                 //parseCheapObj(ref map, prim, ref primIndex, ref csgIndex);
+                parseCheapPrimitive(ref map, prim, ref primIndex);
             }
             // CSG
             else
@@ -294,12 +300,14 @@ public class ShaderBuilder : MonoBehaviour
                     continue;
 
                 //parseCheapObj(ref map, csg, ref primIndex, ref csgIndex);
+                parseCheapCSG(ref map, csg, ref primIndex, ref csgIndex);
 
                 //determineCombineOp(ref map, null, csg, csgIndex - 1);
+                determineCheapCombineOp(ref map, null, csg, csgIndex - 1);
             }
 
-            map.AppendLine("\t\t// ######### " + obj.gameObject.name + " #########");
-            parseCheapObj(ref map, obj, ref primIndex, ref csgIndex);
+            //map.AppendLine("\t\t// ######### " + obj.gameObject.name + " #########");
+            //parseCheapObj(ref map, obj, ref primIndex, ref csgIndex);
             map.AppendLine("\t\t// ######### " + obj.gameObject.name + " #########");
             map.AppendLine();
         }
@@ -499,27 +507,141 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
+    private void parseCheapPrimitive(ref StringBuilder cheapMap, RMPrimitive prim, ref uint primIndex, bool csgNodeTwo = false)
+    {
+        if (!prim.Static)
+        {
+            // Determine position and geometric information
+            cheapMap.AppendLine("\t\tpos = mul(_invModelMats[" + primIndex + "], float4(p, 1.0));");
+            cheapMap.AppendLine("\t\tgeoInfo = _boundGeoInfo[" + primIndex + "];");
+
+            string obj = "obj";
+            if (csgNodeTwo)
+                obj = "obj2";
+
+            cheapMap.Append("\t\t" + obj + " = ");
+
+            // Determine primitive type
+            switch (prim.BoundShape)
+            {
+                case BoundingShapes.Sphere:
+                    cheapMap.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                    break;
+                case BoundingShapes.Box:
+                    cheapMap.AppendLine("sdBox(pos.xyz, geoInfo.xyz);");
+                    break;
+                default:
+                    Debug.LogError("Obj's bound shape, in cheap map, could not be parsed.");
+                    break;
+            }
+
+            cheapMap.AppendLine();
+
+            // Determine combining operation
+            if (!prim.CSGNode)
+            {
+                determineCheapCombineOp(ref cheapMap, prim, null, primIndex);
+            }
+            else
+                cheapMap.AppendLine();
+
+            //map.AppendLine();
+            ++primIndex;
+        }
+        else
+        {
+
+        }
+    }
+
     private void parseCheapCSG(ref StringBuilder cheapMap, CSG csg, ref uint primIndex, ref uint csgIndex)
     {
+        //// Base case: Both nodes are primitives.
+        //if (csg.AllPrimNodes)
+        //{
+        //    ++primIndex;
+        //    ++primIndex;
+        //    ++csgIndex;
+        //    return;
+        //}
+        //// Only first node is a primitive.
+        //else if (csg.IsFirstPrim)
+        //{
+        //    ++primIndex;
+        //    ++csgIndex;
+        //    return;
+        //}
+        //// Only second node is a primitive.
+        //else if (csg.IsSecondPrim)
+        //{
+        //    ++primIndex;
+        //    ++csgIndex;
+        //    return;
+        //}
+        //// Both nodes are CSGs.
+        //else
+        //{
+        //    // Recurse through first node.
+        //    parseCheapCSG(ref cheapMap, csg.FirstNode as CSG, ref primIndex, ref csgIndex);
+
+        //    // Recurse through second node.
+        //    parseCheapCSG(ref cheapMap, csg.SecondNode as CSG, ref primIndex, ref csgIndex);
+
+        //    // Parse this CSG.
+        //    cheapMap.AppendLine();
+        //    ++csgIndex;
+        //    return;
+        //}
+
+
         // Base case: Both nodes are primitives.
         if (csg.AllPrimNodes)
         {
-            ++primIndex;
-            ++primIndex;
+            // Parse both nodes.
+            parseCheapPrimitive(ref cheapMap, csg.FirstNode as RMPrimitive, ref primIndex, false);
+            parseCheapPrimitive(ref cheapMap, csg.SecondNode as RMPrimitive, ref primIndex, true);
+
+            // Parse this CSG.
+            determineCheapCSGNodeCombineOp(ref cheapMap, csg, csgIndex);
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
+            cheapMap.AppendLine();
             ++csgIndex;
             return;
         }
         // Only first node is a primitive.
         else if (csg.IsFirstPrim)
         {
-            ++primIndex;
+            // Recurse through second node (Must be a CSG).
+            parseCheapCSG(ref cheapMap, csg.SecondNode as CSG, ref primIndex, ref csgIndex);
+
+            // Parse first node.
+            parseCheapPrimitive(ref cheapMap, csg.FirstNode as RMPrimitive, ref primIndex, false);
+
+            // Parse this CSG.
+            cheapMap.AppendLine("\t\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
+            cheapMap.AppendLine();
+            determineCheapCSGNodeCombineOp(ref cheapMap, csg, csgIndex);
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
+            cheapMap.AppendLine();
             ++csgIndex;
             return;
         }
         // Only second node is a primitive.
         else if (csg.IsSecondPrim)
         {
-            ++primIndex;
+            // Recurse through first node (Must be a csg).
+            parseCheapCSG(ref cheapMap, csg.FirstNode as CSG, ref primIndex, ref csgIndex);
+
+            cheapMap.AppendLine("\t\tobj = storedCSGs[" + (csgIndex - 1) + "];");
+            cheapMap.AppendLine();
+
+            // Parse second node.
+            parseCheapPrimitive(ref cheapMap, csg.SecondNode as RMPrimitive, ref primIndex, true);
+
+            // Parse this CSG.
+            determineCheapCSGNodeCombineOp(ref cheapMap, csg, csgIndex);
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
+            cheapMap.AppendLine();
             ++csgIndex;
             return;
         }
@@ -529,10 +651,19 @@ public class ShaderBuilder : MonoBehaviour
             // Recurse through first node.
             parseCheapCSG(ref cheapMap, csg.FirstNode as CSG, ref primIndex, ref csgIndex);
 
+            uint firstNodeIndex = (csgIndex - 1);
+
             // Recurse through second node.
             parseCheapCSG(ref cheapMap, csg.SecondNode as CSG, ref primIndex, ref csgIndex);
 
+            cheapMap.AppendLine("\t\tobj = storedCSGs[" + firstNodeIndex + "];");
+            cheapMap.AppendLine();
+            cheapMap.AppendLine("\t\tobj2 = storedCSGs[" + (csgIndex - 1) + "];");
+            cheapMap.AppendLine();
+
             // Parse this CSG.
+            determineCheapCSGNodeCombineOp(ref cheapMap, csg, csgIndex);
+            //map.AppendLine("\t\tstoredCSGs[" + csgIndex + "] = csg;");
             cheapMap.AppendLine();
             ++csgIndex;
             return;
@@ -563,6 +694,69 @@ public class ShaderBuilder : MonoBehaviour
                 break;
             default:
                 cheapMap.AppendLine("\t\tscene = opU(scene, obj);");
+                break;
+        }
+    }
+
+    private void determineCheapCombineOp(ref StringBuilder cheapMap, RMPrimitive prim, CSG csg, uint index)
+    {
+        CombineOpsTypes combineOpType;
+        string obj = "obj";
+        string combineOps = "_combineOps" + "[" + index + "].y);";
+
+        if (prim)
+            combineOpType = prim.CombineOpType;
+        else
+        {
+            combineOpType = csg.CombineOpType;
+            obj = "storedCSGs[" + index + "]";
+            combineOps = "_combineOpsCSGs" + "[" + index + "].w);";
+        }
+
+
+        switch (combineOpType)
+        {
+            case CombineOpsTypes.Union:
+                cheapMap.AppendLine("\t\tscene = opU(scene, " + obj + ");");
+                break;
+            case CombineOpsTypes.SmoothUnion:
+                cheapMap.AppendLine("\t\tscene = opSmoothUnion(scene, " + obj + ", " + combineOps);
+                break;
+            case CombineOpsTypes.SmoothSubtraction:
+                cheapMap.AppendLine("\t\tscene = opSmoothUnion(scene, " + obj + ", " + combineOps);
+                break;
+            case CombineOpsTypes.SmoothIntersection:
+                cheapMap.AppendLine("\t\tscene = opSmoothUnion(scene, " + obj + ", " + combineOps);
+                break;
+            default:
+                cheapMap.AppendLine("\t\tscene = opU(scene, " + obj + ");");
+                break;
+        }
+    }
+    private void determineCheapCSGNodeCombineOp(ref StringBuilder cheapMap, CSG csg, uint csgIndex)
+    {
+        string result = "\t\tstoredCSGs[" + csgIndex + "]";
+
+        switch (csg.NodeCombineOpType)
+        {
+            case NodeCombineOpsTypes.Union:
+                cheapMap.AppendLine(result + " = opU(obj, obj2);");
+                break;
+            case NodeCombineOpsTypes.SmoothUnion:
+                cheapMap.AppendLine(result + " = opSmoothUnion(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
+                break;
+            case NodeCombineOpsTypes.SmoothSubtraction:
+                cheapMap.AppendLine(result + " = opSmoothUnion(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
+                break;
+            case NodeCombineOpsTypes.SmoothIntersection:
+                cheapMap.AppendLine(result + " = opSmoothUnion(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
+                break;
+            case NodeCombineOpsTypes.Lerp:
+                cheapMap.AppendLine("\t\tcsg = lerp(obj, obj2, _combineOpsCSGs[" + csgIndex + "].y);");
+                cheapMap.AppendLine(result + " = csg;");
+                break;
+            default:
+                cheapMap.AppendLine(result + " = opU(obj, obj2);");
                 break;
         }
     }

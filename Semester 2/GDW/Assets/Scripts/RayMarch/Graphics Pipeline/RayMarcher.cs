@@ -258,7 +258,7 @@ public class RayMarcher : MonoBehaviour
 
     public void render(RenderTexture source, RenderTexture destination)
     {
-        //EffectMaterial.EnableKeyword("BOUND_DEBUG");  // TO-DO Perform this only when debug is enabled.
+        //EffectMaterial.EnableKeyword("BOUND_DEBUG");  // TO-DO Perform this only when debug is _enabled.
         //EffectMaterial.shaderKeywords = new string[1] { "BOUNDING_SPHERE_DEBUG" };
         //Matrix4x4 torusMat = Matrix4x4.TRS(
         //                                    Vector3.right * Mathf.Sin(Time.time) * 5.0f,
@@ -496,7 +496,7 @@ public class RayMarcherEditor : Editor
     }
 }
 
-public class ShaderEditorWindow : EditorWindow
+public class ShaderEditorWindow : EditorWindow, ISerializationCallbackReceiver
 {
     static Camera _camera;
     static List<System.Type> _desiredDockNextTo = new List<System.Type>();
@@ -527,6 +527,24 @@ public class ShaderEditorWindow : EditorWindow
     //    _rayMarcher = RayMarcher.Instance;
     //}
 
+
+    [Serializable]
+    public struct SerializedShader
+    {
+        public int index;
+        public bool _serialized;
+        //public Shader _effectShader;
+        //public string _shaderName;
+        //public RayMarchShaderSettings _settings;
+        //public ShaderType _shaderType;
+        //public List<RMObj> _renderList;
+        //public ComputeShader _sdfToMeshShader;
+    }
+
+    [SerializeField]
+    SerializedShader _serializedShader;
+
+
     public static void Init(RayMarchShader shader)
     {
         // Get existing open window or if none, make a new one:
@@ -546,9 +564,23 @@ public class ShaderEditorWindow : EditorWindow
         //window._onRemoveShader += window.removeShader;
     }
 
+    void initIfNeeded()
+    {
+        if (!_shader && _serializedShader._serialized)
+        {
+            //Debug.Log("Deserialized YES");
+            _rayMarcher = RayMarcher.Instance;
+
+            //_serializedShader._serialized = false;
+
+            _shader = _rayMarcher.Shaders[_serializedShader.index];
+        }
+    }
 
     void OnGUI()
     {
+        initIfNeeded();
+
         shaderScrollPos = GUILayout.BeginScrollView(shaderScrollPos);
 
 
@@ -657,6 +689,73 @@ public class ShaderEditorWindow : EditorWindow
 #else
         Destroy(_shader);
 #endif
+    }
+
+    public void OnBeforeSerialize()
+    {
+        // Now Unity is free to serialize this field, and we should get back the expected 
+        // data when it is deserialized later.
+
+        _serializedShader = new SerializedShader()
+        {
+            index = _rayMarcher.Shaders.IndexOf(_shader),
+            _serialized = true
+            //_effectShader = _shader.EffectShader,
+            //_shaderName = _shader.ShaderName,
+            //_settings = _shader.Settings,
+            //_shaderType = _shader.ShaderType,
+            //_renderList = _shader.RenderList,
+        }
+        ;
+
+        switch (_shader.ShaderType)
+        {
+            case ShaderType.Rendering:
+                break;
+            case ShaderType.MarchingCube:
+                //_serializedShader._sdfToMeshShader = (_shader as RMMarchingCubeShader).SDFtoMeshShader;
+                break;
+            case ShaderType.Collision:
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void OnAfterDeserialize()
+    {
+        //Unity has just written new data into the serializedNodes field.
+        //let's populate our actual runtime data with those new values.
+
+        // Transfer the deserialized data into the internal Node class
+        //RayMarchShader shader = RayMarcher.Instance.Shaders[_serializedShader.index];
+
+        //switch (_serializedShader._shaderType)
+        //{
+        //    case ShaderType.Rendering:
+        //        shader = new RMRenderShader();
+        //        shader.EffectShader = _serializedShader._effectShader;
+        //        shader.ShaderName = _serializedShader._shaderName;
+        //        shader.Settings = _serializedShader._settings;
+        //        shader.ShaderType = _serializedShader._shaderType;
+        //        shader.RenderList = _serializedShader._renderList;
+        //        break;
+        //    case ShaderType.MarchingCube:
+        //        shader = new RMMarchingCubeShader();
+        //        shader.EffectShader = _serializedShader._effectShader;
+        //        shader.ShaderName = _serializedShader._shaderName;
+        //        shader.Settings = _serializedShader._settings;
+        //        shader.ShaderType = _serializedShader._shaderType;
+        //        shader.RenderList = _serializedShader._renderList;
+        //        (shader as RMMarchingCubeShader).SDFtoMeshShader = _serializedShader._sdfToMeshShader;
+        //        break;
+        //    case ShaderType.Collision:
+        //        break;
+        //    default:
+        //        break;
+        //}
+
+        //_shader = shader;
     }
 }
 
