@@ -12,6 +12,8 @@ public class Puzzle : Subject, IObserver
     GameObject _reward;
     [SerializeField]
     GameObject _reward2 = null;
+    [SerializeField]
+    Material _material = null;
     //[SerializeField]
     //Transform _rewardSpawn;
     //Transform _rewardSpawn2;
@@ -21,8 +23,8 @@ public class Puzzle : Subject, IObserver
     void Start()
     {
         //Hides the reward
-        _reward.SetActive(false);
-        if(_reward2)
+        //_reward.SetActive(false);
+        if (_reward2)
         {
             _reward2.SetActive(false);
         }
@@ -75,10 +77,12 @@ public class Puzzle : Subject, IObserver
             _completed = true;
 
             //Instantiate(_reward, _rewardSpawn.position, _rewardSpawn.rotation);
-            _reward.SetActive(true);
+            //_reward.SetActive(true);
+            //_reward.GetComponent<MeshRenderer>().material = _material;
             if (_reward2)
             {
                 _reward2.SetActive(true);
+                //_reward2.GetComponent<MeshRenderer>().material = _material;
             }
 
             // Notify puzzle manager
