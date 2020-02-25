@@ -376,7 +376,7 @@ MonoBehaviour:
   - {fileID: 811698115}
   - {fileID: 156894883}
   turnOn: 0
---- !u!84 &197773522
+--- !u!84 &193980555
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -389,8 +389,8 @@ RenderTexture:
   m_ForcedFallbackFormat: 4
   m_DownscaleFallback: 0
   serializedVersion: 3
-  m_Width: 991
-  m_Height: 411
+  m_Width: 843
+  m_Height: 412
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthFormat: 0
@@ -1630,7 +1630,7 @@ Transform:
   m_GameObject: {fileID: 777428064}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 448365242}
   m_RootOrder: 1
@@ -1979,8 +1979,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 851543457}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.237, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 708574175}
@@ -2885,7 +2885,7 @@ MonoBehaviour:
   - {fileID: 1425710446}
   - {fileID: 1425710447}
   _sunLight: {fileID: 1381117112}
-  _distTex: {fileID: 197773522}
+  _distTex: {fileID: 193980555}
   _collisionCompute: {fileID: 7200000, guid: b7c5a38061b4f6a4c83ae7f3ea565cf9, type: 3}
   _computeTex: {fileID: 8400000, guid: 79c490384388c4c4994815e0e5bf6427, type: 2}
 --- !u!114 &1425710442
@@ -2939,7 +2939,7 @@ MonoBehaviour:
   _shaderTemplate: {fileID: 4800000, guid: d2f2e48d75cd2d2498c3fe3a9cb81ea7, type: 3}
   _computeShaderTemplate: {fileID: 7200000, guid: 26bcc7cb12b51284195acf481084d201,
     type: 3}
-  _currentShader: {fileID: 1425710447}
+  _currentShader: {fileID: 1425710442}
   _buildMode: 0
   _buildType: 0
   _numThreads: {x: 10, y: 1, z: 1}
@@ -3187,7 +3187,7 @@ Transform:
   m_GameObject: {fileID: 1475086142}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 22.08, y: -4.45, z: 2.11}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 0.35, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 13
@@ -3648,7 +3648,7 @@ Transform:
   m_GameObject: {fileID: 1701382884}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 448365240}
   m_RootOrder: 1
@@ -3725,6 +3725,25 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1488617830}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &1808446846
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1808446845}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4576876ee13c08345b37460c6960b3cb, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!114 &1808446847
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3737,12 +3756,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 936d38385e0286841bfb2ef82035e275, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _objs:
-  - {fileID: 929048229}
-  - {fileID: 305989281}
-  _targets:
-  - {fileID: 929048230}
-  - {fileID: 160750143}
+  _objData:
+  - _obj: {fileID: 851543458}
+    _target: {fileID: 0}
+    _toTarget: 0
+  _testData:
+    _obj: {fileID: 0}
+    _target: {fileID: 0}
+    _toTarget: 0
 --- !u!1 &1808586143
 GameObject:
   m_ObjectHideFlags: 0
@@ -4448,7 +4469,7 @@ Transform:
   m_GameObject: {fileID: 2120899616}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 448365241}
   m_RootOrder: 1
