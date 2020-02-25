@@ -9,7 +9,7 @@ public class Puzzle : Subject, IObserver
     int _currObjectives = 0;
     bool _completed = false;
     [SerializeField]
-    GameObject _reward;
+    GameObject _reward = null;
     [SerializeField]
     GameObject _reward2 = null;
     [SerializeField]
@@ -78,7 +78,10 @@ public class Puzzle : Subject, IObserver
 
             //Instantiate(_reward, _rewardSpawn.position, _rewardSpawn.rotation);
             //_reward.SetActive(true);
-            //_reward.GetComponent<MeshRenderer>().material = _material;
+
+            _reward.GetComponent<MeshRenderer>().material = _material;
+
+
             if (_reward2)
             {
                 _reward2.SetActive(true);
