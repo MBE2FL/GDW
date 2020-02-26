@@ -110,9 +110,9 @@ public class MoveKeyboardState : IPlayerState
             }
 
             if (_movement.Angle > 5.0f)
-                _speed = 8 * 1.8f * 4.0f;
+                _speed = 8 * 2f * 7.0f;
             else
-                _speed = 8.0f * 4.0f;
+                _speed = 8.0f * 7.0f;
 
             _force.Normalize();
 
