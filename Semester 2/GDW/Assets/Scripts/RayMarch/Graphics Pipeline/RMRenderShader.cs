@@ -138,7 +138,7 @@ public class RMRenderShader : RayMarchShader
     {
         // Homogeneous transformation matrices
 
-        //_invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix.inverse;
+        _invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix.inverse;
 
         //_invModelMats[primIndex] = rmPrim.transform.localToWorldMatrix;
         //_invModelMats[primIndex].m00 = 1.0f;
@@ -146,9 +146,9 @@ public class RMRenderShader : RayMarchShader
         //_invModelMats[primIndex].m22 = 1.0f;
         //_invModelMats[primIndex] = _invModelMats[primIndex].inverse;
 
-        Matrix4x4 localToWorldNoScale = Matrix4x4.TRS(rmPrim.transform.position, rmPrim.transform.rotation, Vector3.one);
+        //Matrix4x4 localToWorldNoScale = Matrix4x4.TRS(rmPrim.transform.position, rmPrim.transform.rotation, Vector3.one);
 
-        _invModelMats[primIndex] = localToWorldNoScale.inverse;
+        //_invModelMats[primIndex] = localToWorldNoScale.inverse;
 
 
         // Colour information

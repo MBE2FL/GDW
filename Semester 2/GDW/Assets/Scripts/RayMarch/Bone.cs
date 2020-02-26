@@ -15,20 +15,27 @@ public class BoneObjData
     public float _toTarget;
 }
 
-
+[System.Serializable]
+public struct TestAnimStruct
+{
+    public float _testFloat;
+    public Transform _testTrans;
+}
 
 [System.Serializable]
 public class Bone : MonoBehaviour
 {
-    //[SerializeField]
+    //[SerializeField]aa
     //List<RMObj> _objs;
 
     [SerializeField]
     List<BoneObjData> _objData;
 
     [SerializeField]
-    BoneObjData _testData;
+    BoneObjData _testData = new BoneObjData() { _toTarget = 5.0f };
 
+    [SerializeField]
+    TestAnimStruct _testStruct = new TestAnimStruct() { _testFloat = 10.0f, _testTrans = null };
 
 
     public List<BoneObjData> Objs
