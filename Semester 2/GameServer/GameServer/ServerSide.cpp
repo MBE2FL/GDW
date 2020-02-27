@@ -248,6 +248,10 @@ void Server::listenForConnections()
 		//ioctlsocket(client_socket, FIONBIO, &mode);
 
 
+		sockaddr_in fromUDPAddr;
+		int fromUDPLen = sizeof(fromUDPAddr);
+
+
 		// Wait for udp connection as well.
 		unsigned int timeouts = 0;
 		while (timeouts < MAX_TIMEOUTS)
@@ -266,6 +270,8 @@ void Server::listenForConnections()
 
 			if (_udpListenInfo)
 			{
+				fromUDPAddr = *_udpListenInfo;
+
 				char ipbuf[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET, _udpListenInfo, ipbuf, sizeof(ipbuf));
 				cout << "UDP Socket Address: " << ipbuf << endl;
@@ -291,8 +297,8 @@ void Server::listenForConnections()
 			default:
 			{
 				// UDP connection received. Store sockaddr info, and notify client on TCP socket.
-				sockaddr_in fromUDPAddr;
-				int fromUDPLen = sizeof(fromUDPAddr);
+				//sockaddr_in fromUDPAddr;
+				//int fromUDPLen = sizeof(fromUDPAddr);
 				char buf[BUF_LEN];
 				memset(buf, 0, BUF_LEN);
 				int bytesReceived = -1;
@@ -378,8 +384,8 @@ void Server::listenForConnections()
 		client->connected = true;
 		client->_id = index;
 		client->_sockAddr = (sockaddr*)&fromAddr;
-		client->_sockAddrLen = fromLen;
-		client->fromAddr = fromAddr;
+		client->_sockAddrLen = fromUDPLen;
+		client->fromAddr = fromUDPAddr;
 		_clients.insert(_clients.begin() + index, client);
 
 
@@ -563,15 +569,21 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 			//	cout << posDebug.toString() << rotDebug.toString();
 			//}
 
-			cout << "Client Socket Address: " << client->_ip << endl;
+			//cout << "Client TCP: " << client->_ip << endl;
 
-			char ipbuf[INET_ADDRSTRLEN];
-			inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
-			cout << "Socket Address: " << ipbuf << endl;
+			//char ipbuf[INET_ADDRSTRLEN];
+			//inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
+			//cout << "Client UDP: " << ipbuf << endl;
 
-			char ip[BUF_LEN];
-			inet_ntop(AF_INET, &fromAddr.sin_addr, ip, sizeof(ip));
-			cout << "IP: " << ip << endl;
+			//char ip[BUF_LEN];
+			//inet_ntop(AF_INET, &fromAddr.sin_addr, ip, sizeof(ip));
+			//cout << "IP: " << ip << endl;
+
+			//char port[BUF_LEN];
+			//cout << "UDP Port: " << ntohs(fromAddr.sin_port) << endl;
+
+			//char port2[BUF_LEN];
+			//cout << "UDP Port 2: " << ntohs(client->fromAddr.sin_port) << endl;
 
 			continue;
 		}
@@ -581,7 +593,7 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 
 		// Send data to other client.
 		//if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&(client->fromAddr), client->_sockAddrLen) == SOCKET_ERROR)
-		if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, client->_sockAddrLen) == SOCKET_ERROR)
+		if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&client->fromAddr, client->_sockAddrLen) == SOCKET_ERROR)
 		{
 			printf("Failed to send transform data. %d\n", WSAGetLastError());
 		}

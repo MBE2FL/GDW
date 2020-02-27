@@ -1,3 +1,3 @@
 ﻿  ServerSide.cpp
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(181,22): warning C4267: '=': conversion from 'size_t' to 'INT8', possible loss of data
-  GameServer.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(181,22): warning C4267: '=': conversion from 'size_t' to 'INT8', possible loss of data
+  GameServer.vcxproj -> D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe
