@@ -134,14 +134,19 @@ public class BoneEditor : Editor
 
         objData._target = EditorGUILayout.ObjectField(GUIContent.none, objData._target, typeof(Transform), true, GUILayout.MaxWidth(200.0f)) as Transform;
 
+        //if (objData._target)
+        //{ 
         EditorGUI.BeginChangeCheck();
         label.text = "To Target";
+        EditorGUI.BeginDisabledGroup(!objData._target);
         objData._toTarget = EditorGUILayout.Slider(label, objData._toTarget, 0.0f, 1.0f);
+        EditorGUI.EndDisabledGroup();
         if (EditorGUI.EndChangeCheck())
         {
             Transform trans = objData._obj.transform;
             trans.position = Vector3.Lerp(bone.transform.position, objData._target.position, objData._toTarget);
             trans.rotation = Quaternion.Slerp(bone.transform.rotation, objData._target.rotation, objData._toTarget);
+            trans.localScale = Vector3.Lerp(bone.transform.localScale, objData._target.localScale, objData._toTarget);
         }
 
 
