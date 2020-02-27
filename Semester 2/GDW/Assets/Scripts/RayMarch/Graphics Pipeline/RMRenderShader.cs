@@ -121,6 +121,7 @@ public class RMRenderShader : RayMarchShader
         if (primIndex > 0)
         {
             material.SetMatrixArray("_invModelMats", _invModelMats);
+            material.SetFloatArray("_scaleBuffer", _scaleBuffer);
             material.SetColorArray("_rm_colours", _colours);
             material.SetVectorArray("_combineOps", _combineOps);
             material.SetVectorArray("_primitiveGeoInfo", _primitiveGeoInfo);
@@ -149,6 +150,18 @@ public class RMRenderShader : RayMarchShader
         //Matrix4x4 localToWorldNoScale = Matrix4x4.TRS(rmPrim.transform.position, rmPrim.transform.rotation, Vector3.one);
 
         //_invModelMats[primIndex] = localToWorldNoScale.inverse;
+
+        // Store maximum un-inverted scale for each objects's transformation matrix.
+        Matrix4x4 invModelMat = _invModelMats[primIndex];
+        float xScale = new Vector3(invModelMat[0, 0], invModelMat[0, 1], invModelMat[0, 2]).magnitude;
+        float yScale = new Vector3(invModelMat[1, 0], invModelMat[1, 1], invModelMat[1, 2]).magnitude;
+        float zScale = new Vector3(invModelMat[2, 0], invModelMat[2, 1], invModelMat[2, 2]).magnitude;
+
+        float maxScale = Mathf.Max(xScale, Mathf.Max(yScale, zScale));
+
+        //maxScale = maxScale == 0.0f ? 0.2f : 1.0f / maxScale;
+
+        _scaleBuffer[primIndex] = 1.0f / maxScale;
 
 
         // Colour information

@@ -27,6 +27,7 @@ public abstract class RayMarchShader : MonoBehaviour
 
 
     protected Matrix4x4[] _invModelMats = new Matrix4x4[32];   // The inverse transformation matrices of every object.
+    protected float[] _scaleBuffer = new float[32];             // The scaling info for every object.
     protected Vector4[] _combineOps = new Vector4[32];         // The object to scene combine operations, for every object.
     protected Vector4[] _primitiveGeoInfo = new Vector4[32];   // The geometric info for every primitive object.
     protected Vector4[] _altInfo = new Vector4[32];           // The alteration info for every object.

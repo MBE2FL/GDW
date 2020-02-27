@@ -525,10 +525,10 @@ public class ShaderBuilder : MonoBehaviour
             switch (prim.BoundShape)
             {
                 case BoundingShapes.Sphere:
-                    cheapMap.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                    cheapMap.AppendLine("sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                     break;
                 case BoundingShapes.Box:
-                    cheapMap.AppendLine("sdBox(pos.xyz, geoInfo.xyz);");
+                    cheapMap.AppendLine("sdBox(pos.xyz, geoInfo.xyz) * _scaleBuffer[" + primIndex + "];");
                     break;
                 default:
                     Debug.LogError("Obj's bound shape, in cheap map, could not be parsed.");
@@ -780,7 +780,7 @@ public class ShaderBuilder : MonoBehaviour
             map.Append("\t\t" + obj + " = ");
 
             // Determine primitive type
-            parsePrimitiveType(ref map, prim.PrimitiveType);
+            parsePrimitiveType(ref map, prim.PrimitiveType, primIndex);
 
             // Determine alteration operations
             parseAlterationTypes(ref map, prim.Alterations, ref altIndex, false);
@@ -826,7 +826,7 @@ public class ShaderBuilder : MonoBehaviour
             map.Append("\t\t" + obj + " = ");
 
             // Determine primitive type
-            parsePrimitiveType(ref map, prim.PrimitiveType);
+            parsePrimitiveType(ref map, prim.PrimitiveType, primIndex);
 
             // Store distance into distance buffer
             if (useDistBuf)
@@ -847,94 +847,94 @@ public class ShaderBuilder : MonoBehaviour
         }
     }
 
-    private void parsePrimitiveType(ref StringBuilder map, PrimitiveTypes type)
+    private void parsePrimitiveType(ref StringBuilder map, PrimitiveTypes type, uint primIndex)
     {
         switch (type)
         {
             case PrimitiveTypes.Sphere:
-                map.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Box:
-                map.AppendLine("sdBox(pos.xyz, geoInfo.xyz);");
+                map.AppendLine("sdBox(pos.xyz, geoInfo.xyz) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.RoundBox:
-                map.AppendLine("sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w);");
+                map.AppendLine("sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Torus:
-                map.AppendLine("sdTorus(pos.xyz, geoInfo.xy);");
+                map.AppendLine("sdTorus(pos.xyz, geoInfo.xy) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.CappedTorus:
-                map.AppendLine("sdCappedTorus(pos.xyz, geoInfo.xy, geoInfo.z, geoInfo.z);");
+                map.AppendLine("sdCappedTorus(pos.xyz, geoInfo.xy, geoInfo.z, geoInfo.z) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Link:
-                map.AppendLine("sdLink(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z);");
+                map.AppendLine("sdLink(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Cylinder:
-                map.AppendLine("sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);");
+                map.AppendLine("sdCylinder(pos.xyz, geoInfo.x, geoInfo.y) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.CappedCylinder:
-                map.AppendLine("sdCappedCylinder(pos.xyz, geoInfo.x, geoInfo.y);");
+                map.AppendLine("sdCappedCylinder(pos.xyz, geoInfo.x, geoInfo.y) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.CappedCylinderSlower:
-                map.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 Debug.LogError("Capped Cylinder Slower is not yet implemented!");
                 break;
             case PrimitiveTypes.RoundedCylinder:
-                map.AppendLine("sdRoundedCylinder(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z);");
+                map.AppendLine("sdRoundedCylinder(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Cone:
-                map.AppendLine("sdCone(pos.xyz, geoInfo.xy);");
+                map.AppendLine("sdCone(pos.xyz, geoInfo.xy) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.CappedCone:
-                map.AppendLine("sdCappedCone(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z);");
+                map.AppendLine("sdCappedCone(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.RoundCone:
-                map.AppendLine("sdRoundCone(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z);");
+                map.AppendLine("sdRoundCone(pos.xyz, geoInfo.x, geoInfo.y, geoInfo.z) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Plane:
-                map.AppendLine("sdPlane(pos.xyz, geoInfo);");
+                map.AppendLine("sdPlane(pos.xyz, geoInfo) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.HexagonalPrism:
-                map.AppendLine("sdHexagonalPrism(pos.xyz, geoInfo.xy);");
+                map.AppendLine("sdHexagonalPrism(pos.xyz, geoInfo.xy) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.TriangularPrism:
-                map.AppendLine("sdTriangularPrism(pos.xyz, geoInfo.xy);");
+                map.AppendLine("sdTriangularPrism(pos.xyz, geoInfo.xy) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Capsule:
-                map.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 Debug.LogError("Capsule is not yet implemented!");
                 break;
             case PrimitiveTypes.VerticalCapsule:
-                map.AppendLine("sdVerticalCapsule(pos.xyz, geoInfo.x, geoInfo.y);");
+                map.AppendLine("sdVerticalCapsule(pos.xyz, geoInfo.x, geoInfo.y) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.SolidAngle:
-                map.AppendLine("sdSolidAngle(pos.xyz, geoInfo.xy, geoInfo.z);");
+                map.AppendLine("sdSolidAngle(pos.xyz, geoInfo.xy, geoInfo.z) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Ellipsoid:
-                map.AppendLine("sdEllipsoid(pos.xyz, geoInfo.xyz);");
+                map.AppendLine("sdEllipsoid(pos.xyz, geoInfo.xyz) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Octahedron:
-                map.AppendLine("sdOctahedron(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdOctahedron(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.OctahedronBound:
-                map.AppendLine("sdOctahedronBound(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdOctahedronBound(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Triangle:
-                map.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 Debug.LogError("Triangle is not yet implemented!");
                 break;
             case PrimitiveTypes.Quad:
-                map.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 Debug.LogError("Quad is not yet implemented!");
                 break;
             case PrimitiveTypes.Tetrahedron:
-                map.AppendLine("sdTetra(pos.xyz);");
+                map.AppendLine("sdTetra(pos.xyz) * _scaleBuffer[" + primIndex + "];");
                 break;
             case PrimitiveTypes.Mandelbulb:
-                map.AppendLine("sdMandelbulb(pos.xyz, geoInfo.xy);");
+                map.AppendLine("sdMandelbulb(pos.xyz, geoInfo.xy) * _scaleBuffer[" + primIndex + "];");
                 break;
             default:
-                map.AppendLine("sdSphere(pos.xyz, geoInfo.x);");
+                map.AppendLine("sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[" + primIndex + "];");
                 Debug.LogError("Shader Parse: Unkown Primitive Type!");
                 break;
         }

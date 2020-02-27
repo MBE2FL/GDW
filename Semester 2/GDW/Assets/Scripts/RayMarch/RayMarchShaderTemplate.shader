@@ -50,6 +50,7 @@
     static const uint MAX_RM_OBJS = 32;
     static const uint MAX_CSG_CHILDREN = 16;
     float4x4 _invModelMats[MAX_RM_OBJS];
+    float _scaleBuffer[MAX_RM_OBJS];
     float4 _rm_colours[MAX_RM_OBJS];
     int _primitiveTypes[MAX_RM_OBJS];
     float2 _combineOps[MAX_RM_OBJS];
@@ -87,6 +88,23 @@
             color = float4(CustomPassSampleCameraColor(posInput.positionNDC.xy, 0), 1);
 
         // Add your custom pass code here
+
+        // Store maximum un-inverted scale for each objects's transformation matrix.
+        // float4x4 currInvMat;
+        // for (uint i = 0; i < MAX_RM_OBJS; ++i)
+        // {
+        // 	currInvMat = _invModelMats[i];
+
+        // 	float xScale = length(float3(currInvMat[0][0], currInvMat[0][1], currInvMat[0][2]));
+        // 	float yScale = length(float3(currInvMat[1][0], currInvMat[1][1], currInvMat[1][2]));
+        // 	float zScale = length(float3(currInvMat[2][0], currInvMat[2][1], currInvMat[2][2]));
+
+        // 	float maxScale = max(xScale, max(yScale, zScale));
+        // 	maxScale -= (when_eq_float(maxScale, 0.0) * 0.001);
+
+        // 	_scaleBuffer[i] = 1.0 / maxScale;
+        // }
+
 
         // Ray direction
         float3 rayDir = -viewDirection;

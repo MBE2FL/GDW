@@ -50,6 +50,7 @@ Shader "RayMarch/SkeletonTest"
     static const uint MAX_RM_OBJS = 32;
     static const uint MAX_CSG_CHILDREN = 16;
     float4x4 _invModelMats[MAX_RM_OBJS];
+    float _scaleBuffer[MAX_RM_OBJS];
     float4 _rm_colours[MAX_RM_OBJS];
     int _primitiveTypes[MAX_RM_OBJS];
     float2 _combineOps[MAX_RM_OBJS];
@@ -67,45 +68,7 @@ Shader "RayMarch/SkeletonTest"
     float4x4 _cameraInvMatrix;
     float4x4 _cameraMatrix;
 
-	//float4x4 inverse(float4x4 m) 
-	//{
-	//	float n11 = m[0][0], n12 = m[1][0], n13 = m[2][0], n14 = m[3][0];
-	//	float n21 = m[0][1], n22 = m[1][1], n23 = m[2][1], n24 = m[3][1];
-	//	float n31 = m[0][2], n32 = m[1][2], n33 = m[2][2], n34 = m[3][2];
-	//	float n41 = m[0][3], n42 = m[1][3], n43 = m[2][3], n44 = m[3][3];
-	//
-	//	float t11 = n23 * n34 * n42 - n24 * n33 * n42 + n24 * n32 * n43 - n22 * n34 * n43 - n23 * n32 * n44 + n22 * n33 * n44;
-	//	float t12 = n14 * n33 * n42 - n13 * n34 * n42 - n14 * n32 * n43 + n12 * n34 * n43 + n13 * n32 * n44 - n12 * n33 * n44;
-	//	float t13 = n13 * n24 * n42 - n14 * n23 * n42 + n14 * n22 * n43 - n12 * n24 * n43 - n13 * n22 * n44 + n12 * n23 * n44;
-	//	float t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
-	//
-	//	float det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
-	//	float idet = 1.0f / det;
-	//
-	//	float4x4 ret;
-	//
-	//	ret[0][0] = t11 * idet;
-	//	ret[0][1] = (n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44) * idet;
-	//	ret[0][2] = (n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44) * idet;
-	//	ret[0][3] = (n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43) * idet;
-	//
-	//	ret[1][0] = t12 * idet;
-	//	ret[1][1] = (n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44) * idet;
-	//	ret[1][2] = (n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44) * idet;
-	//	ret[1][3] = (n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43) * idet;
-	//
-	//	ret[2][0] = t13 * idet;
-	//	ret[2][1] = (n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44) * idet;
-	//	ret[2][2] = (n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44) * idet;
-	//	ret[2][3] = (n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43) * idet;
-	//
-	//	ret[3][0] = t14 * idet;
-	//	ret[3][1] = (n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34) * idet;
-	//	ret[3][2] = (n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34) * idet;
-	//	ret[3][3] = (n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33) * idet;
-	//
-	//	return ret;
-	//}
+
 
 	float cheapMap(float3 p)
 	{
@@ -122,12 +85,9 @@ Shader "RayMarch/SkeletonTest"
 		float storedCSGs[MAX_CSG_CHILDREN];
 
 		// ######### Ground #########
-		//float4x4 testMat = inverse(_invModelMats[0]);
-		//pos = mul(_invModelMats[0], float4(p, 1.0));
-		float3 invScale = float3(_invModelMats[0][0][0], _invModelMats[0][1][1], _invModelMats[0][2][2]);
 		pos = mul(_invModelMats[0], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[0];
-		obj = sdBox(pos.xyz, geoInfo.xyz) / max(invScale.x , max(invScale.y, invScale.z));
+		obj = sdBox(pos.xyz, geoInfo.xyz) * _scaleBuffer[0];
 
 		scene = opU(scene, obj);
 		// ######### Ground #########
@@ -135,7 +95,7 @@ Shader "RayMarch/SkeletonTest"
 		// ######### one #########
 		pos = mul(_invModelMats[1], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[1];
-		obj = sdSphere(pos.xyz, geoInfo.x);
+		obj = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[1];
 
 		scene = opU(scene, obj);
 		// ######### one #########
@@ -143,12 +103,12 @@ Shader "RayMarch/SkeletonTest"
 		// ######### Fractal CSG #########
 		pos = mul(_invModelMats[2], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[2];
-		obj = sdSphere(pos.xyz, geoInfo.x);
+		obj = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[2];
 
 
 		pos = mul(_invModelMats[3], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[3];
-		obj2 = sdSphere(pos.xyz, geoInfo.x);
+		obj2 = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[3];
 
 
 		storedCSGs[0] = opU(obj, obj2);
@@ -159,7 +119,7 @@ Shader "RayMarch/SkeletonTest"
 		// ######### two #########
 		pos = mul(_invModelMats[4], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[4];
-		obj = sdSphere(pos.xyz, geoInfo.x);
+		obj = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[4];
 
 		scene = opU(scene, obj);
 		// ######### two #########
@@ -167,7 +127,7 @@ Shader "RayMarch/SkeletonTest"
 		// ######### three #########
 		pos = mul(_invModelMats[5], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[5];
-		obj = sdSphere(pos.xyz, geoInfo.x);
+		obj = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[5];
 
 		scene = opU(scene, obj);
 		// ######### three #########
@@ -175,12 +135,12 @@ Shader "RayMarch/SkeletonTest"
 		// ######### CSG ONE #########
 		pos = mul(_invModelMats[6], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[6];
-		obj = sdBox(pos.xyz, geoInfo.xyz);
+		obj = sdBox(pos.xyz, geoInfo.xyz) * _scaleBuffer[6];
 
 
 		pos = mul(_invModelMats[7], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[7];
-		obj2 = sdSphere(pos.xyz, geoInfo.x);
+		obj2 = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[7];
 
 
 		storedCSGs[1] = opU(obj, obj2);
@@ -189,7 +149,7 @@ Shader "RayMarch/SkeletonTest"
 
 		pos = mul(_invModelMats[8], float4(p, 1.0));
 		geoInfo = _boundGeoInfo[8];
-		obj2 = sdSphere(pos.xyz, geoInfo.x);
+		obj2 = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[8];
 
 
 		storedCSGs[2] = opSmoothUnion(obj, obj2, _combineOpsCSGs[2].y);
@@ -216,15 +176,9 @@ Shader "RayMarch/SkeletonTest"
 		float3 cell = float3(0.0, 0.0, 0.0);
 
 		// ######### Ground #########
-		//float4x4 testMat = inverse(_invModelMats[0]);
-		//pos = mul(_invModelMats[0], float4(p, 1.0));
-		float3 invScale = float3(_invModelMats[0][0][0], _invModelMats[0][1][1], _invModelMats[0][2][2]);
 		pos = mul(_invModelMats[0], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[0];
-		//obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w) * max(_invModelMats[0][0][0], max(_invModelMats[0][1][1], _invModelMats[0][2][2]));
-		//obj = sdRoundBox(pos.xyz / float3(1.0, 0.35, 1.0), geoInfo.xyz, geoInfo.w) * min(1.0, min(0.35, 1.0));
-		obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w) / max(invScale.x , max(invScale.y, invScale.z)); // Scale is length of each axis in matrix. Inverse??
-		//obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w) * min(testMat[0][0], min(testMat[1][1], testMat[2][2]));
+		obj = sdRoundBox(pos.xyz, geoInfo.xyz, geoInfo.w) * _scaleBuffer[0];
 		distBuffer[0] = obj;
 
 		scene = opU(scene, obj);
@@ -233,7 +187,7 @@ Shader "RayMarch/SkeletonTest"
 		// ######### one #########
 		pos = mul(_invModelMats[1], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[1];
-		obj = sdSphere(pos.xyz, geoInfo.x);
+		obj = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[1];
 		distBuffer[1] = obj;
 
 		scene = opU(scene, obj);
@@ -242,13 +196,13 @@ Shader "RayMarch/SkeletonTest"
 		// ######### Fractal CSG #########
 		pos = mul(_invModelMats[2], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[2];
-		obj = sdMandelbulb(pos.xyz, geoInfo.xy);
+		obj = sdMandelbulb(pos.xyz, geoInfo.xy) * _scaleBuffer[2];
 		distBuffer[2] = obj;
 
 
 		pos = mul(_invModelMats[3], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[3];
-		obj2 = sdTetra(pos.xyz);
+		obj2 = sdTetra(pos.xyz) * _scaleBuffer[3];
 		distBuffer[3] = obj2;
 
 
@@ -260,7 +214,7 @@ Shader "RayMarch/SkeletonTest"
 		// ######### two #########
 		pos = mul(_invModelMats[4], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[4];
-		obj = sdSphere(pos.xyz, geoInfo.x);
+		obj = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[4];
 		distBuffer[4] = obj;
 
 		scene = opU(scene, obj);
@@ -269,7 +223,7 @@ Shader "RayMarch/SkeletonTest"
 		// ######### three #########
 		pos = mul(_invModelMats[5], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[5];
-		obj = sdSphere(pos.xyz, geoInfo.x);
+		obj = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[5];
 		distBuffer[5] = obj;
 
 		scene = opU(scene, obj);
@@ -278,13 +232,13 @@ Shader "RayMarch/SkeletonTest"
 		// ######### CSG ONE #########
 		pos = mul(_invModelMats[6], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[6];
-		obj = sdBox(pos.xyz, geoInfo.xyz);
+		obj = sdBox(pos.xyz, geoInfo.xyz) * _scaleBuffer[6];
 		distBuffer[6] = obj;
 
 
 		pos = mul(_invModelMats[7], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[7];
-		obj2 = sdSphere(pos.xyz, geoInfo.x);
+		obj2 = sdSphere(pos.xyz, geoInfo.x) * _scaleBuffer[7];
 		distBuffer[7] = obj2;
 
 
@@ -294,7 +248,7 @@ Shader "RayMarch/SkeletonTest"
 
 		pos = mul(_invModelMats[8], float4(p, 1.0));
 		geoInfo = _primitiveGeoInfo[8];
-		obj2 = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y);
+		obj2 = sdCylinder(pos.xyz, geoInfo.x, geoInfo.y) * _scaleBuffer[8];
 		distBuffer[8] = obj2;
 
 
@@ -428,6 +382,23 @@ Shader "RayMarch/SkeletonTest"
             color = float4(CustomPassSampleCameraColor(posInput.positionNDC.xy, 0), 1);
 
         // Add your custom pass code here
+
+        // Store maximum un-inverted scale for each objects's transformation matrix.
+        // float4x4 currInvMat;
+        // for (uint i = 0; i < MAX_RM_OBJS; ++i)
+        // {
+        // 	currInvMat = _invModelMats[i];
+
+        // 	float xScale = length(float3(currInvMat[0][0], currInvMat[0][1], currInvMat[0][2]));
+        // 	float yScale = length(float3(currInvMat[1][0], currInvMat[1][1], currInvMat[1][2]));
+        // 	float zScale = length(float3(currInvMat[2][0], currInvMat[2][1], currInvMat[2][2]));
+
+        // 	float maxScale = max(xScale, max(yScale, zScale));
+        // 	maxScale -= (when_eq_float(maxScale, 0.0) * 0.001);
+
+        // 	_scaleBuffer[i] = 1.0 / maxScale;
+        // }
+
 
         // Ray direction
         float3 rayDir = -viewDirection;
