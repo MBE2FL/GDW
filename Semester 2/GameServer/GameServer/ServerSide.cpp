@@ -536,19 +536,20 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 {
 
 	// Reveive transform updates from players.
-		//std::cout << "Received: " << buf << std::endl;
+
 
 	// Retrieve network id of incomming message.
 	INT8 networkID = buf[1];
 
 
+
 	// Extract data (FOR DEBUG ONLY).
-	size_t posSize = sizeof(float) * 3;
-	size_t rotSize = sizeof(float) * 4;
-	Vector3 posDebug;
-	Quaternion rotDebug;
-	memcpy(&posDebug._x, reinterpret_cast<float*>(&buf[2]), posSize);
-	memcpy(&rotDebug._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
+	//size_t posSize = sizeof(float) * 3;
+	//size_t rotSize = sizeof(float) * 4;
+	//Vector3 posDebug;
+	//Quaternion rotDebug;
+	//memcpy(&posDebug._x, reinterpret_cast<float*>(&buf[2]), posSize);
+	//memcpy(&rotDebug._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
 	//cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
 	//cout << posDebug.toString() << rotDebug.toString();
 
@@ -563,44 +564,58 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 		// Don't send back to the same client who sent the data.
 		if (client->_id == networkID)
 		{
-			//if (client->_id == 0)
-			//{
-			//	cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
-			//	cout << posDebug.toString() << rotDebug.toString();
-			//}
-
-			//cout << "Client TCP: " << client->_ip << endl;
-
-			//char ipbuf[INET_ADDRSTRLEN];
-			//inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
-			//cout << "Client UDP: " << ipbuf << endl;
-
-			//char ip[BUF_LEN];
-			//inet_ntop(AF_INET, &fromAddr.sin_addr, ip, sizeof(ip));
-			//cout << "IP: " << ip << endl;
-
-			//char port[BUF_LEN];
-			//cout << "UDP Port: " << ntohs(fromAddr.sin_port) << endl;
-
-			//char port2[BUF_LEN];
-			//cout << "UDP Port 2: " << ntohs(client->fromAddr.sin_port) << endl;
-
 			continue;
 		}
 
-		//cout << client->_ip << endl;
 
-
-		// Send data to other client.
-		//if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&(client->fromAddr), client->_sockAddrLen) == SOCKET_ERROR)
+		// Send data to other clients.
 		if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&client->fromAddr, client->_sockAddrLen) == SOCKET_ERROR)
 		{
 			printf("Failed to send transform data. %d\n", WSAGetLastError());
 		}
-		//else
-		//{
-		//	cout << "Sent Transform" << endl;
-		//}
+	}
+}
+
+void Server::processAnim(char buf[BUF_LEN], SOCKET* socket)
+{
+
+	// Reveive anim updates from players.
+
+	if (recv(*socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		cout << "Could not read packet from TCP socket!" << endl;
+	}
+
+	// Retrieve network id of incomming message.
+	INT8 networkID = buf[1];
+
+
+	// Extract data (FOR DEBUG ONLY).
+	size_t animStateSize = sizeof(int);
+	int state = -1;
+	memcpy(&state, reinterpret_cast<int*>(&buf[DATA_START_POS]), animStateSize);
+	cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
+	cout << state << endl;
+
+
+	// Send data too all other clients.
+	SOCKET* client;
+	vector<SOCKET*>::const_iterator it;
+	for (it = _clientTCPSockets.cbegin(); it != _clientTCPSockets.cend(); ++it)
+	{
+		client = *it;
+
+		// Don't send back to the same client who sent the data.
+		if (client == socket)
+		{
+			continue;
+		}
+
+		// Send data to other clients.
+		if (send(*client, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			printf("Failed to send anim data. %d\n", WSAGetLastError());
+		}
 	}
 }
 
@@ -655,7 +670,7 @@ void Server::udpUpdate()
 
 			switch (msgType)
 			{
-			case TransformData:
+			case TransformMsg:
 				processTransform(buf, fromAddr, fromLen);
 				break;
 			case ConnectionAttempt:
@@ -677,28 +692,48 @@ void Server::tcpUpdate()
 
 	while (true)
 	{
-		while (_clientTCPSockets.empty())
-		{
-			
-		}
+		if (_clientTCPSockets.empty())
+			continue;
 
 		char buf[BUF_LEN];
 		memset(buf, '\0', BUF_LEN);
 
 		int bytes_received = -1;
-		int sError = -1;
+		int wsaError = -1;
 
 		// Receive message from a client.
-		//vector<SOCKET*>::const_iterator it;
-		//for (it = _clientTCPSockets.cbegin(); it != _clientTCPSockets.cend(); ++it)
-		//{
-		//	bytes_received = recv(*(*it), buf, BUF_LEN, 0);
-		//}
+		fd_set fds;
+		FD_ZERO(&fds);
+		for (SOCKET* tcpSocket : _clientTCPSockets)
+		{
+			FD_SET(*tcpSocket, &fds);
+		}
+
+		if (fds.fd_count <= 0)
+			continue;
+		
+
+		wsaError = select(NULL, &fds, NULL, NULL, NULL);
+
+		if (wsaError == SOCKET_ERROR)
+		{
+			cout << "TCP Read Wait Error!" << endl;
+		}
+		else if (wsaError >= 1)
+		{
+			for (int i = 0; i < fds.fd_count; ++i)
+			{
+				bytes_received = recv(fds.fd_array[i], buf, BUF_LEN, 0);
+
+				cout << bytes_received << endl;
+			}
+		}
+
+
+
 
 		//sError = WSAGetLastError();
 
 		//cout << sError << endl;
-
-		// Packet recieved
 	}
 }

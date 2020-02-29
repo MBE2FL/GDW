@@ -1,26 +1,43 @@
 #pragma once
-//#include <iostream>
+#include <iostream>
+#include <cstdint>
 
 #define BUF_LEN 512
+#define MSG_TYPE_POS 0
+#define NET_ID_POS 1
+#define OBJ_ID_POS 2
+#define DATA_START_POS 3
 
-enum MessageTypes : INT8
+enum MessageTypes : int8_t
 {
 	ConnectionAttempt,
 	ConnectionAccepted,
 	ConnectionFailed,
 	ServerFull,
-	TransformData
+	TransformMsg,
+	Anim
 };
+
+
+class TransformPacket;
+class AnimPacket;
 
 
 class Packet
 {
 public:
-	virtual void serialize() = 0;
-	virtual void deserialize() = 0;
+	Packet(int8_t networkID, int8_t objID);
+	virtual void serialize(void* data) = 0;
+	virtual void deserialize(void* data) = 0;
+
+	static Packet* CreatePacket(char buf[BUF_LEN]);
+	//static Packet* CreatePacket(MessageTypes msgType, int8_t networkID, int8_t objID);
 
 
 	char _data[BUF_LEN];
+
+protected:
+	Packet() {};
 
 private:
 	Packet& operator=(const Packet& other) {};

@@ -1,3 +1,10 @@
-﻿  ServerSide.cpp
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(181,22): warning C4267: '=': conversion from 'size_t' to 'INT8', possible loss of data
+﻿  AnimPacket.cpp
+  Packet.cpp
+  TransformPacket.cpp
+  main.cpp
+  ServerSide.cpp
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(181,22): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(740,22): warning C4018: '<': signed/unsigned mismatch
+  Generating Code...
+     Creating library D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.lib and object D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.exp
   GameServer.vcxproj -> D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe

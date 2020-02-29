@@ -13,6 +13,7 @@
 #include "Transform.h"
 #include "PluginSettings.h"
 #include <thread>
+#include "Packet.h"
 
 
 // Networking
@@ -42,14 +43,14 @@ struct CS_to_Plugin_Functions
 };
 
 
-enum MessageTypes : INT8
-{
-	ConnectionAttempt,
-	ConnectionAccepted,
-	ConnectionFailed,
-	ServerFull,
-	TransformData
-};
+//enum MessageTypes : INT8
+//{
+//	ConnectionAttempt,
+//	ConnectionAccepted,
+//	ConnectionFailed,
+//	ServerFull,
+//	TransformData
+//};
 
 
 class PLUGIN_OUT ClientSide
@@ -79,5 +80,5 @@ private:
 	SOCKET _clientTCPsocket;
 	struct addrinfo* _ptr = NULL;
 	string _serverIP = "";
-	INT8 _networkID = NULL;
+	int8_t _networkID = NULL;
 };

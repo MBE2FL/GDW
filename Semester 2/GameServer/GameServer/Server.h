@@ -15,7 +15,8 @@
 #include <thread>
 #include <mutex>
 
-#include "../../CommonNetworking/Packet.h"
+#include "Packet.h"
+#include "TransformPacket.h"
 
 
 using std::cout;
@@ -40,7 +41,7 @@ struct Client
 	Transform _transform;
 	string _ip = "";
 	bool connected = false;
-	INT8 _id = NULL;
+	int8_t _id = NULL;
 	sockaddr* _sockAddr;
 	int _sockAddrLen;
 	sockaddr_in fromAddr;
@@ -70,6 +71,7 @@ public:
 	void connectPlayer(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen);
 	void listenForConnections();
 	void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen);
+	void processAnim(char buf[BUF_LEN], SOCKET* socket);
 
 	void update();
 	void initUpdateThreads();

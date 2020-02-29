@@ -395,7 +395,7 @@ void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
 	char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
 
-	buf[0] = MessageTypes::TransformData;
+	buf[0] = MessageTypes::TransformMsg;
 	buf[1] = _networkID;
 
 	size_t posSize = sizeof(float) * 3;
@@ -420,7 +420,16 @@ void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
 		//cout << posDebug.toString() << rotDebug.toString();
 	}
 
-
+	char test[BUF_LEN];
+	memset(test, 0, BUF_LEN);
+	test[0] = MessageTypes::Anim;
+	test[1] = _networkID;
+	test[2] = int8_t(0);
+	test[3] = int8_t(1);
+	if (send(_clientTCPsocket, test, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		cout << "TCP Test Error!" << endl;
+	}
 
 	//string msg = _networkID + " X " + to_string(position._x)
 	//						+ " Y " + to_string(position._y)
@@ -486,7 +495,7 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 
 		switch (msgType)
 		{
-		case TransformData:
+		case TransformMsg:
 		{
 			Vector3 pos;
 			Quaternion rot;
