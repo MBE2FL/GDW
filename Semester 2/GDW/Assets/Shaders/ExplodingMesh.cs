@@ -8,7 +8,7 @@ public class ExplodingMesh : MonoBehaviour
     private ComputeShader shader;
     private ComputeShader displacementShader;
     private ComputeShader memoryShader;
-    public float lerp = 0.0f;
+     float lerp = -5.6f;
     public float dropDistance = 0.0f;
 
     Mesh mesh;
@@ -371,6 +371,9 @@ public class ExplodingMesh : MonoBehaviour
         //Vector4[] temp3 = new Vector4[mesh.triangles.Length];
         if (lerp > 1)
             lerp = 1.0f;
+
+        gameObject.GetComponent<MeshRenderer>().material.SetFloat("t", lerp);
+
         //for (int i = 0; i < mesh.triangles.Length; i++)
         //{
         //    temp3[i].x = lerp;

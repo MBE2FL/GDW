@@ -16,23 +16,38 @@ public class AddExploding : MonoBehaviour
                 if (meshList[i].gameObject.GetComponent<MeshRenderer>().material != null)
                 {
                     Texture tex;
-                    if (meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture") != null)
-                    {
-                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture");
-                    }
-                    else if(meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("_BaseColorMap") != null)
-                    {
-                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("_BaseColorMap");
-                    }
-                    else
-                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture");
-
+                    // if (meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture") != null)
+                    // {
+                    //     tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture");
+                    // }
+                    // else if(meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("_BaseColorMap") != null)
+                    // {
+                    //     tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("_BaseColorMap");
+                    // }
+                    // else
+                    //string[] names = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexturePropertyNames();
+                    string name = meshList[i].gameObject.GetComponent<MeshRenderer>().material.shader.GetPropertyName(0);
                     //meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexturePropertyNameIDs()
 
                     // meshList[i].gameObject.GetComponent<MeshRenderer>().material.shader = Shader.Find("Shader Graphs/GeoGraph");
                     // meshList[i].gameObject.GetComponent<MeshRenderer>().material.SetTexture("BIG atlas", tex);
+                    if (name == "_HdrpVersion")
+                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("_BaseColorMap");
+                    else
+                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture(name);
+                    //Debug.Log(name);
+
+
+
+
+
+
                     meshList[i].gameObject.GetComponent<MeshRenderer>().material = (Material)Resources.Load("Geo atlas");
-                    meshList[i].gameObject.GetComponent<MeshRenderer>().material.SetTexture("tex", tex);
+                    meshList[i].gameObject.GetComponent<MeshRenderer>().material.SetTexture("GeoTexture", tex);
+
+                    meshList[i].gameObject.GetComponent<MeshRenderer>().material.doubleSidedGI = true;
+
+
                 }
             }
            

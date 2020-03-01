@@ -23,10 +23,10 @@ Material:
   m_Name: Geo Tutorial Map 1
   m_Shader: {fileID: -6465566751694194690, guid: aad1b995a02d7694cb97cfbc2756a8c4,
     type: 3}
-  m_ShaderKeywords: 
+  m_ShaderKeywords: _DOUBLESIDED_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: 2000
   stringTagMap:
     MotionVector: User
@@ -36,6 +36,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - GeoTexture:
+        m_Texture: {fileID: 2800000, guid: 498451a191a140742b04bcd966126f75, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - Texture2D_32DAAF11:
         m_Texture: {fileID: 2800000, guid: 498451a191a140742b04bcd966126f75, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -140,8 +144,8 @@ Material:
     - _Anisotropy: 0
     - _BlendMode: 0
     - _CoatMask: 0
-    - _CullMode: 2
-    - _CullModeForward: 2
+    - _CullMode: 0
+    - _CullModeForward: 0
     - _Cutoff: 0.5
     - _DepthOffsetEnable: 0
     - _DetailAlbedoScale: 1
@@ -166,7 +170,7 @@ Material:
     - _DistortionSrcBlend: 0
     - _DistortionVectorBias: -1
     - _DistortionVectorScale: 2
-    - _DoubleSidedEnable: 0
+    - _DoubleSidedEnable: 1
     - _DoubleSidedNormalMode: 1
     - _DstBlend: 0
     - _EmissiveColorMode: 1
@@ -246,6 +250,7 @@ Material:
     - _ZTestModeDistortion: 8
     - _ZTestTransparent: 4
     - _ZWrite: 1
+    - t: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
