@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ExplodingMesh : MonoBehaviour
 {
@@ -33,8 +31,8 @@ public class ExplodingMesh : MonoBehaviour
     int[] newTris;
     
     
-    public Vector3[] data;
-    public Vector3[] baseData;
+    //public Vector3[] data;
+    Vector3[] baseData;
     Vector3[] output;
     bool reset = true;
     bool re = true;
@@ -50,31 +48,40 @@ public class ExplodingMesh : MonoBehaviour
         vertices = mesh.vertices;
         normals = mesh.normals;
         uvs = mesh.uv;
-        
 
+        
 
         newNormals = new Vector3[triangles.Length];
         newUvs = new Vector2[triangles.Length];
         newVerts = new Vector3[triangles.Length];
         newTris = new int[triangles.Length];
         baseData = new Vector3[triangles.Length];
-        data = new Vector3[triangles.Length];
+        //data = new Vector3[triangles.Length];
         output = new Vector3[triangles.Length];
 
 
-        for(int i = 0; i < triangles.Length; i++)
+        for (int i = 0; i < triangles.Length; i++)
         {
             newTris[i] = i;
         }
 
         RunMemShader();
-        mesh.vertices = newVerts;
-        mesh.uv2 = new Vector2[triangles.Length];
-        mesh.uv3 = new Vector2[triangles.Length];
-        mesh.uv4 = new Vector2[triangles.Length];
-        mesh.uv = newUvs;
-        mesh.triangles = newTris;
-        mesh.normals = newNormals;
+        // mesh.vertices = newVerts;
+        // mesh.uv2 = new Vector4[triangles.Length];
+        // mesh.uv3 = new Vector2[triangles.Length];
+        // mesh.uv4 = new Vector2[triangles.Length];
+        // mesh.uv = newUvs;
+        // mesh.triangles = newTris;
+        // mesh.normals = newNormals;
+        //mesh = new Mesh();
+        mesh.SetVertices(newVerts);
+        mesh.SetTriangles(newTris, 0);
+        mesh.SetUVs(1, new Vector2[triangles.Length]);
+        mesh.SetUVs(2, new Vector2[triangles.Length]);
+        mesh.SetUVs(3, new Vector2[triangles.Length]);
+        mesh.SetUVs(0, newUvs);
+        mesh.SetNormals(newNormals);
+
         if (useNormals)
         {
             RunExpShader();
@@ -84,7 +91,7 @@ public class ExplodingMesh : MonoBehaviour
             RunDisShader();
         }
 
-        
+
 
         Vector2[] temp1 = new Vector2[triangles.Length];
         Vector2[] temp2 = new Vector2[triangles.Length];
@@ -92,107 +99,118 @@ public class ExplodingMesh : MonoBehaviour
 
         for (int i = 0; i < triangles.Length; i++)
         {
+            //temp1[i].x = baseData[i].x;
+            //temp1[i].y = newVerts[i].x;
+            //
+            //temp2[i].x = baseData[i].y;
+            //temp2[i].y = newVerts[i].y;
+            //
+            //temp3[i].x = baseData[i].z;
+            //temp3[i].y = newVerts[i].z;
+
             temp1[i].x = baseData[i].x;
-            temp1[i].y = newVerts[i].x;
+            temp1[i].y = baseData[i].y;
 
-            temp2[i].x = baseData[i].y;
-            temp2[i].y = newVerts[i].y;
+            temp2[i].x = baseData[i].z;
+            temp2[i].y = newVerts[i].x;
 
-            temp3[i].x = baseData[i].z;
+            temp3[i].x = newVerts[i].y;
             temp3[i].y = newVerts[i].z;
+
         }
-        mesh.uv2 = temp1;
-        mesh.uv3 = temp2;
-        mesh.uv4 = temp3;
+        mesh.SetUVs(1, temp1);
+        mesh.SetUVs(2, temp2);
+        mesh.SetUVs(3, temp3);
 
-
-            //data = new Matrix4x4[mesh.triangles.Length/3];
-            //output = new Matrix4x4[mesh.triangles.Length/3];
-            
-            //baseData = new Matrix4x4[mesh.triangles.Length/3];
-            
-            //int j = 0;
-            //for (int i = 0; i < data.Length; i++)
-            //{
-            //    data[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-            //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i *0.1f,
-            //        mesh.vertices[mesh.triangles[j]].z, 0));
-            //    baseData[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-            //        mesh.vertices[mesh.triangles[j]].y,
-            //        mesh.vertices[mesh.triangles[j]].z, 0));
-            //    j++;
-                
-            //    data[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-            //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
-            //        mesh.vertices[mesh.triangles[j]].z, 0));
-            //    baseData[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-            //        mesh.vertices[mesh.triangles[j]].y,
-            //        mesh.vertices[mesh.triangles[j]].z, 0));
-            //    j++;
-            
-            //    data[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-            //        mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
-            //        mesh.vertices[mesh.triangles[j]].z, 0));
-            //    baseData[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
-            //        mesh.vertices[mesh.triangles[j]].y,
-            //        mesh.vertices[mesh.triangles[j]].z, 0));
-            //    j++;
-            
-            //    data[i].SetRow(3, new Vector4(0, 0, 0, 0));
-            //    baseData[i].SetRow(3, new Vector4(0, 0, 0, 0)); 
-            
-            //}
-            //RunShader();
-        }
-
-    private void RunShader()
-    {
-        if (lerp > 0.99)
         {
-            if (reset)
+            /*data = new Matrix4x4[mesh.triangles.Length/3];
+            output = new Matrix4x4[mesh.triangles.Length/3];
+            
+            baseData = new Matrix4x4[mesh.triangles.Length/3];
+            
+            int j = 0;
+            for (int i = 0; i < data.Length; i++)
             {
-                mesh.triangles = triangles;
-                mesh.vertices = vertices;
-                mesh.normals = normals;
-                mesh.uv = uvs;
-                reset = false;
-                re = true;
+                data[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+                    mesh.vertices[mesh.triangles[j]].y - dropDistance - i *0.1f,
+                    mesh.vertices[mesh.triangles[j]].z, 0));
+                baseData[i].SetRow(0, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+                    mesh.vertices[mesh.triangles[j]].y,
+                    mesh.vertices[mesh.triangles[j]].z, 0));
+                j++;
+              
+                data[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+                    mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
+                    mesh.vertices[mesh.triangles[j]].z, 0));
+                baseData[i].SetRow(1, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+                    mesh.vertices[mesh.triangles[j]].y,
+                    mesh.vertices[mesh.triangles[j]].z, 0));
+                j++;
+            
+                data[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+                    mesh.vertices[mesh.triangles[j]].y - dropDistance - i * 0.1f,
+                    mesh.vertices[mesh.triangles[j]].z, 0));
+                baseData[i].SetRow(2, new Vector4(mesh.vertices[mesh.triangles[j]].x,
+                    mesh.vertices[mesh.triangles[j]].y,
+                    mesh.vertices[mesh.triangles[j]].z, 0));
+                j++;
+            
+                data[i].SetRow(3, new Vector4(0, 0, 0, 0));
+                baseData[i].SetRow(3, new Vector4(0, 0, 0, 0)); 
+            
             }
+            RunShader();*/
         }
-        else if (data.Length > 0)
-        {
-            ComputeBuffer buffer = new ComputeBuffer(data.Length, 3 * 4);
-            ComputeBuffer baseBuffer = new ComputeBuffer(baseData.Length, 3 * 4);
-
-            buffer.SetData(data);
-            baseBuffer.SetData(baseData);
-
-            int kernelHandle = shader.FindKernel("CSMain");
-            shader.SetBuffer(kernelHandle, "dataBuffer", buffer);
-            shader.SetFloat("t", lerp);
-
-            //shader.Dispatch(kernelHandle, data.Length, 1, 1);
-            shader.SetBuffer(kernelHandle, "baseBuffer", baseBuffer);
-            shader.Dispatch(kernelHandle, baseData.Length, 1, 1);
-
-            //output = data;
-            buffer.GetData(output); ;
-            buffer.Dispose();
-            baseBuffer.Dispose();
-
-            mesh.vertices = output;
-            if (re)
-            {
-                mesh.triangles = newTris;
-                mesh.normals = newNormals;
-                mesh.uv = newUvs;
-                reset = true;
-                re = false;
-            }
-        }
-        //mesh.vertices = vertices;
-        //mesh.triangles = triangles;
     }
+
+    //private void RunShader()
+    //{
+    //    if (lerp > 0.99)
+    //    {
+    //        if (reset)
+    //        {
+    //            mesh.triangles = triangles;
+    //            mesh.vertices = vertices;
+    //            mesh.normals = normals;
+    //            mesh.uv = uvs;
+    //            reset = false;
+    //            re = true;
+    //        }
+    //    }
+    //    else if (data.Length > 0)
+    //    {
+    //        ComputeBuffer buffer = new ComputeBuffer(data.Length, 3 * 4);
+    //        ComputeBuffer baseBuffer = new ComputeBuffer(baseData.Length, 3 * 4);
+
+    //        buffer.SetData(data);
+    //        baseBuffer.SetData(baseData);
+
+    //        int kernelHandle = shader.FindKernel("CSMain");
+    //        shader.SetBuffer(kernelHandle, "dataBuffer", buffer);
+    //        shader.SetFloat("t", lerp);
+
+    //        //shader.Dispatch(kernelHandle, data.Length, 1, 1);
+    //        shader.SetBuffer(kernelHandle, "baseBuffer", baseBuffer);
+    //        shader.Dispatch(kernelHandle, baseData.Length, 1, 1);
+
+    //        //output = data;
+    //        buffer.GetData(output); ;
+    //        buffer.Dispose();
+    //        baseBuffer.Dispose();
+
+    //        mesh.vertices = output;
+    //        if (re)
+    //        {
+    //            mesh.triangles = newTris;
+    //            mesh.normals = newNormals;
+    //            mesh.uv = newUvs;
+    //            reset = true;
+    //            re = false;
+    //        }
+    //    }
+    //    //mesh.vertices = vertices;
+    //    //mesh.triangles = triangles;
+    //}
 
     private void RunDisShader()
     {
@@ -219,28 +237,28 @@ public class ExplodingMesh : MonoBehaviour
         {
 
             Tri[] triangle = new Tri[newVerts.Length / 3];
-            Tri[] normals = new Tri[newVerts.Length / 3];
+            Tri[] norm = new Tri[newVerts.Length / 3];
             int j = 0;
             for (int i = 0; i < triangle.Length; i++)
             {
                 triangle[i].p1 = newVerts[j];
-                normals[i].p1 = newNormals[j];
+                norm[i].p1 = newNormals[j];
                 j++;
 
                 triangle[i].p2 = newVerts[j];
-                normals[i].p2 = newNormals[j];
+                norm[i].p2 = newNormals[j];
                 j++;
 
                 triangle[i].p3 = newVerts[j];
-                normals[i].p3 = newNormals[j];
+                norm[i].p3 = newNormals[j];
                 j++;
             }
 
             ComputeBuffer buffer = new ComputeBuffer(triangle.Length, 9 * 4);
             buffer.SetData(triangle);
 
-            ComputeBuffer normBuffer = new ComputeBuffer(normals.Length, 9 * 4);
-            normBuffer.SetData(normals);
+            ComputeBuffer normBuffer = new ComputeBuffer(norm.Length, 9 * 4);
+            normBuffer.SetData(norm);
 
             int kernelHandle = explosiveShader.FindKernel("Main");
             explosiveShader.SetBuffer(kernelHandle, "dataBuffer", buffer);
@@ -350,19 +368,32 @@ public class ExplodingMesh : MonoBehaviour
     {
         //RunShader();
         lerp += Time.deltaTime * 0.2f;
+        //Vector4[] temp3 = new Vector4[mesh.triangles.Length];
+        if (lerp > 1)
+            lerp = 1.0f;
+        //for (int i = 0; i < mesh.triangles.Length; i++)
+        //{
+        //    temp3[i].x = lerp;
+        //}
+        //mesh.SetUVs(3, temp3);
     }
 
     private void OnApplicationQuit()
     {
         if (mesh != null)
         {
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
-            mesh.normals = normals;
-            mesh.uv = uvs;
+            // mesh.vertices = vertices;
+            // mesh.triangles = triangles;
+            // mesh.normals = normals;
+            // mesh.uv = uvs;
+            mesh = new Mesh();
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles,0);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
             mesh.uv2 = null;
             mesh.uv3 = null;
-            mesh.uv4 = null;
+            mesh.uv4 = null; 
         }
     }
 }

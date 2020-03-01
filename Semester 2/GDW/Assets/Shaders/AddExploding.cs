@@ -15,10 +15,24 @@ public class AddExploding : MonoBehaviour
                 meshList[i].gameObject.AddComponent(typeof(ExplodingMesh));
                 if (meshList[i].gameObject.GetComponent<MeshRenderer>().material != null)
                 {
-                    // Texture tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.mainTexture;
+                    Texture tex;
+                    if (meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture") != null)
+                    {
+                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture");
+                    }
+                    else if(meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("_BaseColorMap") != null)
+                    {
+                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("_BaseColorMap");
+                    }
+                    else
+                        tex = meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture");
+
+                    //meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexturePropertyNameIDs()
+
                     // meshList[i].gameObject.GetComponent<MeshRenderer>().material.shader = Shader.Find("Shader Graphs/GeoGraph");
                     // meshList[i].gameObject.GetComponent<MeshRenderer>().material.SetTexture("BIG atlas", tex);
                     meshList[i].gameObject.GetComponent<MeshRenderer>().material = (Material)Resources.Load("Geo atlas");
+                    meshList[i].gameObject.GetComponent<MeshRenderer>().material.SetTexture("tex", tex);
                 }
             }
            
