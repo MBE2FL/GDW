@@ -15,6 +15,7 @@ public class AddExploding : MonoBehaviour
                 meshList[i].gameObject.AddComponent(typeof(ExplodingMesh));
                 if (meshList[i].gameObject.GetComponent<MeshRenderer>().material != null)
                 {
+                    meshList[i].gameObject.GetComponent<ExplodingMesh>().oldMaterial = meshList[i].gameObject.GetComponent<MeshRenderer>().material;
                     Texture tex;
                     // if (meshList[i].gameObject.GetComponent<MeshRenderer>().material.GetTexture("Base Texture") != null)
                     // {
