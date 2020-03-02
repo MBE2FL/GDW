@@ -47,7 +47,6 @@ public class memoryPlay : MonoBehaviour
         if (other.transform.tag == "Brother" || other.transform.tag == "Sister")
         {
             inPlayRange = true;
-            Debug.Log("Reeeeet");
         }
     }
 
