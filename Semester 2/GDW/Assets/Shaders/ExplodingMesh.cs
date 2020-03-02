@@ -372,7 +372,7 @@ public class ExplodingMesh : MonoBehaviour
         //RunShader();
         lerp += Time.deltaTime * 0.2f;
         //Vector4[] temp3 = new Vector4[mesh.triangles.Length];
-        if (lerp > 1)
+        if (lerp > 0.999f)
         {
             lerp = 1.0f;
             if(oldMaterial)
