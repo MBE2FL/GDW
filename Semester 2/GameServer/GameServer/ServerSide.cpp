@@ -564,6 +564,19 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 		// Don't send back to the same client who sent the data.
 		if (client->_id == networkID)
 		{
+			// FOR DEBUG ONLY
+			Packet* packet = new TransformPacket(buf);
+			TransformData data = TransformData();
+			int8_t objID = -1;
+			packet->deserialize(objID, &data);
+			delete packet;
+			packet = nullptr;
+
+			// Send data to other clients.
+			if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&client->fromAddr, client->_sockAddrLen) == SOCKET_ERROR)
+			{
+				printf("Failed to send transform data. %d\n", WSAGetLastError());
+			}
 			continue;
 		}
 
@@ -725,7 +738,9 @@ void Server::tcpUpdate()
 			{
 				bytes_received = recv(fds.fd_array[i], buf, BUF_LEN, 0);
 
-				cout << bytes_received << endl;
+				int state = -1;
+				memcpy(&state, reinterpret_cast<int*>(&buf[DATA_START_POS]), sizeof(int));
+				cout << state << endl;
 			}
 		}
 

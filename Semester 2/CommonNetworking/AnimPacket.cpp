@@ -18,8 +18,10 @@ void AnimPacket::serialize(void* data)
 	memcpy(&_data, reinterpret_cast<char*>(&animData._state), animStateSize);
 }
 
-void AnimPacket::deserialize(void* data)
+void AnimPacket::deserialize(int8_t& objID, void* data)
 {
+	objID = _data[OBJ_ID_POS];
+
 	size_t animStateSize = sizeof(int);
 	int state = -1;
 	memcpy(&state, reinterpret_cast<int*>(&_data[DATA_START_POS]), animStateSize);

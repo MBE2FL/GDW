@@ -60,9 +60,24 @@ PLUGIN_OUT bool queryConnectAttempt(int& id)
 	return cs.queryConnectAttempt(id);
 }
 
-PLUGIN_OUT void sendData(const Vector3& position, const Quaternion& rotation)
+//PLUGIN_OUT void sendData(const Vector3& position, const Quaternion& rotation)
+//{
+//	return cs.sendData(position, rotation);
+//}
+
+PLUGIN_OUT void sendData(const int msgType, const int objID, void* data)
 {
-	return cs.sendData(position, rotation);
+	return cs.sendData(msgType, objID, data);
+}
+
+PLUGIN_OUT void receiveData(MessageTypes& msgType, int& objID, void* data)
+{
+	return cs.receiveData(msgType, objID, data);
+}
+
+PLUGIN_OUT char* getReceiveData(int& numElements)
+{
+	return cs.getReceiveData(numElements);
 }
 
 PLUGIN_OUT void receiveData(Vector3& position, Quaternion& rotation)

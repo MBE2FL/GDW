@@ -425,7 +425,8 @@ void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
 	test[0] = MessageTypes::Anim;
 	test[1] = _networkID;
 	test[2] = int8_t(0);
-	test[3] = int8_t(1);
+	int state = 1;
+	memcpy(&test[3], &state, sizeof(int));
 	if (send(_clientTCPsocket, test, BUF_LEN, 0) == SOCKET_ERROR)
 	{
 		cout << "TCP Test Error!" << endl;
@@ -465,6 +466,56 @@ void ClientSide::sendData(const Vector3& position, const Quaternion& rotation)
 	//
 
 	//memset(buf, 0, BUF_LEN);
+}
+
+void ClientSide::sendData(const int msgType, const int objID, void* data)
+{
+	Packet* packet = nullptr;
+
+	MessageTypes _msgType = static_cast<MessageTypes>(msgType);
+
+	switch (_msgType)
+	{
+	case TransformMsg:
+		packet = new TransformPacket(_networkID, objID);
+		break;
+	case Anim:
+		packet = new AnimPacket(_networkID, objID);
+		break;
+	default:
+		break;
+	}
+
+	// Failed to create a packet.
+	if (!packet)
+	{
+		cout << "Failed to create and send a packet!" << endl;
+		return;
+	}
+
+
+	// Serialize data to be sent.
+	packet->serialize(data);
+
+
+	// Failed to send message.
+	if (sendto(_clientUDPsocket, packet->_data, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
+	{
+		cout << "Failed to send packet on UDP socket!\n" << endl;
+	}
+	// Successfully sent message.
+	else
+	{
+		//Vector3 posDebug;
+		//Quaternion rotDebug;
+		//memcpy(&posDebug._x, reinterpret_cast<float*>(&buf[2]), posSize);
+		//memcpy(&rotDebug._x, reinterpret_cast<float*>(&buf[2 + posSize]), rotSize);
+		//cout << "Msg Type: " << int(buf[0]) << ", ID: " << int(buf[1]) << endl;
+		//cout << posDebug.toString() << rotDebug.toString();
+	}
+
+	delete packet;
+	packet = nullptr;
 }
 
 void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
@@ -544,6 +595,287 @@ void ClientSide::receiveData(Vector3& position, Quaternion& rotation)
 		position = _otherTransform._position;
 		rotation = _otherTransform._rotation;
 	}
+}
+
+#pragma region VOID_RECEIVE
+//void ClientSide::receiveData(MessageTypes& msgType, int& objID, void* data)
+//{
+//	char buf[BUF_LEN];
+//	sockaddr_in fromAddr;
+//	int fromLen;
+//	fromLen = sizeof(fromAddr);
+//
+//	memset(buf, 0, BUF_LEN);
+//
+//	int bytes_received = -1;
+//	int sError = -1;
+//
+//
+//	// Reveive updates from the server.
+//	bytes_received = recvfrom(_clientUDPsocket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, &fromLen);
+//
+//	sError = WSAGetLastError();
+//
+//
+//	// Received data from server.
+//	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+//	{
+//		//MessageTypes msgType = static_cast<MessageTypes>(buf[0]);
+//		msgType = static_cast<MessageTypes>(buf[0]);
+//
+//		switch (msgType)
+//		{
+//		case TransformMsg:
+//		{
+//			// Retrieve network ID of incomming message.
+//			INT8 networkID = buf[1];
+//
+//			if (networkID != _networkID)
+//			{
+//				TransformData transData = TransformData();
+//				int8_t _objID = -1;
+//
+//				Packet* packet = new TransformPacket(buf);
+//				packet->deserialize(_objID, &transData);
+//
+//
+//				objID = _objID;
+//				data = &transData;
+//				memcpy(data, &transData, sizeof(TransformData));
+//
+//
+//				_otherTransform._position = transData._pos;
+//				_otherTransform._rotation = transData._rot;
+//
+//				delete packet;
+//				packet = nullptr;
+//
+//				return;
+//			}
+//			else
+//			{
+//				cout << "Own network ID!" << endl;
+//				TransformData transData = TransformData();
+//				int8_t _objID = -1;
+//
+//				Packet* packet = new TransformPacket(buf);
+//				packet->deserialize(_objID, &transData);
+//
+//
+//
+//				objID = _objID;
+//				//data = &transData;
+//				//memcpy(data, reinterpret_cast<float*>(&transData), sizeof(TransformData));
+//				memcpy(data, &transData._pos._x, sizeof(float) * 3);
+//				memcpy(&data[3], reinterpret_cast<char*>(&floatData[3]), rotSize);
+//
+//
+//				_otherTransform._position = transData._pos;
+//				_otherTransform._rotation = transData._rot;
+//
+//				cout << transData._pos.toString();
+//				cout << transData._rot.toString();
+//
+//				delete packet;
+//				packet = nullptr;
+//				return;
+//			}
+//		}
+//		break;
+//		// Use previous transform data.
+//		default:
+//			//position = _otherTransform._position;
+//			//rotation = _otherTransform._rotation;
+//			break;
+//		}
+//	}
+//	// Use previous transform data.
+//	else
+//	{
+//		//cout << sError << "Bytes Recieved: " << bytes_received << endl;
+//		//position = _otherTransform._position;
+//		//rotation = _otherTransform._rotation;
+//	}
+//}
+#pragma endregion
+
+
+void ClientSide::receiveData(MessageTypes& msgType, int& objID, void* data)
+{
+	char buf[BUF_LEN];
+	sockaddr_in fromAddr;
+	int fromLen;
+	fromLen = sizeof(fromAddr);
+
+	memset(buf, 0, BUF_LEN);
+
+	int bytes_received = -1;
+	int sError = -1;
+
+
+	// Reveive updates from the server.
+	bytes_received = recvfrom(_clientUDPsocket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, &fromLen);
+
+	sError = WSAGetLastError();
+
+
+	// Received data from server.
+	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+	{
+		_receiveBuf.insert(_receiveBuf.end(), std::begin(buf), std::end(buf));
+		++_receiveBufElements;
+	}
+	else
+	{
+
+	}
+}
+
+char* ClientSide::getReceiveData(int& numElements)
+{
+	// Copy data to c#.
+	numElements = _receiveBufElements;
+	_receiveBufHandle = new char[_receiveBuf.size()]; // NEED TO CLEANUP
+	memcpy(_receiveBufHandle, _receiveBuf.data(), _receiveBuf.size());
+
+	// Clear data on c++.
+	_receiveBuf.clear();
+	_receiveBufElements = 0;
+
+	return _receiveBufHandle;
+}
+
+void ClientSide::receiveUDPData()
+{
+	char buf[BUF_LEN];
+	sockaddr_in fromAddr;
+	int fromLen;
+	fromLen = sizeof(fromAddr);
+
+	memset(buf, 0, BUF_LEN);
+
+	int bytes_received = -1;
+	int sError = -1;
+
+
+	// Reveive updates from the server.
+	bytes_received = recvfrom(_clientUDPsocket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, &fromLen);
+
+	sError = WSAGetLastError();
+
+
+	// Received data from server.
+	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+	{
+		// Retrieve network ID of incomming message.
+		int8_t networkID = buf[NET_ID_POS];
+
+		if (networkID == _networkID)
+		{
+			cout << "Same Network ID" << endl;
+			return;
+		}
+
+
+		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+
+		switch (msgType)
+		{
+		case TransformMsg:
+		{
+			// Deserialize and store transform data.
+			TransformData transData = TransformData();
+			int8_t _objID = -1;
+
+			Packet* packet = new TransformPacket(buf);
+			//packet->deserialize(_objID, &transData);
+
+			//_transDataBuf.push_back(transData);
+
+
+
+			_udpPacketBuf[msgType][_objID] = packet;
+			
+
+			// Cleanup.
+			//delete packet;
+			//packet = nullptr;
+
+			return;
+		}
+			break;
+		case Anim:
+			break;
+		default:
+			break;
+		}
+	}
+	else
+	{
+
+	}
+}
+
+TransformData* ClientSide::getTransfromPackets(int& transDataElements)
+{
+	//// Copy data to c#.
+	//transDataElements = _transDataBuf.size();
+	//_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
+	//memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size());
+
+	//// Clear data on c++.
+	//_transDataBuf.clear();
+
+	//return _transDataHandle;
+
+
+
+
+#pragma region MapWay
+	_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
+	unordered_map<int8_t, Packet*> currObjMap;
+	Packet* packet = nullptr;
+	TransformData transData;
+	int8_t objID = -1;
+
+	
+	// Search through each type of packet.
+	for (auto msgType : _udpPacketBuf)
+	{
+		currObjMap = msgType.second;
+
+		for(auto obj : currObjMap)
+		{
+			// Deserialze transform packet.
+			transData = TransformData();
+			packet = obj.second;
+			packet->deserialize(objID, &transData);
+
+			// Store deserialized data.
+			_transDataBuf.push_back(transData);
+
+			// CLean up.
+			delete packet;
+			packet = nullptr;
+		}
+	}
+
+
+	// Copy data to c# handle.
+	memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size());
+
+
+	// Clean up.
+	_transDataBuf.clear();
+
+
+	return _transDataHandle;
+#pragma endregion
+}
+
+void ClientSide::transformPacketCleanUp()
+{
+	delete[] _transDataHandle;
 }
 
 void ClientSide::parseData(const string& buf, Vector3& pos, Quaternion& rot)

@@ -13,7 +13,11 @@
 #include "Transform.h"
 #include "PluginSettings.h"
 #include <thread>
-#include "Packet.h"
+#include "TransformPacket.h"
+#include "AnimPacket.h"
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 
 // Networking
@@ -28,6 +32,9 @@ using std::endl;
 using std::string;
 using std::to_string;
 using std::thread;
+using std::vector;
+using std::unordered_map;
+using std::unordered_set;
 
 
 // This struct also needs to be the same as in C#, if you want more functions just add it here and there.
@@ -43,15 +50,6 @@ struct CS_to_Plugin_Functions
 };
 
 
-//enum MessageTypes : INT8
-//{
-//	ConnectionAttempt,
-//	ConnectionAccepted,
-//	ConnectionFailed,
-//	ServerFull,
-//	TransformData
-//};
-
 
 class PLUGIN_OUT ClientSide
 {
@@ -63,8 +61,22 @@ public:
 	void connectToServerTCP();
 	bool connectToServer();
 	bool queryConnectAttempt(int& id);
+
+
 	void sendData(const Vector3& position, const Quaternion& rotation);//from unity to here
+	void sendData(const int msgType, const int objID, void* data);
+
 	void receiveData(Vector3& position, Quaternion& rotation);//from here to unity
+	void receiveData(MessageTypes& msgType, int& objID, void* data);
+	char* getReceiveData(int& numElements);
+
+
+	void receiveUDPData();
+	TransformData* getTransfromPackets(int& transDataElements);
+	void transformPacketCleanUp();
+
+
+
 	void parseData(const string& buf, Vector3& pos, Quaternion& rot);
 
 	void setFuncs(const CS_to_Plugin_Functions& funcs);
@@ -81,4 +93,21 @@ private:
 	struct addrinfo* _ptr = NULL;
 	string _serverIP = "";
 	int8_t _networkID = NULL;
+
+
+	vector<char> _receiveBuf = vector<char>();
+	int _receiveBufElements = 0;
+	char* _receiveBufHandle = NULL;
+
+
+	//unordered_map<int8_t, unordered_map<MessageTypes, Packet*>> _udpPacketBuf = unordered_map<int8_t, unordered_map<MessageTypes, Packet*>>();
+	//unordered_map<MessageTypes, vector<Packet*>> _tcpPacketBuf = unordered_map<MessageTypes, vector<Packet*>>();
+
+	unordered_map<MessageTypes, unordered_map<int8_t, Packet*>> _udpPacketBuf = unordered_map<MessageTypes, unordered_map<int8_t, Packet*>>();
+
+	//unordered_map<int8_t, unordered_set<MessageTypes>> _udpPacketBuf = unordered_map<int8_t, unordered_set<MessageTypes>>();
+
+
+	vector<TransformData> _transDataBuf;
+	TransformData* _transDataHandle = NULL;
 };

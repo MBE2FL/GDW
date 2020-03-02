@@ -27,12 +27,12 @@ class Packet
 {
 public:
 	Packet(int8_t networkID, int8_t objID);
+	virtual ~Packet();
 	virtual void serialize(void* data) = 0;
-	virtual void deserialize(void* data) = 0;
+	virtual void deserialize(int8_t& objID, void* data) = 0;
 
 	static Packet* CreatePacket(char buf[BUF_LEN]);
 	//static Packet* CreatePacket(MessageTypes msgType, int8_t networkID, int8_t objID);
-
 
 	char _data[BUF_LEN];
 

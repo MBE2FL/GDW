@@ -2,12 +2,17 @@
 #include "TransformPacket.h"
 #include "AnimPacket.h"
 
+
 Packet::Packet(int8_t networkID, int8_t objID)
 {
 	memset(_data, 0, BUF_LEN);
 
 	_data[NET_ID_POS] = networkID;
 	_data[OBJ_ID_POS] = objID;
+}
+
+Packet::~Packet()
+{
 }
 
 Packet* Packet::CreatePacket(char data[BUF_LEN])

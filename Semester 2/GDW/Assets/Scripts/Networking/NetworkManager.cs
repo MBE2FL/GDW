@@ -34,6 +34,17 @@ public struct CS_to_Plugin_Functions
 }
 
 
+public enum MessageTypes : byte
+{
+    ConnectionAttempt,
+    ConnectionAccepted,
+    ConnectionFailed,
+    ServerFull,
+    TransformMsg,
+    Anim
+}
+
+
 
 public class NetworkManager : MonoBehaviour
 {
@@ -86,11 +97,17 @@ public class NetworkManager : MonoBehaviour
     public delegate bool queryConnectAttemptDelegate(ref int id);
     public queryConnectAttemptDelegate queryConnectAttempt;
 
-    public delegate void sendDataDelegate(ref Vector3 position, ref Quaternion rotation);
+    //public delegate void sendDataDelegate(ref Vector3 position, ref Quaternion rotation);
+    public delegate void sendDataDelegate(int msgType, int objID, IntPtr data);
     public sendDataDelegate sendData;
 
-    public delegate void receiveDataDelegate(ref Vector3 position, ref Quaternion rotation);
+    //public delegate void receiveDataDelegate(ref Vector3 position, ref Quaternion rotation);
+    public delegate void receiveDataDelegate(ref MessageTypes msgType, ref int objID, ref IntPtr data);
     public receiveDataDelegate receiveData;
+
+    public delegate IntPtr getReceiveDataDelegate(ref int numElements);
+    public getReceiveDataDelegate getReceiveData;
+
 
 
     [SerializeField]
@@ -147,6 +164,7 @@ public class NetworkManager : MonoBehaviour
         queryConnectAttempt = ManualPluginImporter.GetDelegate<queryConnectAttemptDelegate>(_pluginHandle, "queryConnectAttempt");
         sendData = ManualPluginImporter.GetDelegate<sendDataDelegate>(_pluginHandle, "sendData");
         receiveData = ManualPluginImporter.GetDelegate<receiveDataDelegate>(_pluginHandle, "receiveData");
+        getReceiveData = ManualPluginImporter.GetDelegate<getReceiveDataDelegate>(_pluginHandle, "getReceiveData");
     }
 
     private void Awake()

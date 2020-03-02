@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
+using System;
+using System.IO;
 
 enum NetworkOp
 {
@@ -76,10 +78,35 @@ public class NetworkObject : MonoBehaviour
 
     void sendData()
     {
+        // WARNING WOULD ONLY WORK WITH BLITTABLE TYPES I BELIEVE!
+
         Vector3 position = transform.position;
         Quaternion rotation = transform.rotation;
 
-        _networkManager.sendData(ref position, ref rotation);
+        float[] data = new float[7];
+
+        data[0] = position.x;
+        data[1] = position.y;
+        data[2] = position.z;
+        data[3] = rotation.x;
+        data[4] = rotation.y;
+        data[5] = rotation.z;
+        data[6] = rotation.w;
+
+        //IntPtr dataPtr = new IntPtr();
+        //Marshal.Copy(data, 0, dataPtr, 7);
+
+        unsafe
+        {
+            fixed(float* ptrData = data)
+            {
+                IntPtr dataPtr = new IntPtr(ptrData);
+                _networkManager.sendData((int)MessageTypes.TransformMsg, 0, dataPtr);
+            }
+        }
+
+        //_networkManager.sendData(ref position, ref rotation);
+        //_networkManager.sendData((int)MessageTypes.TransformMsg, 0, dataPtr);
     }
 
     void receiveData()
@@ -87,10 +114,79 @@ public class NetworkObject : MonoBehaviour
         Vector3 position = Vector3.zero;
         Quaternion rotation = Quaternion.identity;
 
-        _networkManager.receiveData(ref position, ref rotation);
+        //_networkManager.receiveData(ref position, ref rotation);
 
-        transform.position = position;
-        transform.rotation = rotation;
+        //transform.position = position;
+        //transform.rotation = rotation;
+
+
+        MessageTypes msgType = MessageTypes.ConnectionAttempt;
+        int objID = -1;
+        IntPtr data = IntPtr.Zero;
+        int numElements = -1;
+        byte[] byteData;
+
+
+        _networkManager.receiveData(ref msgType, ref objID, ref data);
+
+
+        data = _networkManager.getReceiveData(ref numElements);
+
+        byteData = new byte[numElements * 512];
+
+        Marshal.Copy(data, byteData, 0, numElements * 512);
+
+
+
+        // Received some packets.
+        if (numElements > 0)
+        {
+            int packetSize = 512;
+            int packetOffset = 0;
+            for (int i = 0; i < numElements; ++i)
+            {
+                packetOffset = i * packetSize;
+
+                msgType = (MessageTypes)byteData[packetOffset];
+
+
+                switch (msgType)
+                {
+                    case MessageTypes.TransformMsg:
+                        {
+                            position.x = BitConverter.ToSingle(byteData, 3 + packetOffset);
+                            position.y = BitConverter.ToSingle(byteData, 7 + packetOffset);
+                            position.z = BitConverter.ToSingle(byteData, 11 + packetOffset);
+                            rotation.x = BitConverter.ToSingle(byteData, 15 + packetOffset);
+                            rotation.y = BitConverter.ToSingle(byteData, 19 + packetOffset);
+                            rotation.z = BitConverter.ToSingle(byteData, 23 + packetOffset);
+                            rotation.w = BitConverter.ToSingle(byteData, 27 + packetOffset);
+
+
+                            MemoryStream stream = new MemoryStream(byteData, 0, numElements * 512);
+                            BinaryReader reader = new BinaryReader(stream);
+                            
+                            position.x = reader.ReadSingle();
+                            position.y = reader.ReadSingle();
+                            position.z = reader.ReadSingle();
+                            rotation.x = reader.ReadSingle();
+                            rotation.y = reader.ReadSingle();
+                            rotation.z = reader.ReadSingle();
+                            rotation.w = reader.ReadSingle();
+
+
+
+                            Debug.Log("Pos: " + position.ToString());
+                            Debug.Log("Rot: " + rotation.ToString());
+                        }
+                        break;
+                    case MessageTypes.Anim:
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
     }
 
 }

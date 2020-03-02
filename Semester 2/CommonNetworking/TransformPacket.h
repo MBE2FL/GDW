@@ -4,6 +4,7 @@
 
 struct TransformData
 {
+	int8_t _objID;
 	Vector3 _pos;
 	Quaternion _rot;
 };
@@ -14,7 +15,7 @@ public:
 	TransformPacket(int8_t networkID, int8_t objID);
 	TransformPacket(char data[BUF_LEN]);
 	virtual void serialize(void* data) override;
-	virtual void deserialize(void* data) override;
+	virtual void deserialize(int8_t& objID, void* data) override;
 
 private:
 	TransformPacket() {};
