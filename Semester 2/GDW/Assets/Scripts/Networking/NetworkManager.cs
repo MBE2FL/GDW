@@ -60,10 +60,7 @@ public struct AnimData
     public int state;
 }
 
-public ref struct testStruct
-{
 
-}
 
 
 public class NetworkManager : MonoBehaviour

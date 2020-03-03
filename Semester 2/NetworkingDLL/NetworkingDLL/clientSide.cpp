@@ -931,8 +931,11 @@ TransformData* ClientSide::getTransformHandle()
 
 void ClientSide::packetHandlesCleanUp()
 {
-	//delete[] _transDataHandle;
-	//delete[] _transDataHandle;
+	delete[] _transDataHandle;
+	_transDataHandle = nullptr;
+
+	delete[] _animDataHandle;
+	_animDataHandle = nullptr;
 }
 
 void ClientSide::parseData(const string& buf, Vector3& pos, Quaternion& rot)

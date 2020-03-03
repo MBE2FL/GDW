@@ -98,7 +98,7 @@ private:
 
 	vector<char> _receiveBuf = vector<char>();
 	int _receiveBufElements = 0;
-	char* _receiveBufHandle = NULL;
+	char* _receiveBufHandle = nullptr;
 
 
 	//unordered_map<int8_t, unordered_map<MessageTypes, Packet*>> _udpPacketBuf = unordered_map<int8_t, unordered_map<MessageTypes, Packet*>>();
@@ -110,8 +110,8 @@ private:
 
 
 	vector<TransformData> _transDataBuf;
-	TransformData* _transDataHandle = NULL;
+	TransformData* _transDataHandle = nullptr;
 
 	vector<AnimData> _animDataBuf;
-	AnimData* _animDataHandle = NULL;
+	AnimData* _animDataHandle = nullptr;
 };
