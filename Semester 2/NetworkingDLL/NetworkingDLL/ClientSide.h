@@ -72,8 +72,8 @@ public:
 
 
 	void receiveUDPData();
-	TransformData* getTransfromPackets(int& transDataElements);
-	void transformPacketCleanUp();
+	void getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle);
+	void packetHandlesCleanUp();
 
 
 
@@ -110,4 +110,7 @@ private:
 
 	vector<TransformData> _transDataBuf;
 	TransformData* _transDataHandle = NULL;
+
+	vector<AnimData> _animDataBuf;
+	AnimData* _animDataHandle = NULL;
 };

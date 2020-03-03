@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-struct AnimData
+struct AnimData : PacketData
 {
 	int _state;
 };

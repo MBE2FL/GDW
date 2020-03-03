@@ -18,6 +18,11 @@ enum MessageTypes : int8_t
 	Anim
 };
 
+struct PacketData
+{
+	int8_t _objID;
+};
+
 
 class TransformPacket;
 class AnimPacket;

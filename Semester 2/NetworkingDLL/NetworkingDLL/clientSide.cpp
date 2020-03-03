@@ -816,7 +816,7 @@ void ClientSide::receiveUDPData()
 	}
 }
 
-TransformData* ClientSide::getTransfromPackets(int& transDataElements)
+void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle)
 {
 	//// Copy data to c#.
 	//transDataElements = _transDataBuf.size();
@@ -833,9 +833,17 @@ TransformData* ClientSide::getTransfromPackets(int& transDataElements)
 
 #pragma region MapWay
 	_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
+
+
 	unordered_map<int8_t, Packet*> currObjMap;
+
+
 	Packet* packet = nullptr;
+	//PacketData* packetData;
 	TransformData transData;
+	AnimData animData;
+
+
 	int8_t objID = -1;
 
 	
@@ -847,12 +855,31 @@ TransformData* ClientSide::getTransfromPackets(int& transDataElements)
 		for(auto obj : currObjMap)
 		{
 			// Deserialze transform packet.
-			transData = TransformData();
-			packet = obj.second;
-			packet->deserialize(objID, &transData);
+			switch (msgType.first)
+			{
+			case TransformMsg:
+			{
+				transData = TransformData();
+				packet = obj.second;
+				packet->deserialize(objID, &transData);
 
-			// Store deserialized data.
-			_transDataBuf.push_back(transData);
+				// Store deserialized data.
+				_transDataBuf.push_back(transData);
+			}
+			case Anim:
+			{
+				animData = AnimData();
+				packet = obj.second;
+				packet->deserialize(objID, &animData);
+
+				// Store deserialized data.
+				_animDataBuf.push_back(animData);
+			}
+			default:
+				continue;
+				//break;
+			}
+
 
 			// CLean up.
 			delete packet;
@@ -863,18 +890,22 @@ TransformData* ClientSide::getTransfromPackets(int& transDataElements)
 
 	// Copy data to c# handle.
 	memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size());
+	memcpy(_animDataHandle, _animDataBuf.data(), _animDataBuf.size());
 
 
 	// Clean up.
 	_transDataBuf.clear();
+	_animDataBuf.clear();
 
-
-	return _transDataHandle;
+	// Assign handles.
+	transDataHandle = _transDataHandle;
+	animDataHandle = _animDataHandle;
 #pragma endregion
 }
 
-void ClientSide::transformPacketCleanUp()
+void ClientSide::packetHandlesCleanUp()
 {
+	delete[] _transDataHandle;
 	delete[] _transDataHandle;
 }
 

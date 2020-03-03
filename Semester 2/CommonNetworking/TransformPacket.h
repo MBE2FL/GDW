@@ -2,9 +2,8 @@
 #include "Packet.h"
 #include "Transform.h"
 
-struct TransformData
+struct TransformData : PacketData
 {
-	int8_t _objID;
 	Vector3 _pos;
 	Quaternion _rot;
 };
