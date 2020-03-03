@@ -1,8 +1,15 @@
-﻿  ServerSide.cpp
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(180,24): warning C4267: '=': conversion from 'size_t' to 'INT8', possible loss of data
+﻿  AnimPacket.cpp
+  Packet.cpp
+  Transform.cpp
+  TransformPacket.cpp
+  main.cpp
+  ServerSide.cpp
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(181,22): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(737,22): warning C4018: '<': signed/unsigned mismatch
+     Creating library C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Release\GameServer.lib and object C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Release\GameServer.exp
   Generating code
-  25 of 146 functions (17.1%) were compiled, the rest were copied from previous compilation.
-    5 functions were new in current compilation
-    8 functions had inline decision re-evaluated but remain unchanged
+  341 of 349 functions (97.7%) were compiled, the rest were copied from previous compilation.
+    203 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   GameServer.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Release\GameServer.exe

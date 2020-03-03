@@ -773,7 +773,7 @@ void ClientSide::receiveUDPData()
 		if (networkID == _networkID)
 		{
 			cout << "Same Network ID" << endl;
-			return;
+			//return;
 		}
 
 
@@ -785,7 +785,7 @@ void ClientSide::receiveUDPData()
 		{
 			// Deserialize and store transform data.
 			TransformData transData = TransformData();
-			int8_t _objID = -1;
+			int8_t _objID = buf[OBJ_ID_POS];
 
 			Packet* packet = new TransformPacket(buf);
 			//packet->deserialize(_objID, &transData);
@@ -796,7 +796,7 @@ void ClientSide::receiveUDPData()
 
 			_udpPacketBuf[msgType][_objID] = packet;
 			
-
+			//cout << "Transform received: " << int(msgType) << ", " << int(_objID) << endl;
 			// Cleanup.
 			//delete packet;
 			//packet = nullptr;
@@ -805,6 +805,16 @@ void ClientSide::receiveUDPData()
 		}
 			break;
 		case Anim:
+		{
+			// Deserialize and store anim data.
+			//AnimData transData = AnimData();
+			//int8_t _objID = buf[OBJ_ID_POS];
+
+			//Packet* packet = new AnimPacket(buf);
+
+
+			//_udpPacketBuf[msgType][_objID] = packet;
+		}
 			break;
 		default:
 			break;
@@ -832,9 +842,6 @@ void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDa
 
 
 #pragma region MapWay
-	_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
-
-
 	unordered_map<int8_t, Packet*> currObjMap;
 
 
@@ -866,6 +873,7 @@ void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDa
 				// Store deserialized data.
 				_transDataBuf.push_back(transData);
 			}
+			break;
 			case Anim:
 			{
 				animData = AnimData();
@@ -875,6 +883,7 @@ void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDa
 				// Store deserialized data.
 				_animDataBuf.push_back(animData);
 			}
+			break;
 			default:
 				continue;
 				//break;
@@ -888,25 +897,42 @@ void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDa
 	}
 
 
+	_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
+	_animDataHandle = new AnimData[_animDataBuf.size()]; // NEED TO CLEANUP
+
+	transDataElements = _transDataBuf.size();
+	animDataElements = _animDataBuf.size();
+
+
 	// Copy data to c# handle.
-	memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size());
-	memcpy(_animDataHandle, _animDataBuf.data(), _animDataBuf.size());
+	memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size() * sizeof(TransformData));
+	memcpy(_animDataHandle, _animDataBuf.data(), _animDataBuf.size() * sizeof(AnimData));
 
 
 	// Clean up.
 	_transDataBuf.clear();
 	_animDataBuf.clear();
+	_udpPacketBuf.clear();
 
 	// Assign handles.
 	transDataHandle = _transDataHandle;
 	animDataHandle = _animDataHandle;
+
+
+	//if (transDataElements > 0)
+	//	cout << _transDataHandle[0]._pos._x << endl;
 #pragma endregion
+}
+
+TransformData* ClientSide::getTransformHandle()
+{
+	return _transDataHandle;
 }
 
 void ClientSide::packetHandlesCleanUp()
 {
-	delete[] _transDataHandle;
-	delete[] _transDataHandle;
+	//delete[] _transDataHandle;
+	//delete[] _transDataHandle;
 }
 
 void ClientSide::parseData(const string& buf, Vector3& pos, Quaternion& rot)

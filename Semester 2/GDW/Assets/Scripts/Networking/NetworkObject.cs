@@ -109,84 +109,120 @@ public class NetworkObject : MonoBehaviour
         //_networkManager.sendData((int)MessageTypes.TransformMsg, 0, dataPtr);
     }
 
+
     void receiveData()
     {
-        Vector3 position = Vector3.zero;
-        Quaternion rotation = Quaternion.identity;
-
-        //_networkManager.receiveData(ref position, ref rotation);
-
-        //transform.position = position;
-        //transform.rotation = rotation;
+        _networkManager.receiveUDPData();
 
 
-        MessageTypes msgType = MessageTypes.ConnectionAttempt;
-        int objID = -1;
-        IntPtr data = IntPtr.Zero;
-        int numElements = -1;
-        byte[] byteData;
+        int transDataElements = -1;
+        int animDataElements = -1;
+        IntPtr transDataHandle;
+        IntPtr animDataHandle;
+
+        _networkManager.getPacketHandles(ref transDataElements, out transDataHandle, ref animDataElements, out animDataHandle);
 
 
-        _networkManager.receiveData(ref msgType, ref objID, ref data);
+        TransformData[] transData = new TransformData[transDataElements];
+        AnimData[] animData = new AnimData[animDataElements];
 
 
-        data = _networkManager.getReceiveData(ref numElements);
-
-        byteData = new byte[numElements * 512];
-
-        Marshal.Copy(data, byteData, 0, numElements * 512);
+        transDataHandle = _networkManager.getTransformHandle();
 
 
-
-        // Received some packets.
-        if (numElements > 0)
+        if (transDataElements > 0)
         {
-            int packetSize = 512;
-            int packetOffset = 0;
-            for (int i = 0; i < numElements; ++i)
-            {
-                packetOffset = i * packetSize;
-
-                msgType = (MessageTypes)byteData[packetOffset];
-
-
-                switch (msgType)
-                {
-                    case MessageTypes.TransformMsg:
-                        {
-                            position.x = BitConverter.ToSingle(byteData, 3 + packetOffset);
-                            position.y = BitConverter.ToSingle(byteData, 7 + packetOffset);
-                            position.z = BitConverter.ToSingle(byteData, 11 + packetOffset);
-                            rotation.x = BitConverter.ToSingle(byteData, 15 + packetOffset);
-                            rotation.y = BitConverter.ToSingle(byteData, 19 + packetOffset);
-                            rotation.z = BitConverter.ToSingle(byteData, 23 + packetOffset);
-                            rotation.w = BitConverter.ToSingle(byteData, 27 + packetOffset);
-
-
-                            MemoryStream stream = new MemoryStream(byteData, 0, numElements * 512);
-                            BinaryReader reader = new BinaryReader(stream);
-                            
-                            position.x = reader.ReadSingle();
-                            position.y = reader.ReadSingle();
-                            position.z = reader.ReadSingle();
-                            rotation.x = reader.ReadSingle();
-                            rotation.y = reader.ReadSingle();
-                            rotation.z = reader.ReadSingle();
-                            rotation.w = reader.ReadSingle();
-
-
-
-                            Debug.Log("Pos: " + position.ToString());
-                            Debug.Log("Rot: " + rotation.ToString());
-                        }
-                        break;
-                    case MessageTypes.Anim:
-                        break;
-                    default:
-                        break;
-                }
-            }
+            transData[0] = (TransformData)Marshal.PtrToStructure(transDataHandle, typeof(TransformData));
+            transDataHandle += Marshal.SizeOf(typeof(TransformData));
+            Debug.Log("objID: " + transData[0].objID);
+            Debug.Log("Pos: " + transData[0].pos.ToString());
+            Debug.Log("Rot: " + transData[0].rot.ToString());
         }
+
+        
+
+        _networkManager.packetHandlesCleanUp();
+
+
+
+        #region OLD_BYTE_TEST
+        //Vector3 position = Vector3.zero;
+        //Quaternion rotation = Quaternion.identity;
+
+        ////_networkManager.receiveData(ref position, ref rotation);
+
+        ////transform.position = position;
+        ////transform.rotation = rotation;
+
+
+        //MessageTypes msgType = MessageTypes.ConnectionAttempt;
+        //int objID = -1;
+        //IntPtr data = IntPtr.Zero;
+        //int numElements = -1;
+        //byte[] byteData;
+
+
+        //_networkManager.receiveData(ref msgType, ref objID, ref data);
+
+
+        //data = _networkManager.getReceiveData(ref numElements);
+
+        //byteData = new byte[numElements * 512];
+
+        //Marshal.Copy(data, byteData, 0, numElements * 512);
+
+
+
+        //// Received some packets.
+        //if (numElements > 0)
+        //{
+        //    int packetSize = 512;
+        //    int packetOffset = 0;
+        //    for (int i = 0; i < numElements; ++i)
+        //    {
+        //        packetOffset = i * packetSize;
+
+        //        msgType = (MessageTypes)byteData[packetOffset];
+
+
+        //        switch (msgType)
+        //        {
+        //            case MessageTypes.TransformMsg:
+        //                {
+        //                    position.x = BitConverter.ToSingle(byteData, 3 + packetOffset);
+        //                    position.y = BitConverter.ToSingle(byteData, 7 + packetOffset);
+        //                    position.z = BitConverter.ToSingle(byteData, 11 + packetOffset);
+        //                    rotation.x = BitConverter.ToSingle(byteData, 15 + packetOffset);
+        //                    rotation.y = BitConverter.ToSingle(byteData, 19 + packetOffset);
+        //                    rotation.z = BitConverter.ToSingle(byteData, 23 + packetOffset);
+        //                    rotation.w = BitConverter.ToSingle(byteData, 27 + packetOffset);
+
+
+        //                    MemoryStream stream = new MemoryStream(byteData, 0, numElements * 512);
+        //                    BinaryReader reader = new BinaryReader(stream);
+
+        //                    position.x = reader.ReadSingle();
+        //                    position.y = reader.ReadSingle();
+        //                    position.z = reader.ReadSingle();
+        //                    rotation.x = reader.ReadSingle();
+        //                    rotation.y = reader.ReadSingle();
+        //                    rotation.z = reader.ReadSingle();
+        //                    rotation.w = reader.ReadSingle();
+
+
+
+        //                    Debug.Log("Pos: " + position.ToString());
+        //                    Debug.Log("Rot: " + rotation.ToString());
+        //                }
+        //                break;
+        //            case MessageTypes.Anim:
+        //                break;
+        //            default:
+        //                break;
+        //        }
+        //    }
+        //}
+        #endregion OLD_BYTE_TEST
     }
 
 }

@@ -45,6 +45,26 @@ public enum MessageTypes : byte
 }
 
 
+[StructLayout(LayoutKind.Sequential)]
+public struct TransformData
+{
+    public byte objID;
+    public Vector3 pos;
+    public Quaternion rot;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct AnimData
+{
+    public byte objID;
+    public int state;
+}
+
+public ref struct testStruct
+{
+
+}
+
 
 public class NetworkManager : MonoBehaviour
 {
@@ -110,6 +130,20 @@ public class NetworkManager : MonoBehaviour
 
 
 
+    public delegate void receiveUDPDataDelegate();
+    public receiveUDPDataDelegate receiveUDPData;
+
+    public delegate void getPacketHandlesDelegate(ref int transDataElements, out IntPtr transDataHandle, ref int animDataElements, out IntPtr animDataHandle);
+    public getPacketHandlesDelegate getPacketHandles;
+
+    public delegate void packetHandlesCleanUpDelegate();
+    public packetHandlesCleanUpDelegate packetHandlesCleanUp;
+
+    public delegate IntPtr getTransformHandleDelegate();
+    public getTransformHandleDelegate getTransformHandle;
+
+
+
     [SerializeField]
     bool _initialized = false;
 
@@ -165,6 +199,12 @@ public class NetworkManager : MonoBehaviour
         sendData = ManualPluginImporter.GetDelegate<sendDataDelegate>(_pluginHandle, "sendData");
         receiveData = ManualPluginImporter.GetDelegate<receiveDataDelegate>(_pluginHandle, "receiveData");
         getReceiveData = ManualPluginImporter.GetDelegate<getReceiveDataDelegate>(_pluginHandle, "getReceiveData");
+
+
+        receiveUDPData = ManualPluginImporter.GetDelegate<receiveUDPDataDelegate>(_pluginHandle, "receiveUDPData");
+        getPacketHandles = ManualPluginImporter.GetDelegate<getPacketHandlesDelegate>(_pluginHandle, "getPacketHandles");
+        packetHandlesCleanUp = ManualPluginImporter.GetDelegate<packetHandlesCleanUpDelegate>(_pluginHandle, "packetHandlesCleanUp");
+        getTransformHandle = ManualPluginImporter.GetDelegate<getTransformHandleDelegate>(_pluginHandle, "getTransformHandle");
     }
 
     private void Awake()

@@ -80,6 +80,26 @@ PLUGIN_OUT char* getReceiveData(int& numElements)
 	return cs.getReceiveData(numElements);
 }
 
+PLUGIN_OUT void receiveUDPData()
+{
+	return cs.receiveUDPData();
+}
+
+PLUGIN_OUT void getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle)
+{
+	return cs.getPacketHandles(transDataElements, transDataHandle, animDataElements, animDataHandle);
+}
+
+PLUGIN_OUT TransformData* getTransformHandle()
+{
+	return cs.getTransformHandle();
+}
+
+PLUGIN_OUT void packetHandlesCleanUp()
+{
+	return cs.packetHandlesCleanUp();
+}
+
 PLUGIN_OUT void receiveData(Vector3& position, Quaternion& rotation)
 {
 	return cs.receiveData(position, rotation);

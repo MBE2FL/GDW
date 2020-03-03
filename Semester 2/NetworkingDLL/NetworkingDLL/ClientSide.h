@@ -73,6 +73,7 @@ public:
 
 	void receiveUDPData();
 	void getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle);
+	TransformData* getTransformHandle();
 	void packetHandlesCleanUp();
 
 

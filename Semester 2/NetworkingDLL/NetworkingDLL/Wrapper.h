@@ -29,6 +29,11 @@ extern "C"
 	PLUGIN_OUT void receiveData(MessageTypes& msgType, int& objID, void* data);
 	PLUGIN_OUT char* getReceiveData(int& numElements);
 
+	PLUGIN_OUT void receiveUDPData();
+	PLUGIN_OUT void getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle);
+	PLUGIN_OUT TransformData* getTransformHandle();
+	PLUGIN_OUT void packetHandlesCleanUp();
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
