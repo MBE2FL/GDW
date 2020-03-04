@@ -289,7 +289,7 @@ void Server::listenForConnections()
 		inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
 		cout << "TCP Socket Address: " << ipbuf << endl;
 
-		char ipbuf[INET_ADDRSTRLEN];
+		memset(ipbuf, 0, BUF_LEN);
 		inet_ntop(AF_INET, &fromUDPAddr, ipbuf, sizeof(ipbuf));
 		cout << "UDP Socket Address: " << ipbuf << endl;
 

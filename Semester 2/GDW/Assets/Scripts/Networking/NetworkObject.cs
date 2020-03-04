@@ -11,6 +11,21 @@ enum NetworkOp
     Transmitter
 }
 
+public enum PrefabType : byte
+{
+    Brother,
+    Sister,
+    Rock,
+    Tire,
+    Rope
+}
+
+public enum Ownership : byte
+{
+    ClientOwned,
+    ServerOwned
+}
+
 public class NetworkObject : MonoBehaviour
 {
     [SerializeField]
@@ -20,6 +35,48 @@ public class NetworkObject : MonoBehaviour
 
     [SerializeField]
     byte _objID = 0;
+    [SerializeField]
+    PrefabType _prefabType = PrefabType.Sister;
+    [SerializeField]
+    Ownership _ownership = Ownership.ClientOwned;
+
+
+    public byte ObjID
+    {
+        get
+        {
+            return _objID;
+        }
+        set
+        {
+            _objID = value;
+        }
+    }
+
+    public PrefabType PrefabType
+    {
+        get
+        {
+            return _prefabType;
+        }
+        set
+        {
+            _prefabType = value;
+        }
+    }
+
+    public Ownership Ownership
+    {
+        get
+        {
+            return _ownership;
+        }
+        set
+        {
+            _ownership = value;
+        }
+    }
+
 
     //const string DLL_NAME = "NETWORKINGDLL";
 
@@ -48,6 +105,8 @@ public class NetworkObject : MonoBehaviour
             default:
                 break;
         }
+
+        _networkManager.NetworkObjects.Add(this);
     }
 
     private void OnApplicationQuit()
@@ -115,36 +174,36 @@ public class NetworkObject : MonoBehaviour
 
     void receiveData()
     {
-        _networkManager.receiveUDPData();
+        //_networkManager.receiveUDPData();
 
 
-        int transDataElements = -1;
-        int animDataElements = -1;
-        IntPtr transDataHandle;
-        IntPtr animDataHandle;
+        //int transDataElements = -1;
+        //int animDataElements = -1;
+        //IntPtr transDataHandle;
+        //IntPtr animDataHandle;
 
-        _networkManager.getPacketHandles(ref transDataElements, out transDataHandle, ref animDataElements, out animDataHandle);
-
-
-        TransformData[] transData = new TransformData[transDataElements];
-        AnimData[] animData = new AnimData[animDataElements];
+        //_networkManager.getPacketHandles(ref transDataElements, transDataHandle, ref animDataElements, animDataHandle);
 
 
-        transDataHandle = _networkManager.getTransformHandle();
+        //TransformData[] transData = new TransformData[transDataElements];
+        //AnimData[] animData = new AnimData[animDataElements];
 
 
-        if (transDataElements > 0)
-        {
-            transData[0] = (TransformData)Marshal.PtrToStructure(transDataHandle, typeof(TransformData));
-            transDataHandle += Marshal.SizeOf(typeof(TransformData));
-            Debug.Log("objID: " + transData[0].objID);
-            Debug.Log("Pos: " + transData[0].pos.ToString());
-            Debug.Log("Rot: " + transData[0].rot.ToString());
-        }
+        //transDataHandle = _networkManager.getTransformHandle();
+
+
+        //if (transDataElements > 0)
+        //{
+        //    transData[0] = (TransformData)Marshal.PtrToStructure(transDataHandle, typeof(TransformData));
+        //    transDataHandle += Marshal.SizeOf(typeof(TransformData));
+        //    Debug.Log("objID: " + transData[0].objID);
+        //    Debug.Log("Pos: " + transData[0].pos.ToString());
+        //    Debug.Log("Rot: " + transData[0].rot.ToString());
+        //}
 
         
 
-        _networkManager.packetHandlesCleanUp();
+        //_networkManager.packetHandlesCleanUp();
 
 
 

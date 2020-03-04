@@ -118,7 +118,7 @@ bool ClientSide::initTCP(const char* ip)
 	return true;
 }
 
-void ClientSide::connectToServerTCP()
+void ClientSide::connectToServer()
 {
 	//Connect to the server
 	if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
@@ -233,101 +233,102 @@ void ClientSide::connectToServerTCP()
 
 
 
+
 	return;
 }
 
-bool ClientSide::connectToServer()
-{
-	thread tcpConnect(&ClientSide::connectToServerTCP, this);
-	//connectToServerTCP();
-	tcpConnect.detach();
-
-	return false;
-
-
-#pragma region OLD_UDP_CONNECT
-	INT8 id = 0;
-	// Attempt to connect to the server.
-	char message[BUF_LEN];
-	//char* message = new char[BUF_LEN];
-	memset(message, 0, BUF_LEN);
-
-	//string msg = "connect";
-
-	MessageTypes msgType = MessageTypes::ConnectionAttempt;
-	//message[0] = reinterpret_cast<char&>(msgType);
-	message[0] = msgType;
-
-
-	//strcpy_s(message, (char*)msg.c_str());
-
-	if (sendto(_clientUDPsocket, message, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
-	{
-		cout << "Connection attempt failed to send!" << endl;
-		return false;
-	}
-
-	cout << "sent: " << message << endl;
-
-	memset(message, 0, BUF_LEN);
-
-
-	// Get potential response from server.
-	struct sockaddr_in fromAdder;
-	int fromLen;
-	fromLen = sizeof(fromAdder);
-	int bytes_received = -1;
-	int sError = -1;
-
-
-	bytes_received = recvfrom(_clientUDPsocket, message, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
-
-	sError = WSAGetLastError();
-
-	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
-	{
-		//std::cout << "Received: " << buf << std::endl;
-
-		//string temp = message;
-		//std::size_t pos = temp.find('@');
-		//temp = temp.substr(0, pos - 1);
-		//tx = std::stof(temp);
-		//temp = buf;
-		//temp = temp.substr(pos + 1);
-		//ty = std::stof(temp);
-
-		//msgType = reinterpret_cast<MessageTypes&>(message[0]);
-		msgType = static_cast<MessageTypes>(message[0]);
-
-		switch (msgType)
-		{
-		case MessageTypes::ConnectionAccepted:
-		{
-			cout << "Connection successful" << endl;
-
-			//_networkID = reinterpret_cast<INT8&>(message[1]);
-			_networkID = message[1];
-			cout << "ID: " << _networkID << endl;
-			char msg = _networkID;
-			cout << "ID: " << msg << endl;
-			cout << "ID: " << message[1] << endl;
-			id = _networkID;
-			cout << "ID: " << id << endl;
-
-			return true;
-		}
-			break;
-		default:
-			cout << "Incorrect message type receieved! " << msgType << endl;
-			break;
-		}
-	}
-
-	// Client failed to connect.
-	cout << "Failed to connect" << endl;
-	return false;
-#pragma endregion
-}
+//bool ClientSide::connectToServer()
+//{
+//	thread tcpConnect(&ClientSide::connectToServerTCP, this);
+//	//connectToServerTCP();
+//	tcpConnect.detach();
+//
+//	return false;
+//
+//
+//#pragma region OLD_UDP_CONNECT
+//	INT8 id = 0;
+//	// Attempt to connect to the server.
+//	char message[BUF_LEN];
+//	//char* message = new char[BUF_LEN];
+//	memset(message, 0, BUF_LEN);
+//
+//	//string msg = "connect";
+//
+//	MessageTypes msgType = MessageTypes::ConnectionAttempt;
+//	//message[0] = reinterpret_cast<char&>(msgType);
+//	message[0] = msgType;
+//
+//
+//	//strcpy_s(message, (char*)msg.c_str());
+//
+//	if (sendto(_clientUDPsocket, message, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
+//	{
+//		cout << "Connection attempt failed to send!" << endl;
+//		return false;
+//	}
+//
+//	cout << "sent: " << message << endl;
+//
+//	memset(message, 0, BUF_LEN);
+//
+//
+//	// Get potential response from server.
+//	struct sockaddr_in fromAdder;
+//	int fromLen;
+//	fromLen = sizeof(fromAdder);
+//	int bytes_received = -1;
+//	int sError = -1;
+//
+//
+//	bytes_received = recvfrom(_clientUDPsocket, message, BUF_LEN, 0, (struct sockaddr*) & fromAdder, &fromLen);
+//
+//	sError = WSAGetLastError();
+//
+//	if (sError != WSAEWOULDBLOCK && bytes_received > 0)
+//	{
+//		//std::cout << "Received: " << buf << std::endl;
+//
+//		//string temp = message;
+//		//std::size_t pos = temp.find('@');
+//		//temp = temp.substr(0, pos - 1);
+//		//tx = std::stof(temp);
+//		//temp = buf;
+//		//temp = temp.substr(pos + 1);
+//		//ty = std::stof(temp);
+//
+//		//msgType = reinterpret_cast<MessageTypes&>(message[0]);
+//		msgType = static_cast<MessageTypes>(message[0]);
+//
+//		switch (msgType)
+//		{
+//		case MessageTypes::ConnectionAccepted:
+//		{
+//			cout << "Connection successful" << endl;
+//
+//			//_networkID = reinterpret_cast<INT8&>(message[1]);
+//			_networkID = message[1];
+//			cout << "ID: " << _networkID << endl;
+//			char msg = _networkID;
+//			cout << "ID: " << msg << endl;
+//			cout << "ID: " << message[1] << endl;
+//			id = _networkID;
+//			cout << "ID: " << id << endl;
+//
+//			return true;
+//		}
+//			break;
+//		default:
+//			cout << "Incorrect message type receieved! " << msgType << endl;
+//			break;
+//		}
+//	}
+//
+//	// Client failed to connect.
+//	cout << "Failed to connect" << endl;
+//	return false;
+//#pragma endregion
+//}
 
 bool ClientSide::queryConnectAttempt(int& id)
 {
@@ -778,22 +779,8 @@ void ClientSide::receiveUDPData()
 	}
 }
 
-void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle)
+void ClientSide::getPacketHandleSizes(int& transDataElements, int& animDataElements)
 {
-	//// Copy data to c#.
-	//transDataElements = _transDataBuf.size();
-	//_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
-	//memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size());
-
-	//// Clear data on c++.
-	//_transDataBuf.clear();
-
-	//return _transDataHandle;
-
-
-
-
-#pragma region MapWay
 	unordered_map<int8_t, Packet*> currObjMap;
 
 
@@ -805,13 +792,13 @@ void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDa
 
 	int8_t objID = -1;
 
-	
+
 	// Search through each type of packet.
 	for (auto msgType : _udpPacketBuf)
 	{
 		currObjMap = msgType.second;
 
-		for(auto obj : currObjMap)
+		for (auto obj : currObjMap)
 		{
 			// Deserialze transform packet.
 			switch (msgType.first)
@@ -848,17 +835,43 @@ void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDa
 		}
 	}
 
-
-	_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
-	_animDataHandle = new AnimData[_animDataBuf.size()]; // NEED TO CLEANUP
-
 	transDataElements = _transDataBuf.size();
 	animDataElements = _animDataBuf.size();
+}
+
+void ClientSide::getPacketHandles(void* dataHandle)
+{
+	//// Copy data to c#.
+	//transDataElements = _transDataBuf.size();
+	//_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
+	//memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size());
+
+	//// Clear data on c++.
+	//_transDataBuf.clear();
+
+	//return _transDataHandle;
+
+
+
+
+#pragma region MapWay
+	//_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
+	//_animDataHandle = new AnimData[_animDataBuf.size()]; // NEED TO CLEANUP
+
+	//transDataElements = _transDataBuf.size();
+	//animDataElements = _animDataBuf.size();
 
 
 	// Copy data to c# handle.
-	memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size() * sizeof(TransformData));
-	memcpy(_animDataHandle, _animDataBuf.data(), _animDataBuf.size() * sizeof(AnimData));
+	//memcpy(transDataHandle, _transDataBuf.data(), _transDataBuf.size() * sizeof(TransformData));
+	//memcpy(animDataHandle, _animDataBuf.data(), _animDataBuf.size() * sizeof(AnimData));
+
+	char* byteDatahandle = reinterpret_cast<char*>(dataHandle);
+
+	memcpy(byteDatahandle, _transDataBuf.data(), _transDataBuf.size() * sizeof(TransformData));
+	memcpy(&byteDatahandle[_transDataBuf.size() * sizeof(TransformData)], _animDataBuf.data(), _animDataBuf.size() * sizeof(AnimData));
+
+
 
 
 	// Clean up.
@@ -867,12 +880,8 @@ void ClientSide::getPacketHandles(int& transDataElements, TransformData* transDa
 	_udpPacketBuf.clear();
 
 	// Assign handles.
-	transDataHandle = _transDataHandle;
-	animDataHandle = _animDataHandle;
-
-
-	//if (transDataElements > 0)
-	//	cout << _transDataHandle[0]._pos._x << endl;
+	//transDataHandle = _transDataHandle;
+	//animDataHandle = _animDataHandle;
 #pragma endregion
 }
 

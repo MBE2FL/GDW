@@ -1141,6 +1141,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _networkOp: 1
+  _objID: 0
+  _prefabType: 0
+  _ownership: 1
 --- !u!1 &3429134451789160222
 GameObject:
   m_ObjectHideFlags: 0

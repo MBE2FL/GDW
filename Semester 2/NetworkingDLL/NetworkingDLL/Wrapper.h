@@ -30,7 +30,8 @@ extern "C"
 	PLUGIN_OUT char* getReceiveData(int& numElements);
 
 	PLUGIN_OUT void receiveUDPData();
-	PLUGIN_OUT void getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle);
+	PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements);
+	PLUGIN_OUT void getPacketHandles(void* dataHandle);
 	PLUGIN_OUT TransformData* getTransformHandle();
 	PLUGIN_OUT void packetHandlesCleanUp();
 

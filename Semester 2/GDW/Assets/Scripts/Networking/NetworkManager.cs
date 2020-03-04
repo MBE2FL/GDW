@@ -4,9 +4,11 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 using System;
 using UnityEngine.UI;
+using Unity.Collections.LowLevel.Unsafe;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using Unity.Jobs;
 
 
 // This struct needs to be in the same order as in C++
@@ -60,6 +62,28 @@ public struct AnimData
     public int state;
 }
 
+[StructLayout(LayoutKind.Sequential)]
+public struct Entity
+{
+    public byte _objID;
+    public byte _prefabType;
+    public byte _ownership;
+}
+
+struct ConnectJob : IJob
+{
+    [NativeDisableUnsafePtrRestriction]
+    public IntPtr _ip;
+
+
+
+    public void Execute()
+    {
+    // Attempt to establish a connection to the server.
+    NetworkManager.connectToServer();
+    }
+}
+
 
 
 
@@ -98,7 +122,7 @@ public class NetworkManager : MonoBehaviour
 
     // Network manager functions
     public delegate bool connectToServerDelegate();
-    public connectToServerDelegate connectToServer;
+    public static connectToServerDelegate connectToServer;
 
     public delegate bool initNetworkDelegate(string ip);
     public initNetworkDelegate initNetwork;
@@ -130,7 +154,13 @@ public class NetworkManager : MonoBehaviour
     public delegate void receiveUDPDataDelegate();
     public receiveUDPDataDelegate receiveUDPData;
 
-    public delegate void getPacketHandlesDelegate(ref int transDataElements, out IntPtr transDataHandle, ref int animDataElements, out IntPtr animDataHandle);
+    public delegate void getPacketHandleSizesDelegate(ref int transDataElements, ref int animDataElements);
+    public getPacketHandleSizesDelegate getPacketHandleSizes;
+
+    //public delegate void getPacketHandlesDelegate(ref int transDataElements, IntPtr transDataHandle, ref int animDataElements, IntPtr animDataHandle);
+    //public getPacketHandlesDelegate getPacketHandles;
+
+    public delegate void getPacketHandlesDelegate(IntPtr dataHandle);
     public getPacketHandlesDelegate getPacketHandles;
 
     public delegate void packetHandlesCleanUpDelegate();
@@ -176,6 +206,22 @@ public class NetworkManager : MonoBehaviour
     float _updateInterval = 0.066f; // 1s / 15ups = 0.066ms
     //float _updateInterval = 0.167f;
 
+    [SerializeField]
+    List<NetworkObject> _networkObjects;
+
+
+    public List<NetworkObject> NetworkObjects
+    {
+        get
+        {
+            return _networkObjects;
+        }
+        set
+        {
+            _networkObjects = value;
+        }
+    }
+
 
 
     private void InitPluginFunctions()
@@ -200,6 +246,7 @@ public class NetworkManager : MonoBehaviour
 
 
         receiveUDPData = ManualPluginImporter.GetDelegate<receiveUDPDataDelegate>(_pluginHandle, "receiveUDPData");
+        getPacketHandleSizes = ManualPluginImporter.GetDelegate<getPacketHandleSizesDelegate>(_pluginHandle, "getPacketHandleSizes");
         getPacketHandles = ManualPluginImporter.GetDelegate<getPacketHandlesDelegate>(_pluginHandle, "getPacketHandles");
         packetHandlesCleanUp = ManualPluginImporter.GetDelegate<packetHandlesCleanUpDelegate>(_pluginHandle, "packetHandlesCleanUp");
         getTransformHandle = ManualPluginImporter.GetDelegate<getTransformHandleDelegate>(_pluginHandle, "getTransformHandle");
@@ -336,10 +383,47 @@ public class NetworkManager : MonoBehaviour
 
 
         // Only attempt to establish a connection to the server iff, no connection has already been made.
+        //if (!_connected && !_connecting)
+        //{
+        //    // Attempt to establish a connection to the server.
+        //    connectToServer();
+
+        //    _connecting = true;
+
+        //    _testObj.SetActive(true);
+
+        //    _connectButton.GetComponent<Button>().interactable = false;
+        //    _connectButton.GetComponentInChildren<Text>().text = "Connecting...";
+        //}
+
+
+
+        // Only attempt to establish a connection to the server iff, no connection has already been made.
         if (!_connected && !_connecting)
         {
-            // Attempt to establish a connection to the server.
-            connectToServer();
+            ConnectJob job = new ConnectJob();
+            job._ip = Marshal.StringToHGlobalAnsi(_ip);
+
+            Entity[] entities = new Entity[_networkObjects.Count];
+            int i = 0;
+            foreach (NetworkObject obj in _networkObjects)
+            {
+                entities[i] = new Entity() { _objID = obj.ObjID, _prefabType = (byte)obj.PrefabType, _ownership = (byte)obj.Ownership };
+
+                ++i;
+            }
+
+            //job._entities = Marshal.GetIUnknownForObject(entities);
+            //job._entities = IntPtr.Zero;
+
+            //job._networkManager;
+            //Marshal.StructureToPtr<NetworkManager>(this, job._networkManager, false);
+
+
+            JobHandle jobHandle = job.Schedule();
+
+            //jobHandle.Complete();
+
 
             _connecting = true;
 
@@ -380,32 +464,49 @@ public class NetworkManager : MonoBehaviour
 
         int transDataElements = -1;
         int animDataElements = -1;
-        IntPtr transDataHandle;
-        IntPtr animDataHandle;
+        //IntPtr transDataHandle;
+        //IntPtr animDataHandle;
+        IntPtr dataHandle;
 
-        getPacketHandles(ref transDataElements, out transDataHandle, ref animDataElements, out animDataHandle);
+
+        getPacketHandleSizes(ref transDataElements, ref animDataElements);
+
+        //transDataHandle = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>() * transDataElements);
+        //animDataHandle = Marshal.AllocHGlobal(Marshal.SizeOf<AnimData>() * animDataElements);
+
+        dataHandle = Marshal.AllocHGlobal((Marshal.SizeOf<TransformData>() * transDataElements) + (Marshal.SizeOf<AnimData>() * animDataElements));
+
+        getPacketHandles(dataHandle);
 
 
         TransformData[] transData = new TransformData[transDataElements];
         AnimData[] animData = new AnimData[animDataElements];
 
 
-        transDataHandle = getTransformHandle();
+        //transDataHandle = getTransformHandle();
 
-
+        IntPtr tempDataHandle = dataHandle;
         for (int i = 0; i < transDataElements; ++i)
         {
-            transData[i] = (TransformData)Marshal.PtrToStructure(transDataHandle, typeof(TransformData));
-            transDataHandle += Marshal.SizeOf(typeof(TransformData));
+            transData[i] = (TransformData)Marshal.PtrToStructure(dataHandle, typeof(TransformData));
+            dataHandle += Marshal.SizeOf(typeof(TransformData));
 
             Debug.Log("objID: " + transData[i].objID);
             Debug.Log("Pos: " + transData[i].pos.ToString());
             Debug.Log("Rot: " + transData[i].rot.ToString());
         }
 
+        // Clean up
+        Array.Clear(transData, 0, transData.Length);
+        Array.Clear(animData, 0, animData.Length);
+
+        //Marshal.FreeHGlobal(tempTestFuck);
+        //Marshal.FreeHGlobal(animDataHandle);
+        Marshal.FreeHGlobal(tempDataHandle);
 
 
-        packetHandlesCleanUp();
+
+        //packetHandlesCleanUp();
 
 
 

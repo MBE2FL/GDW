@@ -85,9 +85,14 @@ PLUGIN_OUT void receiveUDPData()
 	return cs.receiveUDPData();
 }
 
-PLUGIN_OUT void getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle)
+PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements)
 {
-	return cs.getPacketHandles(transDataElements, transDataHandle, animDataElements, animDataHandle);
+	return cs.getPacketHandleSizes(transDataElements, animDataElements);
+}
+
+PLUGIN_OUT void getPacketHandles(void* dataHandle)
+{
+	return cs.getPacketHandles(dataHandle);
 }
 
 PLUGIN_OUT TransformData* getTransformHandle()

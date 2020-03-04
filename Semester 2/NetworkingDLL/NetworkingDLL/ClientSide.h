@@ -58,8 +58,8 @@ public:
 	bool initNetwork(const char* ip);
 	bool initUDP(const char* ip);
 	bool initTCP(const char* ip);
-	void connectToServerTCP();
-	bool connectToServer();
+	void connectToServer();
+	//bool connectToServer();
 	bool queryConnectAttempt(int& id);
 
 
@@ -72,7 +72,8 @@ public:
 
 
 	void receiveUDPData();
-	void getPacketHandles(int& transDataElements, TransformData* transDataHandle, int& animDataElements, AnimData* animDataHandle);
+	void getPacketHandleSizes(int& transDataElements, int& animDataElements);
+	void getPacketHandles(void* dataHandle);
 	TransformData* getTransformHandle();
 	void packetHandlesCleanUp();
 
