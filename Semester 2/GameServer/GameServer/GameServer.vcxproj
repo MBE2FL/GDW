@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\CommonNetworking\AnimPacket.cpp" />
+    <ClCompile Include="..\..\CommonNetworking\EntityPacket.cpp" />
     <ClCompile Include="..\..\CommonNetworking\Packet.cpp" />
     <ClCompile Include="..\..\CommonNetworking\Transform.cpp" />
     <ClCompile Include="..\..\CommonNetworking\TransformPacket.cpp" />
@@ -136,6 +137,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\CommonNetworking\AnimPacket.h" />
+    <ClInclude Include="..\..\CommonNetworking\EntityPacket.h" />
     <ClInclude Include="..\..\CommonNetworking\Packet.h" />
     <ClInclude Include="..\..\CommonNetworking\Transform.h" />
     <ClInclude Include="..\..\CommonNetworking\TransformPacket.h" />

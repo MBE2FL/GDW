@@ -228,60 +228,12 @@ void ClientSide::connectToServerTCP()
 	// Call c# function.
 	//_funcs.connectedToServer();
 
-	//return true;
+
+
+
+
+
 	return;
-
-
-
-	//bool result = false;
-
-	//thread([&id, &result, this]
-	//	{
-	//		//Connect to the server
-	//		if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
-	//			printf("Unable to connect to server: %d\n", WSAGetLastError());
-	//			closesocket(_clientTCPsocket);
-	//			freeaddrinfo(_ptr);
-	//			WSACleanup();
-	//			system("pause");
-	//			return;
-	//		}
-
-
-	//		char buf[BUF_LEN];
-	//		memset(buf, 0, BUF_LEN);
-
-	//		MessageTypes msgType;
-
-
-	//		if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
-	//		{
-	//			msgType = static_cast<MessageTypes>(buf[0]);
-	//			switch (msgType)
-	//			{
-	//			case MessageTypes::ConnectionAccepted:
-	//			{
-	//				_networkID = buf[1];
-	//				id = _networkID;
-	//				cout << "ID: " << id << endl;
-	//			}
-	//				break;
-	//			default:
-	//				cout << "Unexpected message type receieved for connection attempt!" << endl;
-	//				return;
-	//				break;
-	//			}
-	//		}
-	//		else printf("recv() error: %d\n", WSAGetLastError());
-
-	//		result = true;
-
-	//		// Call c# function.
-	//		_funcs.connectedToServer();
-
-	//		return;
-	//	}
-	//);
 }
 
 bool ClientSide::connectToServer()

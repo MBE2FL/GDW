@@ -18,6 +18,9 @@ public class NetworkObject : MonoBehaviour
 
     NetworkManager _networkManager;
 
+    [SerializeField]
+    byte _objID = 0;
+
     //const string DLL_NAME = "NETWORKINGDLL";
 
     //[DllImport(DLL_NAME)]

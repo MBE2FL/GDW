@@ -15,7 +15,11 @@ enum MessageTypes : int8_t
 	ConnectionFailed,
 	ServerFull,
 	TransformMsg,
-	Anim
+	Anim,
+	EntitiesStart,
+	EntitiesNoStart,
+	EntitiesRequired,
+	EntitiesUpdate
 };
 
 struct PacketData

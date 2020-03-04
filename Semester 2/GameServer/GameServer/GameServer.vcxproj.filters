@@ -30,14 +30,17 @@
     <ClCompile Include="..\..\CommonNetworking\AnimPacket.cpp">
       <Filter>Source Files\Packets</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\CommonNetworking\Packet.cpp">
+    <ClCompile Include="..\..\CommonNetworking\Transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\CommonNetworking\TransformPacket.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Packets</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\CommonNetworking\Transform.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\CommonNetworking\Packet.cpp">
+      <Filter>Source Files\Packets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonNetworking\EntityPacket.cpp">
+      <Filter>Source Files\Packets</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -55,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="..\..\CommonNetworking\Transform.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonNetworking\EntityPacket.h">
+      <Filter>Header Files\Packets</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

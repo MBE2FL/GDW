@@ -17,6 +17,7 @@
 
 #include "Packet.h"
 #include "TransformPacket.h"
+#include "EntityPacket.h"
 
 
 using std::cout;
@@ -38,13 +39,17 @@ using std::lock_guard;
 
 struct Client
 {
-	Transform _transform;
 	string _ip = "";
-	bool connected = false;
+	bool _connected = false;
 	int8_t _id = NULL;
-	sockaddr* _sockAddr;
-	int _sockAddrLen;
-	sockaddr_in fromAddr;
+	sockaddr_in _udpSockAddr;
+	int _udpSockAddrLen = -1;
+};
+
+struct Entity
+{
+	int8_t _objID = 0;
+	int8_t _prefabType = 0;
 };
 
 
@@ -68,8 +73,12 @@ public:
 	bool initUDP();
 	bool initTCP();
 
-	void connectPlayer(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen);
 	void listenForConnections();
+
+	void requestStarterEntities(SOCKET* clientSocket, Client* client);
+	void requestRequiredEntites(SOCKET* clientSocket, Client* client);
+	void sendEntitiesToClient(SOCKET* clientSocket, Client* client);
+
 	void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen);
 	void processAnim(char buf[BUF_LEN], SOCKET* socket);
 
@@ -78,14 +87,15 @@ public:
 	void udpUpdate();
 	void tcpUpdate();
 
-	//void parseData(const string& buf, Vector3& pos, Quaternion& rot);
 
 private:
 	Client _player1;
 	Client _player2;
+
 	vector<Client*> _clients;
 	thread _udpThread;
 	thread _tcpThread;
+	vector<Entity*> _entities;
 
 	// Networking
 	SOCKET _serverUDP_socket = NULL;

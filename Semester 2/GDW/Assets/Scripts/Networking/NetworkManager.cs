@@ -173,7 +173,8 @@ public class NetworkManager : MonoBehaviour
     float _timeSinceLastUpdate = 0.0f;
     float _time = 0.0f;
     [SerializeField]
-    float _updateInterval = 0.167f;
+    float _updateInterval = 0.066f; // 1s / 15ups = 0.066ms
+    //float _updateInterval = 0.167f;
 
 
 
@@ -224,7 +225,7 @@ public class NetworkManager : MonoBehaviour
         // Output a message to the console, using a C++ function
         //IntPtr result = OutputConsoleMessage("This is a test.");
         //Debug.Log(Marshal.PtrToStringAnsi(result));
-        OutputConsoleMessage("This is a test.");
+        //OutputConsoleMessage("This is a test.");
 
         onServerConnect += connectServerSuccess;
     }
@@ -298,8 +299,9 @@ public class NetworkManager : MonoBehaviour
 
 
             // Retrieve server interpolated transform data of other player.
-            if (onDataReceive != null)
-                onDataReceive.Invoke();
+            //if (onDataReceive != null)
+            //    onDataReceive.Invoke();
+            receivePackets();
 
             _time = _updateInterval;
         }
@@ -368,6 +370,123 @@ public class NetworkManager : MonoBehaviour
 
 
         return true;
+    }
+
+
+    void receivePackets()
+    {
+        receiveUDPData();
+
+
+        int transDataElements = -1;
+        int animDataElements = -1;
+        IntPtr transDataHandle;
+        IntPtr animDataHandle;
+
+        getPacketHandles(ref transDataElements, out transDataHandle, ref animDataElements, out animDataHandle);
+
+
+        TransformData[] transData = new TransformData[transDataElements];
+        AnimData[] animData = new AnimData[animDataElements];
+
+
+        transDataHandle = getTransformHandle();
+
+
+        for (int i = 0; i < transDataElements; ++i)
+        {
+            transData[i] = (TransformData)Marshal.PtrToStructure(transDataHandle, typeof(TransformData));
+            transDataHandle += Marshal.SizeOf(typeof(TransformData));
+
+            Debug.Log("objID: " + transData[i].objID);
+            Debug.Log("Pos: " + transData[i].pos.ToString());
+            Debug.Log("Rot: " + transData[i].rot.ToString());
+        }
+
+
+
+        packetHandlesCleanUp();
+
+
+
+        #region OLD_BYTE_TEST
+        //Vector3 position = Vector3.zero;
+        //Quaternion rotation = Quaternion.identity;
+
+        ////_networkManager.receiveData(ref position, ref rotation);
+
+        ////transform.position = position;
+        ////transform.rotation = rotation;
+
+
+        //MessageTypes msgType = MessageTypes.ConnectionAttempt;
+        //int objID = -1;
+        //IntPtr data = IntPtr.Zero;
+        //int numElements = -1;
+        //byte[] byteData;
+
+
+        //_networkManager.receiveData(ref msgType, ref objID, ref data);
+
+
+        //data = _networkManager.getReceiveData(ref numElements);
+
+        //byteData = new byte[numElements * 512];
+
+        //Marshal.Copy(data, byteData, 0, numElements * 512);
+
+
+
+        //// Received some packets.
+        //if (numElements > 0)
+        //{
+        //    int packetSize = 512;
+        //    int packetOffset = 0;
+        //    for (int i = 0; i < numElements; ++i)
+        //    {
+        //        packetOffset = i * packetSize;
+
+        //        msgType = (MessageTypes)byteData[packetOffset];
+
+
+        //        switch (msgType)
+        //        {
+        //            case MessageTypes.TransformMsg:
+        //                {
+        //                    position.x = BitConverter.ToSingle(byteData, 3 + packetOffset);
+        //                    position.y = BitConverter.ToSingle(byteData, 7 + packetOffset);
+        //                    position.z = BitConverter.ToSingle(byteData, 11 + packetOffset);
+        //                    rotation.x = BitConverter.ToSingle(byteData, 15 + packetOffset);
+        //                    rotation.y = BitConverter.ToSingle(byteData, 19 + packetOffset);
+        //                    rotation.z = BitConverter.ToSingle(byteData, 23 + packetOffset);
+        //                    rotation.w = BitConverter.ToSingle(byteData, 27 + packetOffset);
+
+
+        //                    MemoryStream stream = new MemoryStream(byteData, 0, numElements * 512);
+        //                    BinaryReader reader = new BinaryReader(stream);
+
+        //                    position.x = reader.ReadSingle();
+        //                    position.y = reader.ReadSingle();
+        //                    position.z = reader.ReadSingle();
+        //                    rotation.x = reader.ReadSingle();
+        //                    rotation.y = reader.ReadSingle();
+        //                    rotation.z = reader.ReadSingle();
+        //                    rotation.w = reader.ReadSingle();
+
+
+
+        //                    Debug.Log("Pos: " + position.ToString());
+        //                    Debug.Log("Rot: " + rotation.ToString());
+        //                }
+        //                break;
+        //            case MessageTypes.Anim:
+        //                break;
+        //            default:
+        //                break;
+        //        }
+        //    }
+        //}
+        #endregion OLD_BYTE_TEST
     }
 }
 

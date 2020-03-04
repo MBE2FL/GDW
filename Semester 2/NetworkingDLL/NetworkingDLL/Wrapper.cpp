@@ -21,12 +21,12 @@ PLUGIN_OUT void InitConsole()
 	AllocConsole();
 	freopen_s(&pConsole, "CONOUT$", "wb", stdout);
 
-	std::cout << "Welcome to our plugin.\n";
+	std::cout << "Client plugin initialized.\n";
 	std::cout << "==============================================================================\n";
 
-	std::cout << CS_Functions.multiplyVectors(Vector3(1, 2, 4), Vector3(2, 1, 2)).toString() << std::endl;
-	std::cout << CS_Functions.multiplyInts(1, 2) << std::endl;
-	std::cout << CS_Functions.GetFloat() << std::endl;
+	//std::cout << CS_Functions.multiplyVectors(Vector3(1, 2, 4), Vector3(2, 1, 2)).toString() << std::endl;
+	//std::cout << CS_Functions.multiplyInts(1, 2) << std::endl;
+	//std::cout << CS_Functions.GetFloat() << std::endl;
 
 	cs.setFuncs(CS_Functions);
 }
