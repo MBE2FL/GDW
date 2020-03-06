@@ -85,7 +85,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         //float linearEyeDepth = LinearEyeDepth(posInput.positionWS, UNITY_MATRIX_V);
         //linearEyeDepth = LinearEyeDepth(depth, _ZBufferParams);
     //float linearEyeDepth = posInput.linearDepth;
-    float linearEyeDepth = LinearEyeDepth(_CameraPos, _cameraInvMatrix);
+    float linearEyeDepth = LinearEyeDepth(_CameraPos, _cameraInvMatrix); // Wrong
     
     
         // Convert ray direction from world space to eyespace(camera).
