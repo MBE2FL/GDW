@@ -1,9 +1,6 @@
 ﻿  ServerSide.cpp
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(390,48): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(394,38): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(467,48): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(471,38): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(522,37): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(872,22): warning C4018: '<': signed/unsigned mismatch
-     Creating library D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.lib and object D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.exp
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(404,39): warning C4267:  '=': conversion from 'size_t' to 'int8_t', possible loss of data
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(489,47): warning C4267:  '=': conversion from 'size_t' to 'int8_t', possible loss of data
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(493,38): warning C4267:  '=': conversion from 'size_t' to 'int8_t', possible loss of data
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(555,37): warning C4267:  'initializing': conversion from 'size_t' to 'int', possible loss of data
   GameServer.vcxproj -> D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe

@@ -15,6 +15,7 @@
 #include <thread>
 #include "TransformPacket.h"
 #include "AnimPacket.h"
+#include "EntityPacket.h"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -58,7 +59,7 @@ public:
 	bool initNetwork(const char* ip);
 	bool initUDP(const char* ip);
 	bool initTCP(const char* ip);
-	void connectToServer();
+	bool connectToServer(const char* ip, EntityData* entities, int numEntities);
 	//bool connectToServer();
 	bool queryConnectAttempt(int& id);
 

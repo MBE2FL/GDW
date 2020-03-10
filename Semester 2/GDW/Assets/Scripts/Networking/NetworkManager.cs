@@ -63,11 +63,11 @@ public struct AnimData
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Entity
+public struct EntityData
 {
-    public byte _objID;
-    public byte _prefabType;
-    public byte _ownership;
+    public byte entityID;
+    public byte entityPrefabType;
+    public byte ownership;
 }
 
 struct ConnectJob : IJob
@@ -79,8 +79,15 @@ struct ConnectJob : IJob
 
     public void Execute()
     {
-    // Attempt to establish a connection to the server.
-    NetworkManager.connectToServer();
+        unsafe
+        {
+            fixed (EntityData* tempPtr = NetworkManager.entityData)
+            {
+                IntPtr entitiesPtr = new IntPtr(tempPtr);
+                // Attempt to establish a connection to the server.
+                NetworkManager.connectToServer(Marshal.PtrToStringAnsi(_ip), entitiesPtr, NetworkManager.numEntities);
+            }
+        }
     }
 }
 
@@ -121,7 +128,7 @@ public class NetworkManager : MonoBehaviour
 
 
     // Network manager functions
-    public delegate bool connectToServerDelegate();
+    public delegate bool connectToServerDelegate(string ip, IntPtr entityData, int numEntities);
     public static connectToServerDelegate connectToServer;
 
     public delegate bool initNetworkDelegate(string ip);
@@ -208,6 +215,8 @@ public class NetworkManager : MonoBehaviour
 
     [SerializeField]
     List<NetworkObject> _networkObjects;
+    public static EntityData[] entityData;
+    public static int numEntities = 0;
 
 
     public List<NetworkObject> NetworkObjects
@@ -287,6 +296,8 @@ public class NetworkManager : MonoBehaviour
         ManualPluginImporter.CloseLibrary(_pluginHandle);
 
         onServerConnect -= connectServerSuccess;
+
+        _networkObjects.Clear();
     }
 
     // Start is called before the first frame update
@@ -404,17 +415,23 @@ public class NetworkManager : MonoBehaviour
             ConnectJob job = new ConnectJob();
             job._ip = Marshal.StringToHGlobalAnsi(_ip);
 
-            Entity[] entities = new Entity[_networkObjects.Count];
+
+            numEntities = _networkObjects.Count;
+            entityData = new EntityData[numEntities];
+
             int i = 0;
             foreach (NetworkObject obj in _networkObjects)
             {
-                entities[i] = new Entity() { _objID = obj.ObjID, _prefabType = (byte)obj.PrefabType, _ownership = (byte)obj.Ownership };
+                entityData[i].entityID = obj.ObjID;
+                entityData[i].entityPrefabType = (byte)obj.PrefabType;
+                entityData[i].ownership = (byte)obj.Ownership;
 
                 ++i;
             }
 
             //job._entities = Marshal.GetIUnknownForObject(entities);
             //job._entities = IntPtr.Zero;
+
 
             //job._networkManager;
             //Marshal.StructureToPtr<NetworkManager>(this, job._networkManager, false);

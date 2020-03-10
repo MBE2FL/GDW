@@ -50,9 +50,9 @@ PLUGIN_OUT bool initNetwork(const char* ip)
 	return cs.initNetwork(ip);
 }
 
-PLUGIN_OUT bool connectToServer()
+PLUGIN_OUT bool connectToServer(const char* ip, EntityData* entities, int numEntities)
 {
-	return cs.connectToServer();
+	return cs.connectToServer(ip, entities, numEntities);
 }
 
 PLUGIN_OUT bool queryConnectAttempt(int& id)

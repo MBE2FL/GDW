@@ -118,7 +118,7 @@ bool ClientSide::initTCP(const char* ip)
 	return true;
 }
 
-void ClientSide::connectToServer()
+bool ClientSide::connectToServer(const char* ip, EntityData* entities, int numEntities)
 {
 	//Connect to the server
 	if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
@@ -126,7 +126,7 @@ void ClientSide::connectToServer()
 		closesocket(_clientTCPsocket);
 		freeaddrinfo(_ptr);
 		WSACleanup();
-		return;
+		return false;
 	}
 
 	char buf[BUF_LEN];
@@ -134,7 +134,7 @@ void ClientSide::connectToServer()
 
 	MessageTypes msgType;
 
-	buf[0] = MessageTypes::ConnectionAttempt;
+	buf[MSG_TYPE_POS] = MessageTypes::ConnectionAttempt;
 
 	unsigned int timeouts = 0;
 	while (timeouts < MAX_TIMEOUTS)
@@ -147,7 +147,7 @@ void ClientSide::connectToServer()
 			freeaddrinfo(_ptr);
 			WSACleanup();
 			system("pause");
-			return;
+			return false;
 		}
 
 		// Wait for reply from server of UDP acception.
@@ -172,7 +172,7 @@ void ClientSide::connectToServer()
 			closesocket(_clientTCPsocket);
 			freeaddrinfo(_ptr);
 			WSACleanup();
-			return;
+			return false;
 		}
 		// Timeout
 		else if (wsaError == 0)
@@ -195,7 +195,7 @@ void ClientSide::connectToServer()
 	if (timeouts >= MAX_TIMEOUTS)
 	{
 		cout << "Server UDP connection could not be established." << endl;
-		return;
+		return false;
 	}
 
 
@@ -203,12 +203,12 @@ void ClientSide::connectToServer()
 
 	if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
 	{
-		msgType = static_cast<MessageTypes>(buf[0]);
+		msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
 		switch (msgType)
 		{
 		case MessageTypes::ConnectionAccepted:
 		{
-			_networkID = buf[1];
+			_networkID = buf[NET_ID_POS];
 			//id = _networkID;
 			//cout << "ID: " << id << endl;
 			cout << "ID: " << int(_networkID) << endl;
@@ -218,7 +218,7 @@ void ClientSide::connectToServer()
 		default:
 			cout << "Unexpected message type receieved for connection attempt!" << endl;
 			//return false;
-			return;
+			return false;
 			break;
 		}
 	}
@@ -230,11 +230,50 @@ void ClientSide::connectToServer()
 
 
 
+	if (_connected)
+	{
+		memset(buf, 0, BUF_LEN);
+
+		if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
+		{
+			msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+			switch (msgType)
+			{
+			case MessageTypes::EntitiesStart:
+			{
+				memset(buf, 0, BUF_LEN);
+				buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+				buf[NET_ID_POS] = _networkID;
+				buf[DATA_START_POS] = numEntities;
+				memcpy(&buf[DATA_START_POS + 1], entities, sizeof(EntityData) * numEntities);
+
+				if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+				{
+					cout << "Failed to send starter entities to the server!" << endl;
+					return false;
+				}
+
+				cout << "Number of entities: " << numEntities << endl;
+				cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
+				cout << "Sent starter entities to the server." << endl;
+			}
+			break;
+			case MessageTypes::EntitiesRequired:
+			{
+				cout << "Sent required entities to the server." << endl;
+			}
+				break;
+			default:
+				cout << "Unexpected message type receieved for entities request!" << endl;
+				return false;
+				break;
+			}
+		}
+	}
 
 
 
-
-	return;
+	return true;
 }
 
 //bool ClientSide::connectToServer()

@@ -19,14 +19,31 @@ void EntityPacket::serialize(void* data)
 	memcpy(_data, data, BUF_LEN);
 }
 
-void EntityPacket::deserialize(int8_t& objID, void* data)
+void EntityPacket::deserialize(int8_t& numEntities, void* data)
 {
-	EntityData* entityData = reinterpret_cast<EntityData*>(data);
+	//EntityData* entityData = reinterpret_cast<EntityData*>(data);
 
-	entityData->_numEntities = _data[DATA_START_POS];
-	entityData->_entityIDs = new int8_t[entityData->_numEntities];
-	entityData->_entityPrefabTypes = new int8_t[entityData->_numEntities];
+	//EntityData currEntity;
 
-	memcpy(entityData->_entityIDs, reinterpret_cast<int8_t*>(&_data[DATA_START_POS + 1]), entityData->_numEntities);
-	memcpy(entityData->_entityPrefabTypes, reinterpret_cast<int8_t*>(&_data[DATA_START_POS + 1 + entityData->_numEntities]), entityData->_numEntities);
+	//numEntities = _data[DATA_START_POS];
+
+
+	//memcpy(entityData->_entityIDs, reinterpret_cast<int8_t*>(&_data[DATA_START_POS + 1]), entityData->_numEntities);
+	//memcpy(entityData->_entityPrefabTypes, reinterpret_cast<int8_t*>(&_data[DATA_START_POS + 1 + entityData->_numEntities]), entityData->_numEntities);
+
+	memcpy(data, _data, sizeof(EntityData) * numEntities);
+
+	//for (int i = 0; i < numEntities; ++i)
+	//{
+	//	memcpy(&currEntity._entityID, reinterpret_cast<int8_t*>(&_data[DATA_START_POS + 1]), 1);
+	//	memcpy(&currEntity._entityPrefabType, reinterpret_cast<int8_t*>(&_data[DATA_START_POS + 1 + numEntities]), 1);
+	//	memcpy(&currEntity._ownership, reinterpret_cast<int8_t*>(&_data[DATA_START_POS + 2 + numEntities]), 1);
+
+	//	entityData[i] = currEntity;
+	//}
+}
+
+int8_t EntityPacket::getNumEntities() const
+{
+	return _data[DATA_START_POS];
 }

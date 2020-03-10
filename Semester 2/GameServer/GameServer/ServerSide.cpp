@@ -150,7 +150,7 @@ void Server::listenForConnections()
 		sockaddr_in fromAddr;
 		int fromLen = sizeof(fromAddr);
 
-		client_socket = accept(_serverTCP_socket, (sockaddr*)&fromAddr, &fromLen);
+		client_socket = accept(_serverTCP_socket, (sockaddr*)& fromAddr, &fromLen);
 
 		if (client_socket == INVALID_SOCKET)
 		{
@@ -196,19 +196,19 @@ void Server::listenForConnections()
 
 			switch (wsaError)
 			{
-			// Error occured while waiting for UDP response.
+				// Error occured while waiting for UDP response.
 			case SOCKET_ERROR:
 				printf("Select() failed %d\n", WSAGetLastError());
 				closesocket(client_socket);
 				//freeaddrinfo(_ptr);
 				//WSACleanup();
 				break;
-			// Timeout while waiting for UDP response.
+				// Timeout while waiting for UDP response.
 			case 0:
 				cout << "UDP connect attempt timeout!" << endl;
 				++timeouts;
 				continue;
-			// Message available on UDP socket.
+				// Message available on UDP socket.
 			default:
 			{
 				// UDP connection received. Store sockaddr info, and notify client on TCP socket.
@@ -216,7 +216,7 @@ void Server::listenForConnections()
 				memset(buf, 0, BUF_LEN);
 				int bytesReceived = -1;
 
-				bytesReceived = recvfrom(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&fromUDPAddr, &fromUDPLen);
+				bytesReceived = recvfrom(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)& fromUDPAddr, &fromUDPLen);
 
 				// Could check the type of message received as well?
 
@@ -226,9 +226,9 @@ void Server::listenForConnections()
 					continue;
 				}
 			}
-				break;
+			break;
 			}
-			
+
 
 			break;
 		}
@@ -377,39 +377,57 @@ void Server::requestStarterEntities(SOCKET* clientSocket, Client* client)
 	// Requested Entities received.
 	if (bytesReceived > 0)
 	{
+		cout << "Test received" << endl;
 		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
 
 		if (msgType == MessageTypes::EntitiesStart)
 		{
-			EntityData entityData = EntityData();
+			//EntityData entityData = EntityData();
 			EntityPacket packet = EntityPacket(buf);
+			int8_t numEntities = packet.getNumEntities();
 
-			// Generate IDs for the number entities requested. 
-			for (int i = 0; i < entityData._numEntities; ++i)
+			EntityData* entityData = new EntityData[numEntities];
+			packet.deserialize(numEntities, entityData);
+			cout << "Num entities: " << int(numEntities) << endl;
+
+			if (numEntities > 0)
 			{
-				entityData._entityIDs[i] = _entities.size();
+				int8_t* entityIDs = new int8_t[numEntities];
 
-				// Store entity on the server.
-				Entity* entity = new Entity();
-				entity->_objID = _entities.size();
-				entity->_prefabType = entityData._entityPrefabTypes[i];
+				// Generate IDs for the number entities requested. 
+				for (int i = 0; i < numEntities; ++i)
+				{
+					entityData[i]._entityID = int8_t(_entities.size());
 
-				_entities.push_back(entity);
-			}
+					// Store entity on the server.
+					Entity* entity = new Entity();
+					entity->_objID = _entities.size();
+					entity->_prefabType = entityData[i]._entityPrefabType;
+
+					_entities.push_back(entity);
+
+					entityIDs[i] = entity->_objID;
+
+					cout << "Added starter entity with ID, " << int(entity->_objID) << endl;
+				}
+
+				delete[] entityData;
+				entityData = nullptr;
 
 
-			// Send generated IDs back to the client.
-			memset(buf, 0, BUF_LEN);
+				// Send generated IDs back to the client.
+				memset(buf, 0, BUF_LEN);
 
-			buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
-			buf[NET_ID_POS] = client->_id;
-			buf[DATA_START_POS] = entityData._numEntities;
-			memcpy(&buf[DATA_START_POS + 1], entityData._entityIDs, entityData._numEntities);
-			//memcpy(&buf[DATA_START_POS + 1 + entityData._numEntities], entityData._entityPrefabTypes, entityData._numEntities);
+				buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+				buf[NET_ID_POS] = client->_id;
+				buf[DATA_START_POS] = numEntities;
+				memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
 
-			if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-			{
-				cout << "Failed to send generated entity IDs back to client." << endl;
+
+				if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+				{
+					cout << "Failed to send generated entity IDs back to client." << endl;
+				}
 			}
 		}
 	}
@@ -458,40 +476,55 @@ void Server::requestRequiredEntites(SOCKET* clientSocket, Client* client)
 
 		if (msgType == MessageTypes::EntitiesRequired)
 		{
-			EntityData entityData = EntityData();
 			EntityPacket packet = EntityPacket(buf);
+			int8_t numEntities = 0;
+			EntityData* entityData = new EntityData[numEntities];
+			int8_t* entityIDs = new int8_t[numEntities];
+
+			packet.deserialize(numEntities, entityData);
 
 			// Generate IDs for the number entities requested. 
-			for (int i = 0; i < entityData._numEntities; ++i)
+			for (int i = 0; i < numEntities; ++i)
 			{
-				entityData._entityIDs[i] = _entities.size();
+				entityData[i]._entityID = _entities.size();
 
 				// Store entity on the server.
 				Entity* entity = new Entity();
 				entity->_objID = _entities.size();
-				entity->_prefabType = entityData._entityPrefabTypes[i];
+				entity->_prefabType = entityData[i]._entityPrefabType;
 
 				_entities.push_back(entity);
+
+				entityIDs[i] = entity->_objID;
+
+				cout << "Added starter entity with ID, " + int(entity->_objID) << endl;
+			}
+
+			delete[] entityData;
+
+			// Send new entities to all other clients.
+			for (SOCKET* socket : _clientTCPSockets)
+			{
+				if (socket == clientSocket)
+					continue;
+
+				if (send(*socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+				{
+					cout << "Failed to send generated required entity IDs to other clients." << endl;
+				}
 			}
 
 
 			// Send generated IDs back to the client.
-			// Also send generated IDs to all other clients.
 			memset(buf, 0, BUF_LEN);
-
-			buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+			buf[MSG_TYPE_POS] = MessageTypes::EntitiesRequired;
 			buf[NET_ID_POS] = client->_id;
-			buf[DATA_START_POS] = entityData._numEntities;
-			memcpy(&buf[DATA_START_POS + 1], entityData._entityIDs, entityData._numEntities);
-			memcpy(&buf[DATA_START_POS + 1 + entityData._numEntities], entityData._entityPrefabTypes, entityData._numEntities);
+			buf[DATA_START_POS] = numEntities;
+			memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
 
-
-			for (SOCKET* socket : _clientTCPSockets)
+			if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
 			{
-				if (send(*socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-				{
-					cout << "Failed to send generated required entity IDs to client." << endl;
-				}
+				cout << "Failed to send generated entity IDs back to client." << endl;
 			}
 		}
 	}
@@ -707,7 +740,7 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 			packet = nullptr;
 
 			// Send data to other clients.
-			if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&client->_udpSockAddr, client->_udpSockAddrLen) == SOCKET_ERROR)
+			if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)& client->_udpSockAddr, client->_udpSockAddrLen) == SOCKET_ERROR)
 			{
 				printf("Failed to send transform data. %d\n", WSAGetLastError());
 			}
@@ -716,7 +749,7 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 
 
 		// Send data to other clients.
-		if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)&client->_udpSockAddr, client->_udpSockAddrLen) == SOCKET_ERROR)
+		if (sendto(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)& client->_udpSockAddr, client->_udpSockAddrLen) == SOCKET_ERROR)
 		{
 			printf("Failed to send transform data. %d\n", WSAGetLastError());
 		}
@@ -824,7 +857,7 @@ void Server::udpUpdate()
 			{
 				_udpListenInfo = new sockaddr_in(fromAddr);
 			}
-				break;
+			break;
 			default:
 				cout << "Unexpected message type received!" << endl;
 				break;
@@ -859,25 +892,25 @@ void Server::tcpUpdate()
 
 		if (fds.fd_count <= 0)
 			continue;
-		
+
 
 		wsaError = select(NULL, &fds, NULL, NULL, NULL);
 
-		if (wsaError == SOCKET_ERROR)
-		{
-			cout << "TCP Read Wait Error!" << endl;
-		}
-		else if (wsaError >= 1)
-		{
-			for (int i = 0; i < fds.fd_count; ++i)
-			{
-				bytes_received = recv(fds.fd_array[i], buf, BUF_LEN, 0);
+		//if (wsaError == SOCKET_ERROR)
+		//{
+		//	cout << "TCP Read Wait Error!" << endl;
+		//}
+		//else if (wsaError >= 1)
+		//{
+		//	for (int i = 0; i < fds.fd_count; ++i)
+		//	{
+		//		bytes_received = recv(fds.fd_array[i], buf, BUF_LEN, 0);
 
-				int state = -1;
-				memcpy(&state, reinterpret_cast<int*>(&buf[DATA_START_POS]), sizeof(int));
-				cout << state << endl;
-			}
-		}
+		//		int state = -1;
+		//		memcpy(&state, reinterpret_cast<int*>(&buf[DATA_START_POS]), sizeof(int));
+		//		cout << state << endl;
+		//	}
+		//}
 
 
 
