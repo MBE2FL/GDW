@@ -24460,17 +24460,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 465314ad7b625874f81eae51e50304a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cloudMesh: {fileID: 0}
-  cloudMat: {fileID: 0}
-  cloudSize: 5
-  maxScale: 1
-  timeScale: 1
-  texScale: 1
-  minNoiseSize: 0.5
-  sizeScale: 0.25
-  cam: {fileID: 0}
-  maxDist: 0
-  batchesToCreate: 0
+  cloudMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  cloudMat: {fileID: 2100000, guid: cf9f4f07538853b488c1d0f4e6980fab, type: 2}
+  cloudSize: 1
+  maxScale: 2
+  timeScale: 0.1
+  texScale: 0.1
+  minNoiseSize: 0.6
+  sizeScale: 1.5
+  cam: {fileID: 1892732555}
+  maxDist: 100
+  batchesToCreate: 6
 --- !u!4 &2016007893
 Transform:
   m_ObjectHideFlags: 0
