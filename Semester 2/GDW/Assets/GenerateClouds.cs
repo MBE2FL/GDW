@@ -155,6 +155,73 @@ public class GenerateClouds : MonoBehaviour
     }
     private void UpdateBatches()
     {
-        float size = 
+        foreach (var batch in batchesToUpdate)
+        {
+            foreach (var cloud in batch)
+            {
+                float size = Mathf.PerlinNoise(cloud.x * texScale + offsetX, cloud.y * texScale + offsetY);
+                if (size > minNoiseSize)
+                {
+                    float localScaleX = cloud.scale.x;
+
+                    if(!cloud.isActive)
+                    {
+                        cloud.SetActive(true);
+                        cloud.scale = Vector3.zero;
+                    }
+
+                    if (localScaleX < maxScale)
+                    {
+                        ScaleCloud(cloud, 1);
+                        if(cloud.scale.x > maxScale)
+                        {
+                            cloud.scale = new Vector3(maxScale, maxScale, maxScale);
+
+                        }
+                    }
+                }
+
+                else if (size < minNoiseSize)
+                {
+                    float localScaleX = cloud.scale.x;
+                    ScaleCloud(cloud, -1);
+
+                    if (localScaleX <= 0.1)
+                    {
+                        cloud.SetActive(false);
+                        cloud.scale = Vector3.zero;
+                    }
+                }
+            }
+            
+        }
+        
+
+    }
+
+    private void ScaleCloud(CloudData cloud, int direction)
+    {
+        cloud.scale += new Vector3(sizeScale * Time.deltaTime * direction, sizeScale * Time.deltaTime * direction, sizeScale * Time.deltaTime * direction);
+    }
+
+    private void UpdateBatchList()
+    {
+        batchesToUpdate.Clear();
+         foreach(var batch in batches)
+        {
+            if(CheckForActiveBatch(batch))
+            {
+                batchesToUpdate.Add(batch);
+            }
+        }
+
+    }
+
+    private void RenderBatches()
+    {
+        foreach (var batch in batchesToUpdate)
+        {
+            Graphics.DrawMeshInstanced(cloudMesh, 0, cloudMat, batch.Select((a) => a.matrix).ToList());
+        }
     }
 }
