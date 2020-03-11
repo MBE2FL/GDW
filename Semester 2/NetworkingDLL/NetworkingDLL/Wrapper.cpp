@@ -50,9 +50,24 @@ PLUGIN_OUT bool initNetwork(const char* ip)
 	return cs.initNetwork(ip);
 }
 
-PLUGIN_OUT bool connectToServer(const char* ip, EntityData* entities, int numEntities)
+PLUGIN_OUT bool connectToServer(const char* ip)
 {
-	return cs.connectToServer(ip, entities, numEntities);
+	return cs.connectToServer(ip);
+}
+
+PLUGIN_OUT MessageTypes queryEntityRequest()
+{
+	return cs.queryEntityRequest();
+}
+
+PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities)
+{
+	return cs.sendStarterEntities(entities, numEntities);
+}
+
+PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int numEntities)
+{
+	return cs.sendRequiredEntities(entities, numEntities);
 }
 
 PLUGIN_OUT bool queryConnectAttempt(int& id)

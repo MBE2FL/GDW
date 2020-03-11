@@ -118,7 +118,7 @@ bool ClientSide::initTCP(const char* ip)
 	return true;
 }
 
-bool ClientSide::connectToServer(const char* ip, EntityData* entities, int numEntities)
+bool ClientSide::connectToServer(const char* ip)
 {
 	//Connect to the server
 	if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
@@ -230,88 +230,124 @@ bool ClientSide::connectToServer(const char* ip, EntityData* entities, int numEn
 
 
 
-	if (_connected)
-	{
-		memset(buf, 0, BUF_LEN);
+	//if (_connected)
+	//{
+	//	memset(buf, 0, BUF_LEN);
 
-		// Check whether server is requesting the starting entities for the level, or the client's required entities.
-		if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
-		{
-			msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
-			switch (msgType)
-			{
-			case MessageTypes::EntitiesStart:
-			{
-				if (!sendStarterEntities(entities, numEntities))
-					return false;
+	//	// Check whether server is requesting the starting entities for the level, or the client's required entities.
+	//	if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
+	//	{
+	//		msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+	//		switch (msgType)
+	//		{
+	//		case MessageTypes::EntitiesStart:
+	//		{
+	//			if (!sendStarterEntities(entities, numEntities))
+	//				return false;
 
-				// Receive server assigned entity ids.
-				memset(buf, 0, BUF_LEN);
-				int bytesReceived = -1;
+	//			// Receive server assigned entity ids.
+	//			memset(buf, 0, BUF_LEN);
+	//			int bytesReceived = -1;
 
-				bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
-
-
-				if (bytesReceived > 0)
-				{
-					msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
-
-					if (msgType != MessageTypes::EntityIDs)
-					{
-						cout << "Was expecting to receive server assigned entity ids!" << endl;
-						return false;
-					}
-
-					int8_t numEntitesReturned = buf[DATA_START_POS];
-
-					if (numEntitesReturned != numEntities)
-					{
-						cout << "Was expecting to receive, " << int(numEntities) << " server assigned entity ids, but received " << int(numEntitesReturned)<<  " instead!" << endl;
-						return false;
-					}
-
-					cout << "Received " << int(numEntitesReturned) << " server assigned entity ids." << endl;
-
-					if (numEntities > 0)
-					{
-						int8_t* entityIDs = new int8_t[numEntities];
-						memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
-						for (int i = 0; i < numEntities; ++i)
-						{
-							entities[i]._entityID = entityIDs[i];
-						}
-
-						delete[] entityIDs;
-						entityIDs = nullptr;
-					}
-				}
-				else
-				{
-					cout << "Failed to receive server assigned entity ids! " << WSAGetLastError() << endl;
-					return false;
-				}
+	//			bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
 
 
+	//			if (bytesReceived > 0)
+	//			{
+	//				msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
 
-			}
-			break;
-			case MessageTypes::EntitiesRequired:
-			{
-				if (!sendRequiredEntities(entities, numEntities))
-					return false;
-			}
-				break;
-			default:
-				cout << "Unexpected message type receieved for entities request!" << endl;
-				return false;
-				break;
-			}
-		}
-	}
+	//				if (msgType != MessageTypes::EntityIDs)
+	//				{
+	//					cout << "Was expecting to receive server assigned entity ids!" << endl;
+	//					return false;
+	//				}
+
+	//				int8_t numEntitesReturned = buf[DATA_START_POS];
+
+	//				if (numEntitesReturned != numEntities)
+	//				{
+	//					cout << "Was expecting to receive, " << int(numEntities) << " server assigned entity ids, but received " << int(numEntitesReturned)<<  " instead!" << endl;
+	//					return false;
+	//				}
+
+	//				cout << "Received " << int(numEntitesReturned) << " server assigned entity ids." << endl;
+
+	//				if (numEntities > 0)
+	//				{
+	//					int8_t* entityIDs = new int8_t[numEntities];
+	//					memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
+	//					for (int i = 0; i < numEntities; ++i)
+	//					{
+	//						entities[i]._entityID = entityIDs[i];
+	//					}
+
+	//					delete[] entityIDs;
+	//					entityIDs = nullptr;
+	//				}
+	//			}
+	//			else
+	//			{
+	//				cout << "Failed to receive server assigned entity ids! " << WSAGetLastError() << endl;
+	//				return false;
+	//			}
+
+
+
+	//		}
+	//		break;
+	//		case MessageTypes::EntitiesRequired:
+	//		{
+	//			if (!sendRequiredEntities(entities, numEntities))
+	//				return false;
+	//		}
+	//			break;
+	//		default:
+	//			cout << "Unexpected message type receieved for entities request!" << endl;
+	//			return false;
+	//			break;
+	//		}
+	//	}
+	//}
 
 
 
 	return true;
+}
+
+MessageTypes ClientSide::queryEntityRequest()
+{
+	// Ask server if it wants the starting entity list or just the client's required list.
+	char buf[BUF_LEN];
+	memset(buf, 0, BUF_LEN);
+
+	buf[MSG_TYPE_POS] = MessageTypes::EntitiesQuery;
+	buf[NET_ID_POS] = _networkID;
+
+	if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		cout << "Unable to query server for which entity list to provide!" << endl;
+		return MessageTypes::ErrorMsg;
+	}
+
+
+	// Recieve server's reply.
+	int bytesReceived = -1;
+	int wsaError = -1;
+	memset(buf, 0, BUF_LEN);
+
+	bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
+
+	wsaError = WSAGetLastError();
+
+	if (bytesReceived > 0)
+	{
+		cout << "Server is requesting the " << static_cast<int>(buf[MSG_TYPE_POS]) << " entity list." << endl;
+		return static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+	}
+	else
+	{
+		return MessageTypes::EmptyMsg;
+	}
 }
 
 bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
@@ -334,6 +370,55 @@ bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 	cout << "Number of entities: " << numEntities << endl;
 	cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
 	cout << "Sent starter entities to the server." << endl;
+
+
+
+	// Receive server assigned entity ids.
+	memset(buf, 0, BUF_LEN);
+	int bytesReceived = -1;
+
+	bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
+
+
+	if (bytesReceived > 0)
+	{
+		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+
+		if (msgType != MessageTypes::EntityIDs)
+		{
+			cout << "Was expecting to receive server assigned entity ids!" << endl;
+			return false;
+		}
+
+		int8_t numEntitesReturned = buf[DATA_START_POS];
+
+		if (numEntitesReturned != numEntities)
+		{
+			cout << "Was expecting to receive, " << int(numEntities) << " server assigned entity ids, but received " << int(numEntitesReturned)<<  " instead!" << endl;
+			return false;
+		}
+
+		cout << "Received " << int(numEntitesReturned) << " server assigned entity ids." << endl;
+
+		if (numEntities > 0)
+		{
+			int8_t* entityIDs = new int8_t[numEntities];
+			memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
+			for (int i = 0; i < numEntities; ++i)
+			{
+				entities[i]._entityID = entityIDs[i];
+			}
+
+			delete[] entityIDs;
+			entityIDs = nullptr;
+		}
+	}
+	else
+	{
+		cout << "Failed to receive server assigned entity ids! " << WSAGetLastError() << endl;
+		return false;
+	}
+
 
 	return true;
 }

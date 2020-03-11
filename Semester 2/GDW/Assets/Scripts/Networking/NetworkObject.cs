@@ -11,10 +11,12 @@ enum NetworkOp
     Transmitter
 }
 
-public enum PrefabType : byte
+public enum PrefabTypes : byte
 {
     Brother,
+    BrotherPawn,
     Sister,
+    SisterPawn,
     Rock,
     Tire,
     Rope
@@ -36,7 +38,7 @@ public class NetworkObject : MonoBehaviour
     [SerializeField]
     byte _objID = 0;
     [SerializeField]
-    PrefabType _prefabType = PrefabType.Sister;
+    PrefabTypes _prefabType = PrefabTypes.Sister;
     [SerializeField]
     Ownership _ownership = Ownership.ClientOwned;
 
@@ -53,7 +55,7 @@ public class NetworkObject : MonoBehaviour
         }
     }
 
-    public PrefabType PrefabType
+    public PrefabTypes PrefabType
     {
         get
         {

@@ -61,8 +61,9 @@ public:
 	bool initUDP(const char* ip);
 	bool initTCP(const char* ip);
 
-	bool connectToServer(const char* ip, EntityData* entities, int numEntities);
+	bool connectToServer(const char* ip);
 
+	MessageTypes queryEntityRequest();
 	bool sendStarterEntities(EntityData* entities, int numEntities);
 	bool sendRequiredEntities(EntityData* entities, int numEntities);
 

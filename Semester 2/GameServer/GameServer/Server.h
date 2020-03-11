@@ -75,9 +75,10 @@ public:
 
 	void listenForConnections();
 
-	void requestStarterEntities(SOCKET* clientSocket, Client* client);
-	void requestRequiredEntites(SOCKET* clientSocket, Client* client);
-	void sendEntitiesToClient(SOCKET* clientSocket, Client* client);
+	void processClientEntityRequest(SOCKET* clientSocket);
+	void processStarterEntities(SOCKET* clientSocket, char buf[BUF_LEN]);
+	void processRequiredEntities(SOCKET* clientSocket, char buf[BUF_LEN]);
+	void sendEntitiesToClient(SOCKET* clientSocket);
 
 	void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen);
 	void processAnim(char buf[BUF_LEN], SOCKET* socket);

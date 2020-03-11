@@ -139,5 +139,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkOp: 0
   _objID: 0
-  _prefabType: 2
+  _prefabType: 4
   _ownership: 1

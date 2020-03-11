@@ -29,7 +29,7 @@ public struct CS_to_Plugin_Functions
         //RandomFloat = Marshal.GetFunctionPointerForDelegate(new Func<float>(NetworkManager.GetFloat));
         RandomFloat = Marshal.GetFunctionPointerForDelegate(new Func<float>(NetworkManager.GetFloat));
 
-        ConnectedToServer = Marshal.GetFunctionPointerForDelegate(new Func<bool>(NetworkManager.connectedToServer));
+        //ConnectedToServer = Marshal.GetFunctionPointerForDelegate(new Func<bool>(NetworkManager.connectedToServer));
 
         return true;
     }
@@ -43,7 +43,15 @@ public enum MessageTypes : byte
     ConnectionFailed,
     ServerFull,
     TransformMsg,
-    Anim
+    Anim,
+    EntitiesQuery,
+    EntitiesStart,
+    EntitiesNoStart,
+    EntitiesRequired,
+    EntitiesUpdate,
+    EntityIDs,
+    EmptyMsg,
+    ErrorMsg
 }
 
 
@@ -70,6 +78,9 @@ public struct EntityData
     public byte ownership;
 }
 
+
+
+
 struct ConnectJob : IJob
 {
     [NativeDisableUnsafePtrRestriction]
@@ -79,20 +90,8 @@ struct ConnectJob : IJob
 
     public void Execute()
     {
-        unsafe
-        {
-            fixed (EntityData* tempPtr = NetworkManager.entityData)
-            {
-                IntPtr entitiesPtr = new IntPtr(tempPtr);
-                // Attempt to establish a connection to the server.
-                NetworkManager.connectToServer(Marshal.PtrToStringAnsi(_ip), entitiesPtr, NetworkManager.numEntities);
-            }
-        }
-
-        foreach (EntityData entity in NetworkManager.entityData)
-        {
-            Debug.Log("Entity with ID spawned: " + entity.entityID);
-        }
+        // Attempt to establish a connection to the server.
+        NetworkManager.connectToServer(Marshal.PtrToStringAnsi(_ip));
     }
 }
 
@@ -101,6 +100,7 @@ struct ConnectJob : IJob
 
 public class NetworkManager : MonoBehaviour
 {
+#region DLL_VARIABLES
     //const string DLL_NAME = "NETWORKINGDLL";
     // Path to the DLL
 #if UNITY_EDITOR
@@ -133,8 +133,17 @@ public class NetworkManager : MonoBehaviour
 
 
     // Network manager functions
-    public delegate bool connectToServerDelegate(string ip, IntPtr entityData, int numEntities);
+    public delegate bool connectToServerDelegate(string ip);
     public static connectToServerDelegate connectToServer;
+
+    public delegate MessageTypes queryEntityRequestDelegate();
+    public static queryEntityRequestDelegate queryEntityRequest;
+
+    public delegate bool sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
+    public static sendStarterEntitiesDelegate sendStarterEntities;
+
+    public delegate bool sendRequiredEntitiesDelegate(IntPtr entities, int numEntities);
+    public static sendRequiredEntitiesDelegate sendRequiredEntities;
 
     public delegate bool initNetworkDelegate(string ip);
     public initNetworkDelegate initNetwork;
@@ -180,6 +189,7 @@ public class NetworkManager : MonoBehaviour
 
     public delegate IntPtr getTransformHandleDelegate();
     public getTransformHandleDelegate getTransformHandle;
+#endregion DLL_VARIABLES
 
 
 
@@ -224,6 +234,10 @@ public class NetworkManager : MonoBehaviour
     public static int numEntities = 0;
 
 
+    //[SerializeField]
+    //List<NetworkObject> _networkPrefabs;
+    [SerializeField]
+    Dictionary<PrefabTypes, NetworkObject> _networkPrefabs;
     public List<NetworkObject> NetworkObjects
     {
         get
@@ -250,6 +264,9 @@ public class NetworkManager : MonoBehaviour
 
         // Network manager functions
         connectToServer = ManualPluginImporter.GetDelegate<connectToServerDelegate>(_pluginHandle, "connectToServer");
+        queryEntityRequest = ManualPluginImporter.GetDelegate<queryEntityRequestDelegate>(_pluginHandle, "queryEntityRequest");
+        sendStarterEntities = ManualPluginImporter.GetDelegate<sendStarterEntitiesDelegate>(_pluginHandle, "sendStarterEntities");
+        sendRequiredEntities = ManualPluginImporter.GetDelegate<sendRequiredEntitiesDelegate>(_pluginHandle, "sendRequiredEntities");
         initNetwork = ManualPluginImporter.GetDelegate<initNetworkDelegate>(_pluginHandle, "initNetwork");
 
         // Network object functions
@@ -289,6 +306,24 @@ public class NetworkManager : MonoBehaviour
         //OutputConsoleMessage("This is a test.");
 
         onServerConnect += connectServerSuccess;
+
+
+        NetworkObject[] _tempPrefabs = Resources.LoadAll<NetworkObject>("Server Prefabs");
+        _networkPrefabs = new Dictionary<PrefabTypes, NetworkObject>(_tempPrefabs.Length);
+        foreach (NetworkObject netObj in _tempPrefabs)
+        {
+            _networkPrefabs.Add(netObj.PrefabType, netObj);
+        }
+    }
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        initializeNetworkManager();
+
+        _gameManager = GetComponent<GameManager>();
+
+        GameManager.onPlay += play;
     }
 
     private void OnApplicationQuit()
@@ -303,14 +338,8 @@ public class NetworkManager : MonoBehaviour
         onServerConnect -= connectServerSuccess;
 
         _networkObjects.Clear();
-    }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        initializeNetworkManager();
-
-        _gameManager = GetComponent<GameManager>();
+        GameManager.onPlay -= play;
     }
 
     // Example functions
@@ -356,15 +385,15 @@ public class NetworkManager : MonoBehaviour
         if (_time <= 0.0f)
         {
 
-            // Send this player's transform data to server.
-            if (onDataSend != null)
-                onDataSend.Invoke();
+            //// Send this player's transform data to server.
+            //if (onDataSend != null)
+            //    onDataSend.Invoke();
 
 
-            // Retrieve server interpolated transform data of other player.
-            //if (onDataReceive != null)
-            //    onDataReceive.Invoke();
-            receivePackets();
+            //// Retrieve server interpolated transform data of other player.
+            ////if (onDataReceive != null)
+            ////    onDataReceive.Invoke();
+            //receivePackets();
 
             _time = _updateInterval;
         }
@@ -377,43 +406,6 @@ public class NetworkManager : MonoBehaviour
 
     public void connect()
     {
-        //// Only attempt to establish a connection to the server iff, no connection has already been made.
-        //if (!_connected)
-        //{
-        //    // Attempt to establish a connection to the server.
-        //    _connected = connectToServer(ref _id);
-
-        //    // Connection to server established.
-        //    if (_connected)
-        //    {
-        //        Debug.Log("Successfully connected to server.");
-
-        //        // Notify all listeners.
-        //        if (onServerConnect != null)
-        //            onServerConnect.Invoke();
-        //    }
-        //    // Failed to establish a connection to the server.
-        //    else
-        //        Debug.Log("Attemp to connect to server failed!");
-        //}
-
-
-        // Only attempt to establish a connection to the server iff, no connection has already been made.
-        //if (!_connected && !_connecting)
-        //{
-        //    // Attempt to establish a connection to the server.
-        //    connectToServer();
-
-        //    _connecting = true;
-
-        //    _testObj.SetActive(true);
-
-        //    _connectButton.GetComponent<Button>().interactable = false;
-        //    _connectButton.GetComponentInChildren<Text>().text = "Connecting...";
-        //}
-
-
-
         // Only attempt to establish a connection to the server iff, no connection has already been made.
         if (!_connected && !_connecting)
         {
@@ -471,11 +463,48 @@ public class NetworkManager : MonoBehaviour
         Debug.Log("Successfully connected to server.");
     }
 
-    public static bool connectedToServer()
+    public void play()
     {
+        MessageTypes msgType = queryEntityRequest();
+        Debug.Log(msgType);
 
+        if (msgType == MessageTypes.EntitiesStart)
+        {
+            unsafe
+            {
+                fixed (EntityData* tempPtr = entityData)
+                {
+                    IntPtr entitiesPtr = new IntPtr(tempPtr);
+                    // Send starting entity list to the server.
+                    sendStarterEntities(entitiesPtr, numEntities);
+                }
+            }
 
-        return true;
+            NetworkObject netObj = null;
+            foreach (EntityData entity in entityData)
+            {
+                netObj = Instantiate(_networkPrefabs[(PrefabTypes)entity.entityPrefabType], Vector3.zero, Quaternion.identity);
+                netObj.ObjID = entity.entityID;
+
+                Debug.Log("Entity with ID spawned: " + entity.entityID);
+            }
+        }
+        else if (msgType == MessageTypes.EntitiesRequired)
+        {
+
+        }
+        else if (msgType == MessageTypes.EmptyMsg)
+        {
+
+        }
+        else if (msgType == MessageTypes.ErrorMsg)
+        {
+
+        }
+        else
+        {
+
+        }
     }
 
 

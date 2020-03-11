@@ -322,233 +322,171 @@ void Server::listenForConnections()
 
 
 
-		// Server just receieved first client, request their starter entities.
-		if (_entities.size() == 0)
-		{
-			requestStarterEntities(&client_socket, client);
-		}
-		// Notify client the server does not require their starter entities.
-		else
-		{
-			memset(buf, 0, BUF_LEN);
+		//// Server just receieved first client, request their starter entities.
+		//if (_entities.size() == 0)
+		//{
+		//	requestStarterEntities(&client_socket, client);
+		//}
+		//// Notify client the server does not require their starter entities.
+		//else
+		//{
+		//	memset(buf, 0, BUF_LEN);
 
-			buf[MSG_TYPE_POS] = EntitiesNoStart;
+		//	buf[MSG_TYPE_POS] = EntitiesNoStart;
 
-			if (send(client_socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-			{
-				cout << "Failed to notify client the server does not need their starter entites!" << endl;
-			}
+		//	if (send(client_socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		//	{
+		//		cout << "Failed to notify client the server does not need their starter entites!" << endl;
+		//	}
 
 
-			// Send all server entities to the client.
-			sendEntitiesToClient(&client_socket, client);
+		//	// Send all server entities to the client.
+		//	sendEntitiesToClient(&client_socket, client);
 
-			// Request any required entities the client has, and notify all other clients.
-			requestRequiredEntites(&client_socket, client);
-		}
+		//	// Request any required entities the client has, and notify all other clients.
+		//	requestRequiredEntites(&client_socket, client);
+		//}
 
 	}
 }
 
-void Server::requestStarterEntities(SOCKET* clientSocket, Client* client)
+void Server::processClientEntityRequest(SOCKET* clientSocket)
 {
-	// Send a message to the client requesting their starting entities.
 	char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
 
-	buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
-	buf[NET_ID_POS] = client->_id;
+	int wsaError = -1;
+
+
+	if (_clients.size() == 1)
+		buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+	else
+		buf[MSG_TYPE_POS] = MessageTypes::EntitiesRequired;
+
+	cout << "Server is requesting the " << static_cast<int>(buf[MSG_TYPE_POS]) << " entity list from a client." << endl;
 
 	if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
 	{
-		printf("Failed to request starter entities from client. %d\n", WSAGetLastError());
+		cout << "Failed to reply to client entity request! " << WSAGetLastError() << endl;
 		return;
 	}
+}
 
-
-	int bytesReceived = -1;
-	int wsaError = -1;
-	memset(buf, 0, BUF_LEN);
-
-	bytesReceived = recv(*clientSocket, buf, BUF_LEN, 0);
-
-	wsaError = WSAGetLastError();
-
+void Server::processStarterEntities(SOCKET* clientSocket, char buf[BUF_LEN])
+{
 	// Requested Entities received.
-	if (bytesReceived > 0)
-	{
-		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+	EntityPacket packet = EntityPacket(buf);
+	int8_t numEntities = packet.getNumEntities();
 
-		if (msgType == MessageTypes::EntitiesStart)
+	EntityData* entityData = new EntityData[numEntities];
+	packet.deserialize(numEntities, entityData);
+	cout << "Num entities: " << int(numEntities) << endl;
+
+	if (numEntities > 0)
+	{
+		int8_t* entityIDs = new int8_t[numEntities];
+
+		// Generate IDs for the number entities requested. 
+		for (int i = 0; i < numEntities; ++i)
 		{
-			//EntityData entityData = EntityData();
-			EntityPacket packet = EntityPacket(buf);
-			int8_t numEntities = packet.getNumEntities();
+			entityData[i]._entityID = int8_t(_entities.size());
 
-			EntityData* entityData = new EntityData[numEntities];
-			packet.deserialize(numEntities, entityData);
-			cout << "Num entities: " << int(numEntities) << endl;
+			// Store entity on the server.
+			Entity* entity = new Entity();
+			entity->_objID = _entities.size();
+			entity->_prefabType = entityData[i]._entityPrefabType;
 
-			if (numEntities > 0)
-			{
-				int8_t* entityIDs = new int8_t[numEntities];
+			_entities.push_back(entity);
 
-				// Generate IDs for the number entities requested. 
-				for (int i = 0; i < numEntities; ++i)
-				{
-					entityData[i]._entityID = int8_t(_entities.size());
+			entityIDs[i] = entity->_objID;
 
-					// Store entity on the server.
-					Entity* entity = new Entity();
-					entity->_objID = _entities.size();
-					entity->_prefabType = entityData[i]._entityPrefabType;
-
-					_entities.push_back(entity);
-
-					entityIDs[i] = entity->_objID;
-
-					cout << "Added starter entity with ID, " << int(entity->_objID) << endl;
-				}
-
-				delete[] entityData;
-				entityData = nullptr;
-
-
-				// Send generated IDs back to the client.
-				memset(buf, 0, BUF_LEN);
-
-				buf[MSG_TYPE_POS] = MessageTypes::EntityIDs;
-				buf[NET_ID_POS] = client->_id;
-				buf[DATA_START_POS] = numEntities;
-				memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
-
-
-				if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-				{
-					cout << "Failed to send generated entity IDs back to client." << endl;
-				}
-			}
+			cout << "Added starter entity with ID, " << int(entity->_objID) << endl;
 		}
-	}
-	// No entities requested to be spawned.
-	else if (bytesReceived == 0)
-	{
-		cout << "No entities requested to be spawned." << endl;
-		return;
-	}
-	// Error while requesting entties.
-	else
-	{
-		cout << "Unable to receieve entities request! " << wsaError << endl;
-		return;
+
+		delete[] entityData;
+		entityData = nullptr;
+
+
+		// Send generated IDs back to the client.
+		memset(buf, 0, BUF_LEN);
+
+		buf[MSG_TYPE_POS] = MessageTypes::EntityIDs;
+		buf[DATA_START_POS] = numEntities;
+		memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
+
+
+		if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			cout << "Failed to send generated entity IDs back to client." << endl;
+		}
 	}
 }
 
-void Server::requestRequiredEntites(SOCKET* clientSocket, Client* client)
+void Server::processRequiredEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 {
-	// Send a message to the client requesting their required entities.
-	char buf[BUF_LEN];
-	memset(buf, 0, BUF_LEN);
-
-	buf[MSG_TYPE_POS] = MessageTypes::EntitiesRequired;
-	buf[NET_ID_POS] = client->_id;
-
-	if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-	{
-		printf("Failed to request required entities from client. %d\n", WSAGetLastError());
-		return;
-	}
-
-
-	int bytesReceived = -1;
-	int wsaError = -1;
-	memset(buf, 0, BUF_LEN);
-
-	bytesReceived = recv(*clientSocket, buf, BUF_LEN, 0);
-
-	wsaError = WSAGetLastError();
-
 	// Required Entities received.
-	if (bytesReceived > 0)
+	EntityPacket packet = EntityPacket(buf);
+	int8_t numEntities = 0;
+	EntityData* entityData = new EntityData[numEntities];
+	int8_t* entityIDs = new int8_t[numEntities];
+
+	packet.deserialize(numEntities, entityData);
+
+
+	if (numEntities > 0)
 	{
-		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
-
-		if (msgType == MessageTypes::EntitiesRequired)
+		// Generate IDs for the number entities requested. 
+		for (int i = 0; i < numEntities; ++i)
 		{
-			EntityPacket packet = EntityPacket(buf);
-			int8_t numEntities = 0;
-			EntityData* entityData = new EntityData[numEntities];
-			int8_t* entityIDs = new int8_t[numEntities];
+			entityData[i]._entityID = _entities.size();
 
-			packet.deserialize(numEntities, entityData);
+			// Store entity on the server.
+			Entity* entity = new Entity();
+			entity->_objID = _entities.size();
+			entity->_prefabType = entityData[i]._entityPrefabType;
 
-			// Generate IDs for the number entities requested. 
-			for (int i = 0; i < numEntities; ++i)
+			_entities.push_back(entity);
+
+			entityIDs[i] = entity->_objID;
+
+			cout << "Added starter entity with ID, " + int(entity->_objID) << endl;
+		}
+
+		delete[] entityData;
+
+		// Send new entities to all other clients.
+		for (SOCKET* socket : _clientTCPSockets)
+		{
+			if (socket == clientSocket)
+				continue;
+
+			if (send(*socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
 			{
-				entityData[i]._entityID = _entities.size();
-
-				// Store entity on the server.
-				Entity* entity = new Entity();
-				entity->_objID = _entities.size();
-				entity->_prefabType = entityData[i]._entityPrefabType;
-
-				_entities.push_back(entity);
-
-				entityIDs[i] = entity->_objID;
-
-				cout << "Added starter entity with ID, " + int(entity->_objID) << endl;
-			}
-
-			delete[] entityData;
-
-			// Send new entities to all other clients.
-			for (SOCKET* socket : _clientTCPSockets)
-			{
-				if (socket == clientSocket)
-					continue;
-
-				if (send(*socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-				{
-					cout << "Failed to send generated required entity IDs to other clients." << endl;
-				}
-			}
-
-
-			// Send generated IDs back to the client.
-			memset(buf, 0, BUF_LEN);
-			buf[MSG_TYPE_POS] = MessageTypes::EntitiesRequired;
-			buf[NET_ID_POS] = client->_id;
-			buf[DATA_START_POS] = numEntities;
-			memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
-
-			if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-			{
-				cout << "Failed to send generated entity IDs back to client." << endl;
+				cout << "Failed to send generated required entity IDs to other clients." << endl;
 			}
 		}
-	}
-	// No entities requested to be spawned.
-	else if (bytesReceived == 0)
-	{
-		cout << "No entities requested to be spawned." << endl;
-		return;
-	}
-	// Error while requesting entties.
-	else
-	{
-		cout << "Unable to receieve entities request! " << wsaError << endl;
-		return;
+
+
+		// Send generated IDs back to the client.
+		memset(buf, 0, BUF_LEN);
+		buf[MSG_TYPE_POS] = MessageTypes::EntitiesRequired;
+		buf[DATA_START_POS] = numEntities;
+		memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
+
+		if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			cout << "Failed to send generated entity IDs back to client." << endl;
+		}
 	}
 }
 
-void Server::sendEntitiesToClient(SOCKET* clientSocket, Client* client)
+void Server::sendEntitiesToClient(SOCKET* clientSocket)
 {
 	// Send a message to the client requesting their required entities.
 	char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
 
 	buf[MSG_TYPE_POS] = MessageTypes::EntitiesUpdate;
-	buf[NET_ID_POS] = client->_id;
 
 	int offset = 0;
 	int prefabOffset = _entities.size();
@@ -878,7 +816,7 @@ void Server::tcpUpdate()
 		char buf[BUF_LEN];
 		memset(buf, '\0', BUF_LEN);
 
-		int bytes_received = -1;
+		int bytesReceived = -1;
 		int wsaError = -1;
 
 		// Receive message from a client.
@@ -894,6 +832,77 @@ void Server::tcpUpdate()
 
 
 		wsaError = select(NULL, &fds, NULL, NULL, NULL);
+
+
+
+		if (wsaError == SOCKET_ERROR)
+		{
+			cout << "TCP Update: Error " << WSAGetLastError() << endl;
+			continue;
+		}
+
+		SOCKET* clientSocket = nullptr;
+		for (int i = 0; i < fds.fd_count; ++i)
+		{
+			clientSocket = &fds.fd_array[i];
+
+			bytesReceived = recv(*clientSocket, buf, BUF_LEN, 0);
+
+			
+			if (bytesReceived > 0)
+			{
+				MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+
+				switch (msgType)
+				{
+				case ConnectionAttempt:
+					break;
+				case ConnectionAccepted:
+					break;
+				case ConnectionFailed:
+					break;
+				case ServerFull:
+					break;
+				case Anim:
+					break;
+				case EntitiesQuery:
+					processClientEntityRequest(clientSocket);
+					break;
+				case EntitiesStart:
+					processStarterEntities(clientSocket, buf);
+					break;
+				case EntitiesNoStart:
+					break;
+				case EntitiesRequired:
+					// Send all server entities to the client.
+					sendEntitiesToClient(clientSocket);
+					// Request any required entities the client has, and notify all other clients.
+					processRequiredEntities(clientSocket, buf);
+					break;
+				case EntitiesUpdate:
+					break;
+				case EntityIDs:
+					break;
+				case EmptyMsg:
+					break;
+				default:
+					break;
+				}
+			}
+			else if (bytesReceived == 0)
+			{
+				cout << "TCP Update: Empty message received." << endl;
+			}
+			else
+			{
+				cout << "TCP Update: Error " << WSAGetLastError() << endl;
+			}
+		}
+
+
+
+
+
 
 		//if (wsaError == SOCKET_ERROR)
 		//{

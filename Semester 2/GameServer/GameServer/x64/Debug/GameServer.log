@@ -1,1 +1,9 @@
-﻿  GameServer.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe
+﻿  ServerSide.cpp
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(396,37): warning C4267:  '=': conversion from 'size_t' to 'int8_t', possible loss of data
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(441,46): warning C4267:  '=': conversion from 'size_t' to 'int8_t', possible loss of data
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(445,37): warning C4267:  '=': conversion from 'size_t' to 'int8_t', possible loss of data
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(492,37): warning C4267:  'initializing': conversion from 'size_t' to 'int', possible loss of data
+  main.cpp
+  Generating Code...
+D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(845,21): warning C4018:  '<': signed/unsigned mismatch
+  GameServer.vcxproj -> D:\User Profiles\100671306\Desktop\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe

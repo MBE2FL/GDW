@@ -508,7 +508,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _networkOp: 1
   _objID: 0
-  _prefabType: 1
+  _prefabType: 2
   _ownership: 0
 --- !u!1 &1203054573424653416
 GameObject:
