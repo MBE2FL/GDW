@@ -88,6 +88,11 @@ struct ConnectJob : IJob
                 NetworkManager.connectToServer(Marshal.PtrToStringAnsi(_ip), entitiesPtr, NetworkManager.numEntities);
             }
         }
+
+        foreach (EntityData entity in NetworkManager.entityData)
+        {
+            Debug.Log("Entity with ID spawned: " + entity.entityID);
+        }
     }
 }
 

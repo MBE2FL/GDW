@@ -56,10 +56,16 @@ class PLUGIN_OUT ClientSide
 {
 public:
 	ClientSide();
+
 	bool initNetwork(const char* ip);
 	bool initUDP(const char* ip);
 	bool initTCP(const char* ip);
+
 	bool connectToServer(const char* ip, EntityData* entities, int numEntities);
+
+	bool sendStarterEntities(EntityData* entities, int numEntities);
+	bool sendRequiredEntities(EntityData* entities, int numEntities);
+
 	//bool connectToServer();
 	bool queryConnectAttempt(int& id);
 

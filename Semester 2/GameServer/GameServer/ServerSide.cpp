@@ -377,7 +377,6 @@ void Server::requestStarterEntities(SOCKET* clientSocket, Client* client)
 	// Requested Entities received.
 	if (bytesReceived > 0)
 	{
-		cout << "Test received" << endl;
 		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
 
 		if (msgType == MessageTypes::EntitiesStart)
@@ -418,7 +417,7 @@ void Server::requestStarterEntities(SOCKET* clientSocket, Client* client)
 				// Send generated IDs back to the client.
 				memset(buf, 0, BUF_LEN);
 
-				buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+				buf[MSG_TYPE_POS] = MessageTypes::EntityIDs;
 				buf[NET_ID_POS] = client->_id;
 				buf[DATA_START_POS] = numEntities;
 				memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);

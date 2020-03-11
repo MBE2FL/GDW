@@ -19,7 +19,8 @@ enum MessageTypes : int8_t
 	EntitiesStart,
 	EntitiesNoStart,
 	EntitiesRequired,
-	EntitiesUpdate
+	EntitiesUpdate,
+	EntityIDs
 };
 
 struct PacketData
