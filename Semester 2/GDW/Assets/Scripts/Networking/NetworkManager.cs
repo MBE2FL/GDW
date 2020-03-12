@@ -654,6 +654,8 @@ public class NetworkManagerEditor : Editor
     SerializedProperty _connectButton;
     SerializedProperty _testObj;
 
+    string _entListName = "Enter Save Name Here";
+
     private void OnEnable()
     {
         _intialized = serializedObject.FindProperty("_initialized");
@@ -693,6 +695,26 @@ public class NetworkManagerEditor : Editor
 
         //EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
 
+        EditorGUILayout.Space(20.0f);
+
+        label.text = "Entity List Name";
+        _entListName = EditorGUILayout.TextField(label, _entListName);
+
+        if (GUILayout.Button("Save Entity List"))
+        {
+            NetworkEntityList asset = CreateInstance<NetworkEntityList>();
+
+            NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
+
+            asset.NetObjs = new List<NetworkObject>(netObjs);
+
+            AssetDatabase.CreateAsset(asset, "Assets/Scripts/Networking/" + _entListName + ".asset");
+            AssetDatabase.SaveAssets();
+
+            EditorUtility.FocusProjectWindow();
+
+            Selection.activeObject = asset;
+        }
 
 
         serializedObject.ApplyModifiedProperties();
