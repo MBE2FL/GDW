@@ -314,6 +314,9 @@ public class NetworkManager : MonoBehaviour
         {
             _networkPrefabs.Add(netObj.PrefabType, netObj);
         }
+
+
+        DontDestroyOnLoad(this.gameObject);
     }
 
     // Start is called before the first frame update
@@ -413,18 +416,7 @@ public class NetworkManager : MonoBehaviour
             job._ip = Marshal.StringToHGlobalAnsi(_ip);
 
 
-            numEntities = _networkObjects.Count;
-            entityData = new EntityData[numEntities];
 
-            int i = 0;
-            foreach (NetworkObject obj in _networkObjects)
-            {
-                entityData[i].entityID = obj.ObjID;
-                entityData[i].entityPrefabType = (byte)obj.PrefabType;
-                entityData[i].ownership = (byte)obj.Ownership;
-
-                ++i;
-            }
 
             //job._entities = Marshal.GetIUnknownForObject(entities);
             //job._entities = IntPtr.Zero;
@@ -465,6 +457,26 @@ public class NetworkManager : MonoBehaviour
 
     public void play()
     {
+        NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
+        _networkObjects.Clear();
+        _networkObjects.AddRange(netObjs);
+        _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
+
+
+        numEntities = _networkObjects.Count;
+        entityData = new EntityData[numEntities];
+
+        int i = 0;
+        foreach (NetworkObject netObj in netObjs)
+        {
+            entityData[i].entityID = netObj.ObjID;
+            entityData[i].entityPrefabType = (byte)netObj.PrefabType;
+            entityData[i].ownership = (byte)netObj.Ownership;
+
+            ++i;
+        }
+
+
         MessageTypes msgType = queryEntityRequest();
         Debug.Log(msgType);
 
@@ -481,9 +493,13 @@ public class NetworkManager : MonoBehaviour
             }
 
             NetworkObject netObj = null;
-            foreach (EntityData entity in entityData)
+            EntityData entity;
+            for (int index = 0; index < numEntities; ++index)
             {
-                netObj = Instantiate(_networkPrefabs[(PrefabTypes)entity.entityPrefabType], Vector3.zero, Quaternion.identity);
+                entity = entityData[index];
+                netObj = _networkObjects[index];
+
+                //netObj = Instantiate(_networkPrefabs[(PrefabTypes)entity.entityPrefabType], Vector3.zero, Quaternion.identity);
                 netObj.ObjID = entity.entityID;
 
                 Debug.Log("Entity with ID spawned: " + entity.entityID);
