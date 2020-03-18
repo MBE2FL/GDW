@@ -137,7 +137,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd5b38bc8366c514e9cda6f7524f4bc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _networkOp: 0
   _objID: 0
   _prefabType: 4
   _ownership: 1
+  _packetTypes: 1

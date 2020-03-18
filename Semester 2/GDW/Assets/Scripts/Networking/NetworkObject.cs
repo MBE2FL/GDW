@@ -5,11 +5,6 @@ using System.Runtime.InteropServices;
 using System;
 using System.IO;
 
-enum NetworkOp
-{
-    Receiever,
-    Transmitter
-}
 
 public enum PrefabTypes : byte
 {
@@ -25,13 +20,24 @@ public enum PrefabTypes : byte
 public enum Ownership : byte
 {
     ClientOwned,
-    ServerOwned
+    ServerOwned,
+    OtherClientOwned
+}
+
+[Flags]
+public enum PacketTypes
+{
+    None = 0, // Custom name for "Nothing" option
+    Transform = 1 << 0,
+    Anim = 1 << 1,
+    //AB = A | B, // Combination of two flags
+    All = ~0, // Custom name for "Everything" option
 }
 
 public class NetworkObject : MonoBehaviour
 {
-    [SerializeField]
-    NetworkOp _networkOp;
+    //[SerializeField]
+    //NetworkOp _networkOp;
 
     NetworkManager _networkManager;
 
@@ -42,6 +48,9 @@ public class NetworkObject : MonoBehaviour
     [SerializeField]
     Ownership _ownership = Ownership.ClientOwned;
 
+    [SerializeField]
+    PacketTypes _packetTypes;
+    
 
     public byte ObjID
     {
@@ -96,18 +105,17 @@ public class NetworkObject : MonoBehaviour
         //_networkManager.onServerConnect += onServerConnect;
         NetworkManager.onServerConnect += onServerConnect;
 
-        switch (_networkOp)
+        switch (_ownership)
         {
-            case NetworkOp.Receiever:
-                _networkManager.onDataReceive += receiveData;
-                break;
-            case NetworkOp.Transmitter:
-                _networkManager.onDataSend += sendData;
+            case Ownership.ClientOwned:
+                _networkManager.onDataReceive += sendData;
                 break;
             default:
+                _networkManager.onDataSend += sendData;
+                _networkManager.onDataReceive += receiveData;
                 break;
         }
-
+        
         _networkManager.NetworkObjects.Add(this);
     }
 
@@ -116,15 +124,14 @@ public class NetworkObject : MonoBehaviour
         //_networkManager.onServerConnect -= onServerConnect;
         NetworkManager.onServerConnect -= onServerConnect;
 
-        switch (_networkOp)
+        switch (_ownership)
         {
-            case NetworkOp.Receiever:
-                _networkManager.onDataReceive -= receiveData;
-                break;
-            case NetworkOp.Transmitter:
-                _networkManager.onDataSend -= sendData;
+            case Ownership.ClientOwned:
+                _networkManager.onDataReceive += sendData;
                 break;
             default:
+                _networkManager.onDataSend += sendData;
+                _networkManager.onDataReceive += receiveData;
                 break;
         }
     }
@@ -137,40 +144,47 @@ public class NetworkObject : MonoBehaviour
 
     void onServerConnect()
     {
-        Debug.Log("Network Object Ready: " + _networkOp);
+        Debug.Log("Network Object Ready: " + _ownership);
     }
 
     void sendData()
     {
         // WARNING WOULD ONLY WORK WITH BLITTABLE TYPES I BELIEVE!
 
-        Vector3 position = transform.position;
-        Quaternion rotation = transform.rotation;
+        //Vector3 position = transform.position;
+        //Quaternion rotation = transform.rotation;
 
-        float[] data = new float[7];
+        //float[] data = new float[7];
 
-        data[0] = position.x;
-        data[1] = position.y;
-        data[2] = position.z;
-        data[3] = rotation.x;
-        data[4] = rotation.y;
-        data[5] = rotation.z;
-        data[6] = rotation.w;
+        //data[0] = position.x;
+        //data[1] = position.y;
+        //data[2] = position.z;
+        //data[3] = rotation.x;
+        //data[4] = rotation.y;
+        //data[5] = rotation.z;
+        //data[6] = rotation.w;
 
-        //IntPtr dataPtr = new IntPtr();
-        //Marshal.Copy(data, 0, dataPtr, 7);
 
-        unsafe
+        //unsafe
+        //{
+        //    fixed(float* ptrData = data)
+        //    {
+        //        IntPtr dataPtr = new IntPtr(ptrData);
+        //        _networkManager.sendData((int)MessageTypes.TransformMsg, 0, dataPtr);
+        //    }
+        //}
+
+
+        if ((_packetTypes & PacketTypes.Transform) == PacketTypes.Transform)
         {
-            fixed(float* ptrData = data)
-            {
-                IntPtr dataPtr = new IntPtr(ptrData);
-                _networkManager.sendData((int)MessageTypes.TransformMsg, 0, dataPtr);
-            }
+            TransformData transData = new TransformData() { objID = _objID, pos = transform.position, rot = transform.rotation };
+            IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+            Marshal.StructureToPtr(transData, dataPtr, false);
+            //Marshal.PtrToStructure(dataPtr, transData);
+            _networkManager.sendData((int)MessageTypes.TransformMsg, _objID, dataPtr);
+            Marshal.FreeHGlobal(dataPtr);
         }
 
-        //_networkManager.sendData(ref position, ref rotation);
-        //_networkManager.sendData((int)MessageTypes.TransformMsg, 0, dataPtr);
     }
 
 

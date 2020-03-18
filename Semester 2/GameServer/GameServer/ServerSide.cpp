@@ -289,11 +289,11 @@ void Server::listenForConnections()
 		inet_ntop(AF_INET, &fromAddr, ipbuf, sizeof(ipbuf));
 		cout << "TCP Socket Address: " << ipbuf << endl;
 
-		memset(ipbuf, 0, BUF_LEN);
+		memset(ipbuf, 0, INET_ADDRSTRLEN);
 		inet_ntop(AF_INET, &fromUDPAddr, ipbuf, sizeof(ipbuf));
 		cout << "UDP Socket Address: " << ipbuf << endl;
 
-		char ip[BUF_LEN];
+		char ip[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &fromUDPAddr.sin_addr, ip, sizeof(ip));
 		cout << "IP: " << ip << endl;
 
@@ -318,7 +318,7 @@ void Server::listenForConnections()
 
 
 		// Connection successfuly established. Store client's TCP socket.
-		_clientTCPSockets.insert(_clientTCPSockets.begin() + index, &client_socket);
+		_clientTCPSockets.insert(_clientTCPSockets.begin() + index, new SOCKET(client_socket));
 
 
 
@@ -358,8 +358,11 @@ void Server::processClientEntityRequest(SOCKET* clientSocket)
 	int wsaError = -1;
 
 
-	if (_clients.size() == 1)
+	if (!_gameStarted)
+	{
 		buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+		_gameStarted = true;
+	}
 	else
 		buf[MSG_TYPE_POS] = MessageTypes::EntitiesRequired;
 
@@ -785,6 +788,7 @@ void Server::udpUpdate()
 		{
 			MessageTypes msgType = static_cast<MessageTypes>(buf[0]);
 
+
 			switch (msgType)
 			{
 			case TransformMsg:
@@ -822,10 +826,14 @@ void Server::tcpUpdate()
 		// Receive message from a client.
 		fd_set fds;
 		FD_ZERO(&fds);
-		for (SOCKET* tcpSocket : _clientTCPSockets)
+		for (int i = 0; i < _clientTCPSockets.size(); ++i)
 		{
-			FD_SET(*tcpSocket, &fds);
+			FD_SET(*_clientTCPSockets[i], &fds);
 		}
+		//for (SOCKET* tcpSocket : _clientTCPSockets)
+		//{
+		//	FD_SET(*tcpSocket, &fds);
+		//}
 
 		if (fds.fd_count <= 0)
 			continue;

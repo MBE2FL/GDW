@@ -24,7 +24,7 @@ extern "C"
 	PLUGIN_OUT bool connectToServer(const char* ip);
 	PLUGIN_OUT MessageTypes queryEntityRequest();
 	PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities);
-	PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int numEntities);
+	PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities);
 	PLUGIN_OUT bool queryConnectAttempt(int& id);
 	//PLUGIN_OUT void sendData(const Vector3& position, const Quaternion& rotation);//from unity to here
 	PLUGIN_OUT void sendData(const int msgType, const int objID, void* data);

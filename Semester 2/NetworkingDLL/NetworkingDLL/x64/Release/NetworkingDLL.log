@@ -1,49 +1,6 @@
-﻿  clientSide.cpp
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(104,23): warning C4251:  'ClientSide::_serverIP': class 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'ClientSide'
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.21.27702\include\xstring(4231): message :  see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(108,43): warning C4251:  'ClientSide::_receiveBuf': class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'ClientSide'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(108): message :  see declaration of 'std::vector<char,std::allocator<char>>'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116,139): warning C4251:  'ClientSide::_udpPacketBuf': class 'std::unordered_map<MessageTypes,std::unordered_map<int8_t,Packet *,std::hash<_Kty>,std::equal_to<_Kty>,std::allocator<std::pair<const _Kty,_Ty>>>,std::hash<MessageTypes>,std::equal_to<MessageTypes>,std::allocator<std::pair<const MessageTypes,std::unordered_map<_Kty,_Ty,std::hash<_Kty>,std::equal_to<_Kty>,std::allocator<std::pair<const _Kty,_Ty>>>>>>' needs to have dll-interface to be used by clients of class 'ClientSide'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116,139): warning C4251:         with
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116,139): warning C4251:         [
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116,139): warning C4251:             _Kty=int8_t,
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116,139): warning C4251:             _Ty=Packet *
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116,139): warning C4251:         ]
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116): message :  see declaration of 'std::unordered_map<MessageTypes,std::unordered_map<int8_t,Packet *,std::hash<_Kty>,std::equal_to<_Kty>,std::allocator<std::pair<const _Kty,_Ty>>>,std::hash<MessageTypes>,std::equal_to<MessageTypes>,std::allocator<std::pair<const MessageTypes,std::unordered_map<_Kty,_Ty,std::hash<_Kty>,std::equal_to<_Kty>,std::allocator<std::pair<const _Kty,_Ty>>>>>>'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116): message :         with
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116): message :         [
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116): message :             _Kty=int8_t,
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116): message :             _Ty=Packet *
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(116): message :         ]
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121,37): warning C4251:  'ClientSide::_transDataBuf': class 'std::vector<TransformData,std::allocator<_Ty>>' needs to have dll-interface to be used by clients of class 'ClientSide'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121,37): warning C4251:         with
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121,37): warning C4251:         [
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121,37): warning C4251:             _Ty=TransformData
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121,37): warning C4251:         ]
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121): message :  see declaration of 'std::vector<TransformData,std::allocator<_Ty>>'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121): message :         with
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121): message :         [
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121): message :             _Ty=TransformData
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(121): message :         ]
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124,31): warning C4251:  'ClientSide::_animDataBuf': class 'std::vector<AnimData,std::allocator<_Ty>>' needs to have dll-interface to be used by clients of class 'ClientSide'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124,31): warning C4251:         with
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124,31): warning C4251:         [
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124,31): warning C4251:             _Ty=AnimData
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124,31): warning C4251:         ]
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124): message :  see declaration of 'std::vector<AnimData,std::allocator<_Ty>>'
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124): message :         with
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124): message :         [
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124): message :             _Ty=AnimData
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\ClientSide.h(124): message :         ]
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(143,6): warning C4267:  'argument': conversion from 'size_t' to 'int', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(553,5): warning C4267:  'argument': conversion from 'size_t' to 'int', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(647,5): warning C4267:  'argument': conversion from 'size_t' to 'int', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(1030,42): warning C4267:  '=': conversion from 'size_t' to 'int', possible loss of data
-D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\clientSide.cpp(1031,40): warning C4267:  '=': conversion from 'size_t' to 'int', possible loss of data
-     Creating library ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.lib and object ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.exp
+﻿     Creating library ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.lib and object ..\..\GDW\Assets\Plugins\Release\NetworkingDLL.exp
   Generating code
-  2 of 963 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    9 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB not found, fall back to full compilation.
+  All 855 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
-  NetworkingDLL.vcxproj -> D:\User Profiles\100671306\Desktop\GDW\Semester 2\NetworkingDLL\NetworkingDLL\..\..\GDW\Assets\Plugins\Release\NetworkingDLL.dll
+  NetworkingDLL.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\NetworkingDLL\NetworkingDLL\..\..\GDW\Assets\Plugins\Release\NetworkingDLL.dll

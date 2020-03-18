@@ -65,7 +65,7 @@ PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities)
 	return cs.sendStarterEntities(entities, numEntities);
 }
 
-PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int numEntities)
+PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities)
 {
 	return cs.sendRequiredEntities(entities, numEntities);
 }

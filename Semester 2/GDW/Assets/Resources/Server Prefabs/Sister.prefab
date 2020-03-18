@@ -506,10 +506,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd5b38bc8366c514e9cda6f7524f4bc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _networkOp: 1
   _objID: 0
   _prefabType: 2
   _ownership: 0
+  _packetTypes: -1
 --- !u!1 &1203054573424653416
 GameObject:
   m_ObjectHideFlags: 0

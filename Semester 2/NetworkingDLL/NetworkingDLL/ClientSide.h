@@ -65,7 +65,7 @@ public:
 
 	MessageTypes queryEntityRequest();
 	bool sendStarterEntities(EntityData* entities, int numEntities);
-	bool sendRequiredEntities(EntityData* entities, int numEntities);
+	bool sendRequiredEntities(EntityData* entities, int& numEntities);
 
 	//bool connectToServer();
 	bool queryConnectAttempt(int& id);

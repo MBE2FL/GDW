@@ -252,6 +252,9 @@ public class NetworkManager : MonoBehaviour
 
 
 
+
+
+
     private void InitPluginFunctions()
     {
         // To get the function, add this line
@@ -388,9 +391,9 @@ public class NetworkManager : MonoBehaviour
         if (_time <= 0.0f)
         {
 
-            //// Send this player's transform data to server.
-            //if (onDataSend != null)
-            //    onDataSend.Invoke();
+            // Send this player's transform data to server.
+            if (onDataSend != null)
+                onDataSend.Invoke();
 
 
             //// Retrieve server interpolated transform data of other player.
@@ -457,31 +460,35 @@ public class NetworkManager : MonoBehaviour
 
     public void play()
     {
-        NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
-        _networkObjects.Clear();
-        _networkObjects.AddRange(netObjs);
-        _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
-
-
-        numEntities = _networkObjects.Count;
-        entityData = new EntityData[numEntities];
-
-        int i = 0;
-        foreach (NetworkObject netObj in netObjs)
-        {
-            entityData[i].entityID = netObj.ObjID;
-            entityData[i].entityPrefabType = (byte)netObj.PrefabType;
-            entityData[i].ownership = (byte)netObj.Ownership;
-
-            ++i;
-        }
-
-
         MessageTypes msgType = queryEntityRequest();
         Debug.Log(msgType);
 
+        // Server is requesting the starting entities list.
         if (msgType == MessageTypes.EntitiesStart)
         {
+            // Retrieve all networked objects in the scene.
+            NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
+            _networkObjects.Clear();
+            _networkObjects.AddRange(netObjs);
+            // Add any objects not in the scene.
+            _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
+
+
+            numEntities = _networkObjects.Count;
+            entityData = new EntityData[numEntities];
+
+    
+            int i = 0;
+            foreach (NetworkObject netObj in _networkObjects)
+            {
+                entityData[i].entityID = netObj.ObjID;
+                entityData[i].entityPrefabType = (byte)netObj.PrefabType;
+                entityData[i].ownership = (byte)netObj.Ownership;
+
+                ++i;
+            }
+
+
             unsafe
             {
                 fixed (EntityData* tempPtr = entityData)
@@ -492,34 +499,52 @@ public class NetworkManager : MonoBehaviour
                 }
             }
 
-            NetworkObject netObj = null;
+            NetworkObject networkObj = null;
             EntityData entity;
             for (int index = 0; index < numEntities; ++index)
             {
                 entity = entityData[index];
-                netObj = _networkObjects[index];
+                networkObj = _networkObjects[index];
 
                 //netObj = Instantiate(_networkPrefabs[(PrefabTypes)entity.entityPrefabType], Vector3.zero, Quaternion.identity);
-                netObj.ObjID = entity.entityID;
+                networkObj.ObjID = entity.entityID;
 
                 Debug.Log("Entity with ID spawned: " + entity.entityID);
             }
         }
+        // Server is requesting the required entities list.
         else if (msgType == MessageTypes.EntitiesRequired)
         {
+            Debug.Log("Entities Required message type received.");
 
+            _networkObjects.Clear();
+            _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
+
+
+            numEntities = _networkObjects.Count;
+            entityData = new EntityData[numEntities];
+
+            int i = 0;
+            foreach (NetworkObject netObj in _networkObjects)
+            {
+                entityData[i].entityID = netObj.ObjID;
+                entityData[i].entityPrefabType = (byte)netObj.PrefabType;
+                entityData[i].ownership = (byte)netObj.Ownership;
+
+                ++i;
+            }
         }
         else if (msgType == MessageTypes.EmptyMsg)
         {
-
+            Debug.Log("Empty message type received.");
         }
         else if (msgType == MessageTypes.ErrorMsg)
         {
-
+            Debug.Log("Error message type received.");
         }
         else
         {
-
+            Debug.Log("Wrong message type received: " + msgType);
         }
     }
 

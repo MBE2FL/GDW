@@ -98,6 +98,8 @@ private:
 	thread _tcpThread;
 	vector<Entity*> _entities;
 
+	bool _gameStarted = false;
+
 	// Networking
 	SOCKET _serverUDP_socket = NULL;
 	SOCKET _serverTCP_socket = NULL;

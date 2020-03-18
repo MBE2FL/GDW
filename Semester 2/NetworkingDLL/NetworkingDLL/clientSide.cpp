@@ -423,9 +423,70 @@ bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 	return true;
 }
 
-bool ClientSide::sendRequiredEntities(EntityData* entities, int numEntities)
+bool ClientSide::sendRequiredEntities(EntityData* entities, int& numEntities)
 {
-	cout << "Sent required entities to the server." << endl;
+	char buf[BUF_LEN];
+
+	memset(buf, 0, BUF_LEN);
+
+	buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+	buf[NET_ID_POS] = _networkID;
+	buf[DATA_START_POS] = numEntities;
+	memcpy(&buf[DATA_START_POS + 1], entities, sizeof(EntityData) * numEntities);
+
+	if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		cout << "Failed to send starter entities to the server!" << endl;
+		return false;
+	}
+
+	cout << "Number of entities: " << numEntities << endl;
+	cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
+	cout << "Sent starter entities to the server." << endl;
+
+
+
+	// Receive server assigned entity ids.
+	memset(buf, 0, BUF_LEN);
+	int bytesReceived = -1;
+
+	bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
+
+
+	if (bytesReceived > 0)
+	{
+		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+
+		if (msgType != MessageTypes::EntityIDs)
+		{
+			cout << "Was expecting to receive server assigned entity ids!" << endl;
+			return false;
+		}
+
+		numEntities = atoi(&buf[DATA_START_POS]);
+
+		cout << "Received " << numEntities << " server assigned entity ids." << endl;
+
+		if (numEntities > 0)
+		{
+			int8_t* entityIDs = new int8_t[numEntities];
+			memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
+			for (int i = 0; i < numEntities; ++i)
+			{
+				entities[i]._entityID = entityIDs[i];
+			}
+
+			delete[] entityIDs;
+			entityIDs = nullptr;
+		}
+	}
+	else
+	{
+		cout << "Failed to receive server assigned entity ids! " << WSAGetLastError() << endl;
+		return false;
+	}
+
+
 	return true;
 }
 
