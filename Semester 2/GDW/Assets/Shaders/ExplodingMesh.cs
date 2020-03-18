@@ -14,6 +14,8 @@ public class ExplodingMesh : MonoBehaviour
     public Material oldMaterial;
     Material newMaterial;
 
+    bool matChange = false;
+
     Mesh mesh;
 
     struct Tri
@@ -47,10 +49,10 @@ public class ExplodingMesh : MonoBehaviour
         memoryShader = (ComputeShader)Resources.Load("Memory Allocation Shader");
 
         mesh = GetComponent<MeshFilter>().sharedMesh;
-        triangles = mesh.triangles;
-        vertices = mesh.vertices;
-        normals = mesh.normals;
-        uvs = mesh.uv;
+        triangles = (int[])mesh.triangles.Clone();
+        vertices = (Vector3[])mesh.vertices.Clone();
+        normals = (Vector3[])mesh.normals.Clone();
+        uvs = (Vector2[])mesh.uv.Clone();
 
         newMaterial = gameObject.GetComponent<MeshRenderer>().material;
 
@@ -375,12 +377,20 @@ public class ExplodingMesh : MonoBehaviour
         if (lerp > 0.999f)
         {
             lerp = 1.0f;
-            if(oldMaterial)
+            if (oldMaterial && matChange)
+            {
                 gameObject.GetComponent<MeshRenderer>().material = oldMaterial;
+                matChange = false;
+            }
         }
         else
         {
-            gameObject.GetComponent<MeshRenderer>().material = newMaterial;
+            if (!matChange)
+            {
+                gameObject.GetComponent<MeshRenderer>().material = newMaterial;
+                matChange = true;
+            }
+
             gameObject.GetComponent<MeshRenderer>().material.SetFloat("t", lerp);
         }
 
