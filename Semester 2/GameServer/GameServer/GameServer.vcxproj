@@ -133,6 +133,7 @@
     <ClCompile Include="..\..\CommonNetworking\Transform.cpp" />
     <ClCompile Include="..\..\CommonNetworking\TransformPacket.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Scoreboard.cpp" />
     <ClCompile Include="ServerSide.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +142,7 @@
     <ClInclude Include="..\..\CommonNetworking\Packet.h" />
     <ClInclude Include="..\..\CommonNetworking\Transform.h" />
     <ClInclude Include="..\..\CommonNetworking\TransformPacket.h" />
+    <ClInclude Include="Scoreboard.h" />
     <ClInclude Include="Server.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
