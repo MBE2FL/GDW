@@ -115,7 +115,7 @@ public class MoveKeyboardState : IPlayerState
                 _speed = 8.0f * 7.0f;
 
             _force.Normalize();
-
+            
             if (Input.GetKey(KeyCode.LeftShift))
             {
                 if (_speedRamp < 3.0f)
@@ -128,6 +128,7 @@ public class MoveKeyboardState : IPlayerState
                     _speedRamp -= 0.07f;
 
             }
+            _animator.SetFloat("speed", _speedRamp);
             _speed *= _speedRamp;
             _rb.AddForce(_force * _speed);
 
@@ -145,7 +146,7 @@ public class MoveKeyboardState : IPlayerState
             }
 
             _rb.velocity = _transform.TransformDirection(localVel);
-
+            
 
             _movement.Angle = 0.0f;
         }
