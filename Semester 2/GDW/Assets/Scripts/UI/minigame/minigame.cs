@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class minigame: MonoBehaviour
 {
-    bool completed = false;
     bool toggled = false;
     bool inPlayRange = false;
     int stage = 1;
@@ -12,7 +11,9 @@ public class minigame: MonoBehaviour
     bool sisterStop = false;
     bool brotherStop = false;
 
-    float endDelay = 3.0f;
+    public bool gameComplete = false;
+
+    float endDelay = 1.5f;
 
     [SerializeField]
     private GameObject sisterBar;
@@ -38,9 +39,6 @@ public class minigame: MonoBehaviour
         //finds the animators on the bars
         brotherAnimator = brotherBar.GetComponent<Animator>();
         sisterAnimator = sisterBar.GetComponent<Animator>();
-
-        //turns off the minigame
-        slideGame.SetActive(false);
     }
 
     // Update is called once per frame
@@ -99,10 +97,9 @@ public class minigame: MonoBehaviour
                     //checks if players have beat minigame
                     if (stage == 4)
                     {
-                        completed = true;
-                        toggled = false;
+                        //toggled = false;
                         Debug.Log("ye won");
-
+                        gameComplete = true;
                         //deActivates the slide game
                         slideGame.SetActive(false);
 
@@ -115,7 +112,7 @@ public class minigame: MonoBehaviour
             }
         }
 
-        if (inPlayRange && Input.GetKeyDown(KeyCode.E) && !toggled && !completed)
+        if (inPlayRange && Input.GetKeyDown(KeyCode.E) && !toggled)
         {
             toggled = true;
 

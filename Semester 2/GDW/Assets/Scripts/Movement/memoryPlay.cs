@@ -16,7 +16,7 @@ public class memoryPlay : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(inPlayRange && !isPlaying && Input.GetKeyDown(KeyCode.E))
+        if(inPlayRange && !isPlaying && Input.GetKeyDown(KeyCode.E) && GetComponent<minigame>().gameComplete)
         {
             memoryPlayer.SetActive(true);
             isPlaying = true;
@@ -27,21 +27,6 @@ public class memoryPlay : MonoBehaviour
             memoryPlayer.SetActive(false);
         }
     }
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.transform.tag == "Brother" || collision.transform.tag == "Sister")
-        {
-            inPlayRange = true;
-        }
-    }
-    private void OnCollisionExit(Collision collision)
-    {
-        if (collision.transform.tag == "Brother" || collision.transform.tag == "Sister")
-        {
-            inPlayRange = false;
-        }
-    }
-
     private void OnTriggerEnter(Collider other)
     {
         if (other.transform.tag == "Brother" || other.transform.tag == "Sister")

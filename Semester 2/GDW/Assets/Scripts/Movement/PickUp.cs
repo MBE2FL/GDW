@@ -14,7 +14,7 @@ public class PickUp : MonoBehaviour
 
     bool objectDetection()
     {
-        rayPos = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+        rayPos = new Vector3(transform.position.x, transform.position.y + 0.2f, transform.position.z);
         RaycastHit ray;
         if (Physics.Raycast(rayPos, transform.forward, out ray, 1f, 1 << 9))
         {
