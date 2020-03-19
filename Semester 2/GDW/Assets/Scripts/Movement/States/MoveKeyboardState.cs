@@ -68,12 +68,12 @@ public class MoveKeyboardState : IPlayerState
             if (Input.GetKey(KeyCode.W))
             {
                 _transform.rotation = Quaternion.Euler(0, camTransform.rotation.eulerAngles.y, 0);
-               // _animator.SetBool("walkingForward", true);
+               _animator.SetBool("forward", true);
                 _force += _transform.forward;
             }
             else
             {
-                //_animator.SetBool("walkingForward", false);
+                _animator.SetBool("forward", false);
             }
 
             
