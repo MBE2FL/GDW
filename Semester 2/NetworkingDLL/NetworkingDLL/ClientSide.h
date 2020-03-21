@@ -60,6 +60,7 @@ public:
 	bool initNetwork(const char* ip);
 	bool initUDP(const char* ip);
 	bool initTCP(const char* ip);
+	void networkCleanup();
 
 	bool connectToServer(const char* ip);
 
@@ -80,6 +81,7 @@ public:
 
 
 	void receiveUDPData();
+	void receiveTCPData();
 	void getPacketHandleSizes(int& transDataElements, int& animDataElements);
 	void getPacketHandles(void* dataHandle);
 	TransformData* getTransformHandle();
@@ -110,12 +112,11 @@ private:
 	char* _receiveBufHandle = nullptr;
 
 
-	//unordered_map<int8_t, unordered_map<MessageTypes, Packet*>> _udpPacketBuf = unordered_map<int8_t, unordered_map<MessageTypes, Packet*>>();
-	//unordered_map<MessageTypes, vector<Packet*>> _tcpPacketBuf = unordered_map<MessageTypes, vector<Packet*>>();
 
 	unordered_map<MessageTypes, unordered_map<int8_t, Packet*>> _udpPacketBuf = unordered_map<MessageTypes, unordered_map<int8_t, Packet*>>();
+	unordered_map<MessageTypes, unordered_map<int8_t, vector<Packet*>>> _tcpPacketBuf = unordered_map<MessageTypes, unordered_map<int8_t, vector<Packet*>>>();
 
-	//unordered_map<int8_t, unordered_set<MessageTypes>> _udpPacketBuf = unordered_map<int8_t, unordered_set<MessageTypes>>();
+
 
 
 	vector<TransformData> _transDataBuf;

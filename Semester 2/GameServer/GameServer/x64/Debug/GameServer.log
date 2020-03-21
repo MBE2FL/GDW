@@ -1,9 +1,22 @@
 ﻿  ServerSide.cpp
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(399,37): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(444,46): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(448,37): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(495,37): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(853,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(399,19): error C2039: '_objID': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(400,24): error C2039: '_prefabType': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(404,33): error C2039: '_objID': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(406,66): error C2039: '_objID': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(446,46): warning C4267: '=': conversion from 'size_t' to 'int8_t', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(450,19): error C2039: '_objID': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(451,24): error C2039: '_prefabType': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(455,33): error C2039: '_objID': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(457,80): error C2039: '_objID': is not a member of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\CommonNetworking\EntityPacket.h(5): message : see declaration of 'EntityData'
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(520,86): warning C4267: 'argument': conversion from 'size_t' to 'int8_t', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(876,21): warning C4018: '<': signed/unsigned mismatch
   main.cpp
   Generating Code...
-  GameServer.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe

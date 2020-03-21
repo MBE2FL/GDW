@@ -95,6 +95,30 @@ struct ConnectJob : IJob
     }
 }
 
+struct ReceiveTCPJob : IJob
+{
+    bool _run;
+
+    public void Execute()
+    {
+        _run = true;
+
+        while (!NetworkManager.stopJobs)
+        {
+            Debug.Log("Job Working");
+            NetworkManager.receiveTCPData();
+        }
+        Debug.Log("Job Actually Stopped");
+    }
+
+    public void stop()
+    {
+        _run = false;
+        NetworkManager.onStopJobs -= stop;
+        Debug.Log("Job Stopped");
+    }
+}
+
 
 
 
@@ -142,11 +166,14 @@ public class NetworkManager : MonoBehaviour
     public delegate bool sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
     public static sendStarterEntitiesDelegate sendStarterEntities;
 
-    public delegate bool sendRequiredEntitiesDelegate(IntPtr entities, int numEntities);
+    public delegate bool sendRequiredEntitiesDelegate(IntPtr entities, ref int numEntities);
     public static sendRequiredEntitiesDelegate sendRequiredEntities;
 
     public delegate bool initNetworkDelegate(string ip);
     public initNetworkDelegate initNetwork;
+
+    public delegate void networkCleanupDelegate();
+    public networkCleanupDelegate networkCleanup;
 
     //[DllImport(DLL_NAME)]
     //public static extern bool connectToServer(string id);
@@ -174,6 +201,9 @@ public class NetworkManager : MonoBehaviour
 
     public delegate void receiveUDPDataDelegate();
     public receiveUDPDataDelegate receiveUDPData;
+
+    public delegate void receiveTCPDataDelegate();
+    public static receiveTCPDataDelegate receiveTCPData;
 
     public delegate void getPacketHandleSizesDelegate(ref int transDataElements, ref int animDataElements);
     public getPacketHandleSizesDelegate getPacketHandleSizes;
@@ -217,6 +247,7 @@ public class NetworkManager : MonoBehaviour
     public static event Action onServerConnect;
     public event Action onDataSend;
     public event Action onDataReceive;
+    public static event Action onStopJobs;
 
 
     GameManager _gameManager;
@@ -251,6 +282,11 @@ public class NetworkManager : MonoBehaviour
     }
 
 
+    JobHandle receiveTCPJobHandle;
+    JobHandle connectJobHandle;
+
+    public static bool stopJobs = false;
+
 
 
 
@@ -271,6 +307,7 @@ public class NetworkManager : MonoBehaviour
         sendStarterEntities = ManualPluginImporter.GetDelegate<sendStarterEntitiesDelegate>(_pluginHandle, "sendStarterEntities");
         sendRequiredEntities = ManualPluginImporter.GetDelegate<sendRequiredEntitiesDelegate>(_pluginHandle, "sendRequiredEntities");
         initNetwork = ManualPluginImporter.GetDelegate<initNetworkDelegate>(_pluginHandle, "initNetwork");
+        networkCleanup = ManualPluginImporter.GetDelegate<networkCleanupDelegate>(_pluginHandle, "networkCleanup");
 
         // Network object functions
         queryConnectAttempt = ManualPluginImporter.GetDelegate<queryConnectAttemptDelegate>(_pluginHandle, "queryConnectAttempt");
@@ -280,6 +317,7 @@ public class NetworkManager : MonoBehaviour
 
 
         receiveUDPData = ManualPluginImporter.GetDelegate<receiveUDPDataDelegate>(_pluginHandle, "receiveUDPData");
+        receiveTCPData = ManualPluginImporter.GetDelegate<receiveTCPDataDelegate>(_pluginHandle, "receiveTCPData");
         getPacketHandleSizes = ManualPluginImporter.GetDelegate<getPacketHandleSizesDelegate>(_pluginHandle, "getPacketHandleSizes");
         getPacketHandles = ManualPluginImporter.GetDelegate<getPacketHandlesDelegate>(_pluginHandle, "getPacketHandles");
         packetHandlesCleanUp = ManualPluginImporter.GetDelegate<packetHandlesCleanUpDelegate>(_pluginHandle, "packetHandlesCleanUp");
@@ -334,18 +372,34 @@ public class NetworkManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        // Not sure if this works
-        FreeTheConsole();
+        if (onStopJobs != null)
+        {
+            onStopJobs.Invoke();
+        }
 
-        // close the plugin
-        // This will allow you to rebuild the dll while unity is open (but not while playing)
-        ManualPluginImporter.CloseLibrary(_pluginHandle);
+        networkCleanup();
+
+        stopJobs = true;
+
+        connectJobHandle.Complete();
+        receiveTCPJobHandle.Complete();
+
+
+
 
         onServerConnect -= connectServerSuccess;
 
         _networkObjects.Clear();
 
         GameManager.onPlay -= play;
+
+
+        // Not sure if this works
+        FreeTheConsole();
+
+        // close the plugin
+        // This will allow you to rebuild the dll while unity is open (but not while playing)
+        ManualPluginImporter.CloseLibrary(_pluginHandle);
     }
 
     // Example functions
@@ -429,7 +483,7 @@ public class NetworkManager : MonoBehaviour
             //Marshal.StructureToPtr<NetworkManager>(this, job._networkManager, false);
 
 
-            JobHandle jobHandle = job.Schedule();
+            connectJobHandle = job.Schedule();
 
             //jobHandle.Complete();
 
@@ -477,7 +531,7 @@ public class NetworkManager : MonoBehaviour
             numEntities = _networkObjects.Count;
             entityData = new EntityData[numEntities];
 
-    
+
             int i = 0;
             foreach (NetworkObject netObj in _networkObjects)
             {
@@ -518,7 +572,7 @@ public class NetworkManager : MonoBehaviour
             Debug.Log("Entities Required message type received.");
 
             _networkObjects.Clear();
-            _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
+            _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Brother], Vector3.zero, Quaternion.identity));
 
 
             numEntities = _networkObjects.Count;
@@ -533,6 +587,29 @@ public class NetworkManager : MonoBehaviour
 
                 ++i;
             }
+
+            unsafe
+            {
+                fixed (EntityData* tempPtr = entityData)
+                {
+                    IntPtr entitiesPtr = new IntPtr(tempPtr);
+                    // Send required entity list to the server.
+                    sendRequiredEntities(entitiesPtr, ref numEntities);
+                }
+            }
+
+            NetworkObject networkObj = null;
+            EntityData entity;
+            for (int index = 0; index < numEntities; ++index)
+            {
+                entity = entityData[index];
+                networkObj = _networkObjects[index];
+
+                //netObj = Instantiate(_networkPrefabs[(PrefabTypes)entity.entityPrefabType], Vector3.zero, Quaternion.identity);
+                networkObj.ObjID = entity.entityID;
+
+                Debug.Log("Entity with ID spawned: " + entity.entityID);
+            }
         }
         else if (msgType == MessageTypes.EmptyMsg)
         {
@@ -546,6 +623,12 @@ public class NetworkManager : MonoBehaviour
         {
             Debug.Log("Wrong message type received: " + msgType);
         }
+
+
+        ReceiveTCPJob job = new ReceiveTCPJob();
+        receiveTCPJobHandle = job.Schedule();
+
+        onStopJobs += job.stop;
     }
 
 

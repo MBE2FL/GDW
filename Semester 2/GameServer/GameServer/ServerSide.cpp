@@ -395,7 +395,7 @@ void Server::processStarterEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 			entityData[i]._entityID = int8_t(_entities.size());
 
 			// Store entity on the server.
-			Entity* entity = new Entity();
+			EntityData* entity = new EntityData();
 			entity->_objID = _entities.size();
 			entity->_prefabType = entityData[i]._entityPrefabType;
 
@@ -429,22 +429,24 @@ void Server::processRequiredEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 {
 	// Required Entities received.
 	EntityPacket packet = EntityPacket(buf);
-	int8_t numEntities = 0;
+	int8_t numEntities = packet.getNumEntities();
+
 	EntityData* entityData = new EntityData[numEntities];
-	int8_t* entityIDs = new int8_t[numEntities];
-
 	packet.deserialize(numEntities, entityData);
-
+	cout << "Num entities " << int(numEntities) << endl;
 
 	if (numEntities > 0)
 	{
+		int8_t* entityIDs = new int8_t[numEntities];
+
 		// Generate IDs for the number entities requested. 
 		for (int i = 0; i < numEntities; ++i)
 		{
+			// Update the deserialized entity data.
 			entityData[i]._entityID = _entities.size();
 
 			// Store entity on the server.
-			Entity* entity = new Entity();
+			EntityData* entity = new EntityData();
 			entity->_objID = _entities.size();
 			entity->_prefabType = entityData[i]._entityPrefabType;
 
@@ -452,60 +454,81 @@ void Server::processRequiredEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 
 			entityIDs[i] = entity->_objID;
 
-			cout << "Added starter entity with ID, " + int(entity->_objID) << endl;
+			cout << "Added required entity with ID, " << static_cast<int>(entity->_objID) << endl;
 		}
 
+		// Serialize the updated entity data back into the packet.
+		packet.serialize(entityData);
+
 		delete[] entityData;
+		entityData = nullptr;
 
 		// Send new entities to all other clients.
+		//buf[MSG_TYPE_POS] = MessageTypes::EntityIDs;
+
 		for (SOCKET* socket : _clientTCPSockets)
 		{
-			if (socket == clientSocket)
+			//if (socket == clientSocket)
+			if (*socket == *clientSocket)
 				continue;
 
-			if (send(*socket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+			if (send(*socket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 			{
 				cout << "Failed to send generated required entity IDs to other clients." << endl;
 			}
+			else
+				cout << "Sent generated required entity IDs to other client." << endl;
 		}
 
 
-		// Send generated IDs back to the client.
+		// Send newly generated and all pre-existing IDs to the client.
 		memset(buf, 0, BUF_LEN);
-		buf[MSG_TYPE_POS] = MessageTypes::EntitiesRequired;
+
+		buf[MSG_TYPE_POS] = MessageTypes::EntityIDs;
 		buf[DATA_START_POS] = numEntities;
 		memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
+
 
 		if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
 		{
 			cout << "Failed to send generated entity IDs back to client." << endl;
 		}
+		else
+			cout << "Sent generated required entity IDs back to client." << endl;
 	}
 }
 
 void Server::sendEntitiesToClient(SOCKET* clientSocket)
 {
-	// Send a message to the client requesting their required entities.
-	char buf[BUF_LEN];
-	memset(buf, 0, BUF_LEN);
+	// Send all the current server entities to the newly connected client.
+	//char buf[BUF_LEN];
+	//memset(buf, 0, BUF_LEN);
 
-	buf[MSG_TYPE_POS] = MessageTypes::EntitiesUpdate;
+	//buf[MSG_TYPE_POS] = MessageTypes::EntitiesUpdate;
 
-	int offset = 0;
-	int prefabOffset = _entities.size();
-	for (Entity* entity : _entities)
-	{
-		buf[DATA_START_POS + offset] = entity->_objID;
-		buf[DATA_START_POS + prefabOffset + offset] = entity->_prefabType;
+	//int offset = 0;
+	//int prefabOffset = _entities.size();
+	//for (EntityData* entity : _entities)
+	//{
+	//	buf[DATA_START_POS + offset] = entity->_entityID;
+	//	buf[DATA_START_POS + prefabOffset + offset] = entity->_entityPrefabType;
+	//	//buf[DATA_START_POS + prefabOffset + offset] = entity->_entityPrefabType;
 
-		++offset;
-	}
+	//	++offset;
+	//}
+
+	EntityPacket packet = EntityPacket(MessageTypes::EntitiesUpdate, 0, _entities.size());
+	packet.serialize(_entities.data());
 
 
-	if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	if (send(*clientSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 	{
 		printf("Failed to request required entities from client. %d\n", WSAGetLastError());
 		return;
+	}
+	else
+	{
+		cout << "Sent current server entities to the newly connected client." << endl;
 	}
 }
 

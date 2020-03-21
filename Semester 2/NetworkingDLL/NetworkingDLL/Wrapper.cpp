@@ -50,6 +50,11 @@ PLUGIN_OUT bool initNetwork(const char* ip)
 	return cs.initNetwork(ip);
 }
 
+PLUGIN_OUT void networkCleanup()
+{
+	return cs.networkCleanup();
+}
+
 PLUGIN_OUT bool connectToServer(const char* ip)
 {
 	return cs.connectToServer(ip);
@@ -98,6 +103,11 @@ PLUGIN_OUT char* getReceiveData(int& numElements)
 PLUGIN_OUT void receiveUDPData()
 {
 	return cs.receiveUDPData();
+}
+
+PLUGIN_OUT void receiveTCPData()
+{
+	return cs.receiveTCPData();
 }
 
 PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements)

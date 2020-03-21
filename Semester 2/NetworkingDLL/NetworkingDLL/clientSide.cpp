@@ -118,6 +118,15 @@ bool ClientSide::initTCP(const char* ip)
 	return true;
 }
 
+void ClientSide::networkCleanup()
+{
+	freeaddrinfo(_ptr);
+	closesocket(_clientUDPsocket);
+	closesocket(_clientTCPsocket);
+	WSACleanup();
+	cout << "Network Cleanup" << endl;
+}
+
 bool ClientSide::connectToServer(const char* ip)
 {
 	//Connect to the server
@@ -352,28 +361,29 @@ MessageTypes ClientSide::queryEntityRequest()
 
 bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 {
-	char buf[BUF_LEN];
+	//buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
+	//buf[NET_ID_POS] = _networkID;
+	//buf[DATA_START_POS] = numEntities;
+	//memcpy(&buf[DATA_START_POS + 1], entities, sizeof(EntityData) * numEntities);
 
-	memset(buf, 0, BUF_LEN);
+	EntityPacket packet = EntityPacket(MessageTypes::EntitiesStart, _networkID, numEntities);
+	packet.serialize(entities);
 
-	buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
-	buf[NET_ID_POS] = _networkID;
-	buf[DATA_START_POS] = numEntities;
-	memcpy(&buf[DATA_START_POS + 1], entities, sizeof(EntityData) * numEntities);
-
-	if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 	{
 		cout << "Failed to send starter entities to the server!" << endl;
 		return false;
 	}
-
-	cout << "Number of entities: " << numEntities << endl;
-	cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
-	cout << "Sent starter entities to the server." << endl;
-
+	else
+	{
+		//cout << "Number of entities: " << numEntities << endl;
+		//cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
+		cout << "Sent starter entities to the server." << endl;
+	}
 
 
 	// Receive server assigned entity ids.
+	char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
 	int bytesReceived = -1;
 
@@ -425,28 +435,46 @@ bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 
 bool ClientSide::sendRequiredEntities(EntityData* entities, int& numEntities)
 {
-	char buf[BUF_LEN];
+	EntityPacket packet = EntityPacket(MessageTypes::EntitiesRequired, _networkID, numEntities);
+	packet.serialize(entities);
 
-	memset(buf, 0, BUF_LEN);
-
-	buf[MSG_TYPE_POS] = MessageTypes::EntitiesStart;
-	buf[NET_ID_POS] = _networkID;
-	buf[DATA_START_POS] = numEntities;
-	memcpy(&buf[DATA_START_POS + 1], entities, sizeof(EntityData) * numEntities);
-
-	if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 	{
-		cout << "Failed to send starter entities to the server!" << endl;
+		cout << "Failed to send required entities to the server!" << endl;
 		return false;
 	}
+	else
+	{
+		//cout << "Number of entities: " << numEntities << endl;
+		//cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
+		cout << "Sent required entities to the server." << endl;
+	}
 
-	cout << "Number of entities: " << numEntities << endl;
-	cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
-	cout << "Sent starter entities to the server." << endl;
 
+	char buf[BUF_LEN];
+	memset(buf, 0, BUF_LEN);
+
+	// Receive any pre-existing server entities.
+	if (recv(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		printf("Failed to receive any pre-existing entities from the server. %d\n", WSAGetLastError());
+	}
+	else
+	{
+		cout << "Received pre-existing entities from the server." << endl;
+
+		EntityPacket serverEntityPacket = EntityPacket(buf);
+		int8_t numberServerEntities = serverEntityPacket.getNumEntities();
+		EntityData* serverEntityData = new EntityData[numberServerEntities];
+
+		serverEntityPacket.deserialize(numberServerEntities, serverEntityData);
+
+		memcpy(&entities[numEntities], &serverEntityPacket._data[DATA_START_POS + 1], numberServerEntities * sizeof(EntityData));
+	}
 
 
 	// Receive server assigned entity ids.
+	//char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
 	int bytesReceived = -1;
 
@@ -456,6 +484,7 @@ bool ClientSide::sendRequiredEntities(EntityData* entities, int& numEntities)
 	if (bytesReceived > 0)
 	{
 		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+		cout << "Ent ID Msg Type: " << int(buf[MSG_TYPE_POS]) << endl;
 
 		if (msgType != MessageTypes::EntityIDs)
 		{
@@ -463,9 +492,11 @@ bool ClientSide::sendRequiredEntities(EntityData* entities, int& numEntities)
 			return false;
 		}
 
-		numEntities = atoi(&buf[DATA_START_POS]);
+		numEntities = buf[DATA_START_POS] - '0';
 
-		cout << "Received " << numEntities << " server assigned entity ids." << endl;
+		int8_t numEntitiesReceived = buf[DATA_START_POS];
+		numEntities = numEntitiesReceived;
+		cout << "Received " << int(numEntitiesReceived) << " server assigned entity ids." << endl;
 
 		if (numEntities > 0)
 		{
@@ -1002,7 +1033,7 @@ void ClientSide::receiveUDPData()
 
 			_udpPacketBuf[msgType][_objID] = packet;
 			
-			//cout << "Transform received: " << int(msgType) << ", " << int(_objID) << endl;
+			//cout << "Transform received for object: " << int(_objID) << endl;
 			// Cleanup.
 			//delete packet;
 			//packet = nullptr;
@@ -1010,18 +1041,87 @@ void ClientSide::receiveUDPData()
 			return;
 		}
 			break;
+		default:
+			break;
+		}
+	}
+	else
+	{
+
+	}
+}
+
+void ClientSide::receiveTCPData()
+{
+	char buf[BUF_LEN];
+
+	memset(buf, 0, BUF_LEN);
+
+	int bytes_received = -1;
+	int sError = -1;
+
+
+	// Reveive updates from the server.
+	bytes_received = recv(_clientTCPsocket, buf, BUF_LEN, 0);
+
+	sError = WSAGetLastError();
+
+
+	// Received data from server.
+	if (sError != SOCKET_ERROR && bytes_received > 0)
+	{
+		// Retrieve network ID of incomming message.
+		int8_t networkID = buf[NET_ID_POS];
+
+		if (networkID == _networkID)
+		{
+			cout << "Same Network ID, TCP, Msg Type: " << int(int8_t(buf[MSG_TYPE_POS])) << endl;
+			return;
+		}
+
+
+		MessageTypes msgType = static_cast<MessageTypes>(buf[MSG_TYPE_POS]);
+
+		switch (msgType)
+		{
 		case Anim:
 		{
 			// Deserialize and store anim data.
-			//AnimData transData = AnimData();
-			//int8_t _objID = buf[OBJ_ID_POS];
+			AnimData transData = AnimData();
+			int8_t _objID = buf[OBJ_ID_POS];
 
-			//Packet* packet = new AnimPacket(buf);
+			Packet* packet = new AnimPacket(buf);
 
 
-			//_udpPacketBuf[msgType][_objID] = packet;
+			_tcpPacketBuf[msgType][_objID].push_back(packet);
+
+			return;
 		}
-			break;
+		break;
+		case EntitiesRequired:
+		{
+			EntityPacket* packet = new EntityPacket(buf);
+			int8_t numEntities = packet->getNumEntities();
+			EntityData* entityData = new EntityData[numEntities];
+
+			packet->deserialize(numEntities, entityData);
+
+			cout << "Received " << int(numEntities) << " server entities, from another client." << endl;
+
+			if (numEntities > 0)
+			{
+				EntityData currEntityData;
+
+				for (int i = 0; i < numEntities; ++i)
+				{
+					currEntityData = entityData[i];
+
+					_tcpPacketBuf[msgType][currEntityData._entityID].push_back(packet);
+				}
+
+				delete[] entityData;
+			}
+		}
 		default:
 			break;
 		}
@@ -1094,20 +1194,6 @@ void ClientSide::getPacketHandleSizes(int& transDataElements, int& animDataEleme
 
 void ClientSide::getPacketHandles(void* dataHandle)
 {
-	//// Copy data to c#.
-	//transDataElements = _transDataBuf.size();
-	//_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
-	//memcpy(_transDataHandle, _transDataBuf.data(), _transDataBuf.size());
-
-	//// Clear data on c++.
-	//_transDataBuf.clear();
-
-	//return _transDataHandle;
-
-
-
-
-#pragma region MapWay
 	//_transDataHandle = new TransformData[_transDataBuf.size()]; // NEED TO CLEANUP
 	//_animDataHandle = new AnimData[_animDataBuf.size()]; // NEED TO CLEANUP
 
@@ -1116,9 +1202,6 @@ void ClientSide::getPacketHandles(void* dataHandle)
 
 
 	// Copy data to c# handle.
-	//memcpy(transDataHandle, _transDataBuf.data(), _transDataBuf.size() * sizeof(TransformData));
-	//memcpy(animDataHandle, _animDataBuf.data(), _animDataBuf.size() * sizeof(AnimData));
-
 	char* byteDatahandle = reinterpret_cast<char*>(dataHandle);
 
 	memcpy(byteDatahandle, _transDataBuf.data(), _transDataBuf.size() * sizeof(TransformData));
@@ -1135,7 +1218,6 @@ void ClientSide::getPacketHandles(void* dataHandle)
 	// Assign handles.
 	//transDataHandle = _transDataHandle;
 	//animDataHandle = _animDataHandle;
-#pragma endregion
 }
 
 TransformData* ClientSide::getTransformHandle()

@@ -46,12 +46,6 @@ struct Client
 	int _udpSockAddrLen = -1;
 };
 
-struct Entity
-{
-	int8_t _objID = 0;
-	int8_t _prefabType = 0;
-};
-
 
 //enum MessageTypes : INT8
 //{
@@ -96,7 +90,7 @@ private:
 	vector<Client*> _clients;
 	thread _udpThread;
 	thread _tcpThread;
-	vector<Entity*> _entities;
+	vector<EntityData*> _entities;
 
 	bool _gameStarted = false;
 
