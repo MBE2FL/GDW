@@ -8,7 +8,7 @@ public class ExplodingMesh : MonoBehaviour
     private ComputeShader shader;
     private ComputeShader displacementShader;
     private ComputeShader memoryShader;
-    public float lerp = 0.0f;
+    public float lerp = -3.0f;
     public float dropDistance = 0.0f;
 
     public Material oldMaterial;
@@ -372,7 +372,7 @@ public class ExplodingMesh : MonoBehaviour
     private void Update()
     {
         //RunShader();
-        lerp += Time.deltaTime * 0.2f;
+        lerp += Time.deltaTime * 0.5f;
         //Vector4[] temp3 = new Vector4[mesh.triangles.Length];
         if (lerp > 0.999f)
         {
