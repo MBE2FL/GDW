@@ -52,7 +52,7 @@ bool Scoreboard::CompareTime(playerTime t1, playerTime t2)
 	float sec1 = (float)t1.totalTime.minutes * 60 + t1.totalTime.seconds;
 	float sec2 = (float)t2.totalTime.minutes * 60 + t2.totalTime.seconds;
 	
-	return (sec1 > sec2);
+	return (sec1 < sec2);
 }
 
 void Scoreboard::Sort()
