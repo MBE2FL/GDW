@@ -3,25 +3,42 @@
 #include "AnimPacket.h"
 
 
-Packet::Packet(int8_t networkID, int8_t objID)
+//Packet::Packet(int8_t networkID, int8_t objID)
+//{
+//	memset(_data, 0, BUF_LEN);
+//
+//	_data[NET_ID_POS] = networkID;
+//	_data[EID_POS] = objID;
+//}
+
+Packet::Packet(int8_t networkID)
 {
 	memset(_data, 0, BUF_LEN);
 
 	_data[NET_ID_POS] = networkID;
-	_data[OBJ_ID_POS] = objID;
 }
 
 Packet::~Packet()
 {
 }
 
+int8_t Packet::getEID() const
+{
+	return _data[DATA_START_POS];
+}
+
+void Packet::setPacketType(const PacketTypes& packetType)
+{
+	_data[PCK_TYPE_POS] = packetType;
+}
+
 Packet* Packet::CreatePacket(char data[BUF_LEN])
 {
-	MessageTypes msgType = static_cast<MessageTypes>(data[0]);
+	PacketTypes pckType = static_cast<PacketTypes>(data[0]);
 
 	Packet* packet = nullptr;
 
-	switch (msgType)
+	switch (pckType)
 	{
 	case ConnectionAttempt:
 		break;

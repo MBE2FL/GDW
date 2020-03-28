@@ -1,9 +1,15 @@
 #include "AnimPacket.h"
 
-AnimPacket::AnimPacket(int8_t networkID, int8_t objID)
-	: Packet(networkID, objID)
+//AnimPacket::AnimPacket(int8_t networkID, int8_t objID)
+//	: Packet(networkID, objID)
+//{
+//	_data[PCK_TYPE_POS] = MessageTypes::Anim;
+//}
+
+AnimPacket::AnimPacket(int8_t networkID)
+	: Packet(networkID)
 {
-	_data[MSG_TYPE_POS] = MessageTypes::Anim;
+	_data[PCK_TYPE_POS] = PacketTypes::Anim;
 }
 
 AnimPacket::AnimPacket(char data[BUF_LEN])
@@ -13,17 +19,20 @@ AnimPacket::AnimPacket(char data[BUF_LEN])
 
 void AnimPacket::serialize(void* data)
 {
-	size_t animStateSize = sizeof(int);
-	AnimData animData = reinterpret_cast<AnimData&>(data);
-	memcpy(&_data, reinterpret_cast<char*>(&animData._state), animStateSize);
+	memcpy(&_data[DATA_START_POS], data, sizeof(AnimData));
 }
 
-void AnimPacket::deserialize(int8_t& objID, void* data)
+void AnimPacket::deserialize(void* data)
 {
-	//objID = _data[OBJ_ID_POS];
-
-	size_t animStateSize = sizeof(int);
-	AnimData* animData = reinterpret_cast<AnimData*>(data);
-	animData->_objID = objID;
-	memcpy(&animData->_state, reinterpret_cast<int*>(&_data[DATA_START_POS]), animStateSize);
+	memcpy(data, &_data[DATA_START_POS], sizeof(AnimData));
 }
+
+//void AnimPacket::deserialize(int8_t& objID, void* data)
+//{
+//	//objID = _data[OBJ_ID_POS];
+//
+//	size_t animStateSize = sizeof(int);
+//	AnimData* animData = reinterpret_cast<AnimData*>(data);
+//	animData->_entityID = objID;
+//	memcpy(&animData->_state, reinterpret_cast<int*>(&_data[DATA_START_POS]), animStateSize);
+//}

@@ -60,7 +60,12 @@ PLUGIN_OUT bool connectToServer(const char* ip)
 	return cs.connectToServer(ip);
 }
 
-PLUGIN_OUT MessageTypes queryEntityRequest()
+PLUGIN_OUT bool queryConnectAttempt(int& id)
+{
+	return cs.queryConnectAttempt(id);
+}
+
+PLUGIN_OUT PacketTypes queryEntityRequest()
 {
 	return cs.queryEntityRequest();
 }
@@ -70,34 +75,19 @@ PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities)
 	return cs.sendStarterEntities(entities, numEntities);
 }
 
-PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities)
+PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities)
 {
-	return cs.sendRequiredEntities(entities, numEntities);
+	return cs.sendRequiredEntities(entities, numEntities, numServerEntities);
 }
 
-PLUGIN_OUT bool queryConnectAttempt(int& id)
+PLUGIN_OUT void getServerEntities(EntityData* serverEntities)
 {
-	return cs.queryConnectAttempt(id);
+	return cs.getServerEntities(serverEntities);
 }
 
-//PLUGIN_OUT void sendData(const Vector3& position, const Quaternion& rotation)
-//{
-//	return cs.sendData(position, rotation);
-//}
-
-PLUGIN_OUT void sendData(const int msgType, const int objID, void* data)
+PLUGIN_OUT void sendData(const PacketTypes pckType, void* data)
 {
-	return cs.sendData(msgType, objID, data);
-}
-
-PLUGIN_OUT void receiveData(MessageTypes& msgType, int& objID, void* data)
-{
-	return cs.receiveData(msgType, objID, data);
-}
-
-PLUGIN_OUT char* getReceiveData(int& numElements)
-{
-	return cs.getReceiveData(numElements);
+	return cs.sendData(pckType, data);
 }
 
 PLUGIN_OUT void receiveUDPData()
@@ -110,27 +100,12 @@ PLUGIN_OUT void receiveTCPData()
 	return cs.receiveTCPData();
 }
 
-PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements)
+PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements)
 {
-	return cs.getPacketHandleSizes(transDataElements, animDataElements);
+	return cs.getPacketHandleSizes(transDataElements, animDataElements, entityDataElements);
 }
 
 PLUGIN_OUT void getPacketHandles(void* dataHandle)
 {
 	return cs.getPacketHandles(dataHandle);
-}
-
-PLUGIN_OUT TransformData* getTransformHandle()
-{
-	return cs.getTransformHandle();
-}
-
-PLUGIN_OUT void packetHandlesCleanUp()
-{
-	return cs.packetHandlesCleanUp();
-}
-
-PLUGIN_OUT void receiveData(Vector3& position, Quaternion& rotation)
-{
-	return cs.receiveData(position, rotation);
 }

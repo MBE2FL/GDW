@@ -18,6 +18,10 @@
 #include "Packet.h"
 #include "TransformPacket.h"
 #include "EntityPacket.h"
+#include "AnimPacket.h"
+
+//#include <algorithm>
+//#include <iterator>
 
 
 using std::cout;
@@ -32,7 +36,6 @@ using std::lock_guard;
 
 #define PORT "5000"
 #define BUF_LEN 512
-#define UPDATE_INTERVAL 0.100 //seconds
 #define MAX_CLIENTS 2
 #define MAX_TIMEOUTS 4
 
@@ -44,17 +47,8 @@ struct Client
 	int8_t _id = NULL;
 	sockaddr_in _udpSockAddr;
 	int _udpSockAddrLen = -1;
+	SOCKET _tcpSocket = NULL;
 };
-
-
-//enum MessageTypes : INT8
-//{
-//	ConnectionAttempt,
-//	ConnectionAccepted,
-//	ConnectionFailed,
-//	ServerFull,
-//	TransformData
-//};
 
 
 
@@ -80,25 +74,25 @@ public:
 	void update();
 	void initUpdateThreads();
 	void udpUpdate();
+	void tcpSoftUpdate();
 	void tcpUpdate();
 
 
 private:
-	Client _player1;
-	Client _player2;
-
+	static int8_t _clientIDs;
 	vector<Client*> _clients;
+	vector<Client*> _softConnectClients;
 	thread _udpThread;
+	thread _tcpSoftThread;
 	thread _tcpThread;
-	vector<EntityData*> _entities;
+	vector<EntityData> _entities;
 
 	bool _gameStarted = false;
 
-	// Networking
 	SOCKET _serverUDP_socket = NULL;
 	SOCKET _serverTCP_socket = NULL;
-	struct addrinfo* _ptr = NULL;
-	vector<SOCKET*> _clientTCPSockets;
+	addrinfo* _ptr = nullptr;
+	//vector<SOCKET*> _clientTCPSockets;
 
-	sockaddr_in* _udpListenInfo;
+	sockaddr_in* _udpListenInfoBuf;
 };

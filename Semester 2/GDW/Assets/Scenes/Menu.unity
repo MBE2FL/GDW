@@ -546,6 +546,11 @@ PrefabInstance:
       propertyPath: _packetTypes
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -6079235047844386802, guid: 7da00ca8ba7fa5d45b7762e47f8d1e6d,
+        type: 3}
+      propertyPath: _packetOptions
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5123107977984107959, guid: 7da00ca8ba7fa5d45b7762e47f8d1e6d,
         type: 3}
       propertyPath: m_Name
@@ -1210,6 +1215,11 @@ PrefabInstance:
       propertyPath: _packetTypes
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -6079235047844386802, guid: 7da00ca8ba7fa5d45b7762e47f8d1e6d,
+        type: 3}
+      propertyPath: _packetOptions
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5123107977984107959, guid: 7da00ca8ba7fa5d45b7762e47f8d1e6d,
         type: 3}
       propertyPath: m_Name
@@ -1492,6 +1502,11 @@ PrefabInstance:
       propertyPath: _packetTypes
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -6079235047844386802, guid: 7da00ca8ba7fa5d45b7762e47f8d1e6d,
+        type: 3}
+      propertyPath: _packetOptions
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5123107977984107959, guid: 7da00ca8ba7fa5d45b7762e47f8d1e6d,
         type: 3}
       propertyPath: m_Name
@@ -1678,12 +1693,8 @@ MonoBehaviour:
   _ip: 127.0.0.1
   _id: 2
   _connectButton: {fileID: 1924137081}
-  _testObj: {fileID: 722574848}
   _timeSinceLastUpdate: 0
   _updateInterval: 0.167
-  _networkObjects:
-  - {fileID: -7075369139756114837, guid: f6a6a738f921aaa4a97d58129e49882c, type: 3}
-  - {fileID: -6079235047844386802, guid: 7da00ca8ba7fa5d45b7762e47f8d1e6d, type: 3}
 --- !u!4 &1602923465
 Transform:
   m_ObjectHideFlags: 0

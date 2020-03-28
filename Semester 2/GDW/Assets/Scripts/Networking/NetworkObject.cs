@@ -25,7 +25,7 @@ public enum Ownership : byte
 }
 
 [Flags]
-public enum PacketTypes
+public enum PacketOptions
 {
     None = 0, // Custom name for "Nothing" option
     Transform = 1 << 0,
@@ -42,25 +42,28 @@ public class NetworkObject : MonoBehaviour
     NetworkManager _networkManager;
 
     [SerializeField]
-    byte _objID = 0;
+    byte _EID = 0;
     [SerializeField]
     PrefabTypes _prefabType = PrefabTypes.Sister;
     [SerializeField]
     Ownership _ownership = Ownership.ClientOwned;
 
     [SerializeField]
-    PacketTypes _packetTypes;
+    PacketOptions _packetOptions;
+
+    Animator _animator;
+    int _prevAnimState = -1;
     
 
-    public byte ObjID
+    public byte EID
     {
         get
         {
-            return _objID;
+            return _EID;
         }
         set
         {
-            _objID = value;
+            _EID = value;
         }
     }
 
@@ -88,6 +91,14 @@ public class NetworkObject : MonoBehaviour
         }
     }
 
+    public Animator Animator
+    {
+        get
+        {
+            return _animator;
+        }
+    }
+
 
     //const string DLL_NAME = "NETWORKINGDLL";
 
@@ -108,15 +119,20 @@ public class NetworkObject : MonoBehaviour
         switch (_ownership)
         {
             case Ownership.ClientOwned:
-                _networkManager.onDataReceive += sendData;
+                _networkManager.onDataSend += sendData;
+                break;
+            case Ownership.OtherClientOwned:
+                _networkManager.onDataReceive += receiveData;
                 break;
             default:
                 _networkManager.onDataSend += sendData;
                 _networkManager.onDataReceive += receiveData;
                 break;
         }
-        
-        _networkManager.NetworkObjects.Add(this);
+
+        //_networkManager.NetworkObjects.Add(this);
+
+        _animator = GetComponent<Animator>();
     }
 
     private void OnApplicationQuit()
@@ -127,11 +143,33 @@ public class NetworkObject : MonoBehaviour
         switch (_ownership)
         {
             case Ownership.ClientOwned:
-                _networkManager.onDataReceive += sendData;
+                _networkManager.onDataSend -= sendData;
+                break;
+            case Ownership.OtherClientOwned:
+                _networkManager.onDataReceive -= receiveData;
                 break;
             default:
-                _networkManager.onDataSend += sendData;
-                _networkManager.onDataReceive += receiveData;
+                _networkManager.onDataSend -= sendData;
+                _networkManager.onDataReceive -= receiveData;
+                break;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        NetworkManager.onServerConnect -= onServerConnect;
+
+        switch (_ownership)
+        {
+            case Ownership.ClientOwned:
+                _networkManager.onDataSend -= sendData;
+                break;
+            case Ownership.OtherClientOwned:
+                _networkManager.onDataReceive -= receiveData;
+                break;
+            default:
+                _networkManager.onDataSend -= sendData;
+                _networkManager.onDataReceive -= receiveData;
                 break;
         }
     }
@@ -170,21 +208,79 @@ public class NetworkObject : MonoBehaviour
         //    fixed(float* ptrData = data)
         //    {
         //        IntPtr dataPtr = new IntPtr(ptrData);
-        //        _networkManager.sendData((int)MessageTypes.TransformMsg, 0, dataPtr);
+        //        _networkManager.sendData((int)PacketTypes.TransformMsg, 0, dataPtr);
         //    }
         //}
 
 
-        if ((_packetTypes & PacketTypes.Transform) == PacketTypes.Transform)
+        // Send all packet types.
+        if (_packetOptions == PacketOptions.All)
         {
-            TransformData transData = new TransformData() { objID = _objID, pos = transform.position, rot = transform.rotation };
+            TransformData transData = new TransformData() { _EID = _EID, _pos = transform.position, _rot = transform.rotation };
             IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+
             Marshal.StructureToPtr(transData, dataPtr, false);
             //Marshal.PtrToStructure(dataPtr, transData);
-            _networkManager.sendData((int)MessageTypes.TransformMsg, _objID, dataPtr);
-            Marshal.FreeHGlobal(dataPtr);
-        }
+            _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
 
+            Marshal.FreeHGlobal(dataPtr);
+
+
+            int state = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+            
+            Debug.Log("EID " + _EID + " Anim State: " + state);
+            Debug.Log("State Should be: " + Animator.StringToHash("Walking"));
+
+            if (_prevAnimState != state)
+            {
+                //Debug.Log("EID " + _EID + " Anim State: " + state);
+                _prevAnimState = state;
+
+                AnimData animData = new AnimData() { _EID = _EID, _state = state };
+                dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+
+                Marshal.StructureToPtr(animData, dataPtr, false);
+                //Marshal.PtrToStructure(dataPtr, transData);
+                _networkManager.sendData(PacketTypes.Anim, dataPtr);
+
+                Marshal.FreeHGlobal(dataPtr);
+            }
+        }
+        else
+        {
+            // Send transform packets.
+            if ((_packetOptions & PacketOptions.Transform) == PacketOptions.Transform)
+            {
+                TransformData transData = new TransformData() { _EID = _EID, _pos = transform.position, _rot = transform.rotation };
+                IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+
+                Marshal.StructureToPtr(transData, dataPtr, false);
+                //Marshal.PtrToStructure(dataPtr, transData);
+                _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
+
+                Marshal.FreeHGlobal(dataPtr);
+            }
+            // Send animation packets.
+            else if ((_packetOptions & PacketOptions.Anim) == PacketOptions.Anim)
+            {
+                int state = _animator.GetCurrentAnimatorStateInfo(0).tagHash;
+                
+                if (_prevAnimState != state)
+                {
+                    Debug.Log("EID " + _EID + " Anim State: " + state);
+                    _prevAnimState = state;
+
+                    AnimData animData = new AnimData() { _EID = _EID, _state = state };
+                    IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+
+                    Marshal.StructureToPtr(animData, dataPtr, false);
+                    //Marshal.PtrToStructure(dataPtr, transData);
+                    _networkManager.sendData(PacketTypes.Anim, dataPtr);
+
+                    Marshal.FreeHGlobal(dataPtr);
+                }
+            }
+        }
     }
 
 
@@ -233,14 +329,14 @@ public class NetworkObject : MonoBehaviour
         ////transform.rotation = rotation;
 
 
-        //MessageTypes msgType = MessageTypes.ConnectionAttempt;
+        //PacketTypes pckType = PacketTypes.ConnectionAttempt;
         //int objID = -1;
         //IntPtr data = IntPtr.Zero;
         //int numElements = -1;
         //byte[] byteData;
 
 
-        //_networkManager.receiveData(ref msgType, ref objID, ref data);
+        //_networkManager.receiveData(ref pckType, ref objID, ref data);
 
 
         //data = _networkManager.getReceiveData(ref numElements);
@@ -260,12 +356,12 @@ public class NetworkObject : MonoBehaviour
         //    {
         //        packetOffset = i * packetSize;
 
-        //        msgType = (MessageTypes)byteData[packetOffset];
+        //        pckType = (PacketTypes)byteData[packetOffset];
 
 
-        //        switch (msgType)
+        //        switch (pckType)
         //        {
-        //            case MessageTypes.TransformMsg:
+        //            case PacketTypes.TransformMsg:
         //                {
         //                    position.x = BitConverter.ToSingle(byteData, 3 + packetOffset);
         //                    position.y = BitConverter.ToSingle(byteData, 7 + packetOffset);
@@ -293,7 +389,7 @@ public class NetworkObject : MonoBehaviour
         //                    Debug.Log("Rot: " + rotation.ToString());
         //                }
         //                break;
-        //            case MessageTypes.Anim:
+        //            case PacketTypes.Anim:
         //                break;
         //            default:
         //                break;

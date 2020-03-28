@@ -36,7 +36,7 @@ public struct CS_to_Plugin_Functions
 }
 
 
-public enum MessageTypes : byte
+public enum PacketTypes : byte
 {
     ConnectionAttempt,
     ConnectionAccepted,
@@ -58,24 +58,27 @@ public enum MessageTypes : byte
 [StructLayout(LayoutKind.Sequential)]
 public struct TransformData
 {
-    public byte objID;
-    public Vector3 pos;
-    public Quaternion rot;
+    public byte _EID;
+    public Vector3 _pos;
+    public Quaternion _rot;
 }
 
 [StructLayout(LayoutKind.Sequential)]
 public struct AnimData
 {
-    public byte objID;
-    public int state;
+    public byte _EID;
+    public int _state;
 }
 
 [StructLayout(LayoutKind.Sequential)]
 public struct EntityData
 {
-    public byte entityID;
-    public byte entityPrefabType;
-    public byte ownership;
+    public byte _EID;
+    public PrefabTypes _entityPrefabType;
+    public Ownership _ownership;
+    public Vector3 _position;
+    public Quaternion _rotation;
+    public byte _parent;
 }
 
 
@@ -97,28 +100,29 @@ struct ConnectJob : IJob
 
 struct ReceiveTCPJob : IJob
 {
-    bool _run;
-
     public void Execute()
     {
-        _run = true;
-
         while (!NetworkManager.stopJobs)
         {
-            Debug.Log("Job Working");
             NetworkManager.receiveTCPData();
         }
-        Debug.Log("Job Actually Stopped");
-    }
 
-    public void stop()
-    {
-        _run = false;
-        NetworkManager.onStopJobs -= stop;
-        Debug.Log("Job Stopped");
+        Debug.Log("ReceiveTCPJob Stopped");
     }
 }
 
+struct ReceiveUDPJob : IJob
+{
+    public void Execute()
+    {
+        while (!NetworkManager.stopJobs)
+        {
+            NetworkManager.receiveUDPData();
+        }
+
+        Debug.Log("ReceiveUDPJob Stopped");
+    }
+}
 
 
 
@@ -156,18 +160,6 @@ public class NetworkManager : MonoBehaviour
     public OutputConsoleMessageDelegate OutputConsoleMessage;
 
 
-    // Network manager functions
-    public delegate bool connectToServerDelegate(string ip);
-    public static connectToServerDelegate connectToServer;
-
-    public delegate MessageTypes queryEntityRequestDelegate();
-    public static queryEntityRequestDelegate queryEntityRequest;
-
-    public delegate bool sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
-    public static sendStarterEntitiesDelegate sendStarterEntities;
-
-    public delegate bool sendRequiredEntitiesDelegate(IntPtr entities, ref int numEntities);
-    public static sendRequiredEntitiesDelegate sendRequiredEntities;
 
     public delegate bool initNetworkDelegate(string ip);
     public initNetworkDelegate initNetwork;
@@ -175,50 +167,40 @@ public class NetworkManager : MonoBehaviour
     public delegate void networkCleanupDelegate();
     public networkCleanupDelegate networkCleanup;
 
-    //[DllImport(DLL_NAME)]
-    //public static extern bool connectToServer(string id);
+    public delegate bool connectToServerDelegate(string ip);
+    public static connectToServerDelegate connectToServer;
 
-    //[DllImport(DLL_NAME)]
-    //public static extern bool initNetwork(string ip, string id);
-
-
-    // Network object functions
     public delegate bool queryConnectAttemptDelegate(ref int id);
     public queryConnectAttemptDelegate queryConnectAttempt;
 
-    //public delegate void sendDataDelegate(ref Vector3 position, ref Quaternion rotation);
-    public delegate void sendDataDelegate(int msgType, int objID, IntPtr data);
+    public delegate PacketTypes queryEntityRequestDelegate();
+    public static queryEntityRequestDelegate queryEntityRequest;
+
+    public delegate bool sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
+    public static sendStarterEntitiesDelegate sendStarterEntities;
+
+    public delegate bool sendRequiredEntitiesDelegate(IntPtr entities, ref int numEntities, ref int numServerEntities);
+    public static sendRequiredEntitiesDelegate sendRequiredEntities;
+
+    public delegate void getServerEntitiesDelegate(IntPtr serverEntities);
+    public getServerEntitiesDelegate getServerEntities;
+
+
+    public delegate void sendDataDelegate(PacketTypes pckType, IntPtr data);
     public sendDataDelegate sendData;
-
-    //public delegate void receiveDataDelegate(ref Vector3 position, ref Quaternion rotation);
-    public delegate void receiveDataDelegate(ref MessageTypes msgType, ref int objID, ref IntPtr data);
-    public receiveDataDelegate receiveData;
-
-    public delegate IntPtr getReceiveDataDelegate(ref int numElements);
-    public getReceiveDataDelegate getReceiveData;
-
 
 
     public delegate void receiveUDPDataDelegate();
-    public receiveUDPDataDelegate receiveUDPData;
+    public static receiveUDPDataDelegate receiveUDPData;
 
     public delegate void receiveTCPDataDelegate();
     public static receiveTCPDataDelegate receiveTCPData;
 
-    public delegate void getPacketHandleSizesDelegate(ref int transDataElements, ref int animDataElements);
+    public delegate void getPacketHandleSizesDelegate(ref int transDataElements, ref int animDataElements, ref int entityDataElements);
     public getPacketHandleSizesDelegate getPacketHandleSizes;
-
-    //public delegate void getPacketHandlesDelegate(ref int transDataElements, IntPtr transDataHandle, ref int animDataElements, IntPtr animDataHandle);
-    //public getPacketHandlesDelegate getPacketHandles;
 
     public delegate void getPacketHandlesDelegate(IntPtr dataHandle);
     public getPacketHandlesDelegate getPacketHandles;
-
-    public delegate void packetHandlesCleanUpDelegate();
-    public packetHandlesCleanUpDelegate packetHandlesCleanUp;
-
-    public delegate IntPtr getTransformHandleDelegate();
-    public getTransformHandleDelegate getTransformHandle;
 #endregion DLL_VARIABLES
 
 
@@ -240,14 +222,10 @@ public class NetworkManager : MonoBehaviour
     [SerializeField]
     GameObject _connectButton;
 
-    [SerializeField]
-    GameObject _testObj;
-
 
     public static event Action onServerConnect;
     public event Action onDataSend;
     public event Action onDataReceive;
-    public static event Action onStopJobs;
 
 
     GameManager _gameManager;
@@ -259,17 +237,13 @@ public class NetworkManager : MonoBehaviour
     float _updateInterval = 0.066f; // 1s / 15ups = 0.066ms
     //float _updateInterval = 0.167f;
 
+
     [SerializeField]
-    List<NetworkObject> _networkObjects;
-    public static EntityData[] entityData;
-    public static int numEntities = 0;
-
-
-    //[SerializeField]
-    //List<NetworkObject> _networkPrefabs;
+    Dictionary<byte, NetworkObject> _networkObjects = new Dictionary<byte, NetworkObject>();
     [SerializeField]
     Dictionary<PrefabTypes, NetworkObject> _networkPrefabs;
-    public List<NetworkObject> NetworkObjects
+
+    public Dictionary<byte, NetworkObject> NetworkObjects
     {
         get
         {
@@ -282,8 +256,9 @@ public class NetworkManager : MonoBehaviour
     }
 
 
-    JobHandle receiveTCPJobHandle;
     JobHandle connectJobHandle;
+    JobHandle receiveTCPJobHandle;
+    JobHandle receiveUDPJobHandle;
 
     public static bool stopJobs = false;
 
@@ -301,27 +276,23 @@ public class NetworkManager : MonoBehaviour
         FreeTheConsole = ManualPluginImporter.GetDelegate<FreeTheConsoleDelegate>(_pluginHandle, "FreeTheConsole");
         OutputConsoleMessage = ManualPluginImporter.GetDelegate<OutputConsoleMessageDelegate>(_pluginHandle, "OutputMessageToConsole");
 
-        // Network manager functions
+
+        initNetwork = ManualPluginImporter.GetDelegate<initNetworkDelegate>(_pluginHandle, "initNetwork");
+        networkCleanup = ManualPluginImporter.GetDelegate<networkCleanupDelegate>(_pluginHandle, "networkCleanup");
         connectToServer = ManualPluginImporter.GetDelegate<connectToServerDelegate>(_pluginHandle, "connectToServer");
+        queryConnectAttempt = ManualPluginImporter.GetDelegate<queryConnectAttemptDelegate>(_pluginHandle, "queryConnectAttempt");
         queryEntityRequest = ManualPluginImporter.GetDelegate<queryEntityRequestDelegate>(_pluginHandle, "queryEntityRequest");
         sendStarterEntities = ManualPluginImporter.GetDelegate<sendStarterEntitiesDelegate>(_pluginHandle, "sendStarterEntities");
         sendRequiredEntities = ManualPluginImporter.GetDelegate<sendRequiredEntitiesDelegate>(_pluginHandle, "sendRequiredEntities");
-        initNetwork = ManualPluginImporter.GetDelegate<initNetworkDelegate>(_pluginHandle, "initNetwork");
-        networkCleanup = ManualPluginImporter.GetDelegate<networkCleanupDelegate>(_pluginHandle, "networkCleanup");
+        getServerEntities = ManualPluginImporter.GetDelegate<getServerEntitiesDelegate>(_pluginHandle, "getServerEntities");
 
-        // Network object functions
-        queryConnectAttempt = ManualPluginImporter.GetDelegate<queryConnectAttemptDelegate>(_pluginHandle, "queryConnectAttempt");
+
         sendData = ManualPluginImporter.GetDelegate<sendDataDelegate>(_pluginHandle, "sendData");
-        receiveData = ManualPluginImporter.GetDelegate<receiveDataDelegate>(_pluginHandle, "receiveData");
-        getReceiveData = ManualPluginImporter.GetDelegate<getReceiveDataDelegate>(_pluginHandle, "getReceiveData");
-
 
         receiveUDPData = ManualPluginImporter.GetDelegate<receiveUDPDataDelegate>(_pluginHandle, "receiveUDPData");
         receiveTCPData = ManualPluginImporter.GetDelegate<receiveTCPDataDelegate>(_pluginHandle, "receiveTCPData");
         getPacketHandleSizes = ManualPluginImporter.GetDelegate<getPacketHandleSizesDelegate>(_pluginHandle, "getPacketHandleSizes");
         getPacketHandles = ManualPluginImporter.GetDelegate<getPacketHandlesDelegate>(_pluginHandle, "getPacketHandles");
-        packetHandlesCleanUp = ManualPluginImporter.GetDelegate<packetHandlesCleanUpDelegate>(_pluginHandle, "packetHandlesCleanUp");
-        getTransformHandle = ManualPluginImporter.GetDelegate<getTransformHandleDelegate>(_pluginHandle, "getTransformHandle");
     }
 
     private void Awake()
@@ -372,17 +343,13 @@ public class NetworkManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        if (onStopJobs != null)
-        {
-            onStopJobs.Invoke();
-        }
-
         networkCleanup();
 
         stopJobs = true;
 
         connectJobHandle.Complete();
         receiveTCPJobHandle.Complete();
+        receiveUDPJobHandle.Complete();
 
 
 
@@ -453,7 +420,7 @@ public class NetworkManager : MonoBehaviour
             //// Retrieve server interpolated transform data of other player.
             ////if (onDataReceive != null)
             ////    onDataReceive.Invoke();
-            //receivePackets();
+            receivePackets();
 
             _time = _updateInterval;
         }
@@ -490,8 +457,6 @@ public class NetworkManager : MonoBehaviour
 
             _connecting = true;
 
-            _testObj.SetActive(true);
-
             _connectButton.GetComponent<Button>().interactable = false;
             _connectButton.GetComponentInChildren<Text>().text = "Connecting...";
         }
@@ -507,37 +472,43 @@ public class NetworkManager : MonoBehaviour
         // For some reason won't turn on/off game objects.
         //_connectingButton.SetActive(false);
 
-        _testObj.SetActive(false);
 
         Debug.Log("Successfully connected to server.");
     }
 
     public void play()
     {
-        MessageTypes msgType = queryEntityRequest();
-        Debug.Log(msgType);
+        PacketTypes pckType = queryEntityRequest();
+        Debug.Log(pckType);
+
+        List<NetworkObject> netObjsList = new List<NetworkObject>();
+        EntityData[] entityData;
+        int numEntities = 0;
 
         // Server is requesting the starting entities list.
-        if (msgType == MessageTypes.EntitiesStart)
+        if (pckType == PacketTypes.EntitiesStart)
         {
             // Retrieve all networked objects in the scene.
             NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
-            _networkObjects.Clear();
-            _networkObjects.AddRange(netObjs);
+            netObjsList.AddRange(netObjs);
+
             // Add any objects not in the scene.
-            _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
+            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
 
 
-            numEntities = _networkObjects.Count;
+            numEntities = netObjsList.Count;
             entityData = new EntityData[numEntities];
 
 
             int i = 0;
-            foreach (NetworkObject netObj in _networkObjects)
+            foreach (NetworkObject netObj in netObjsList)
             {
-                entityData[i].entityID = netObj.ObjID;
-                entityData[i].entityPrefabType = (byte)netObj.PrefabType;
-                entityData[i].ownership = (byte)netObj.Ownership;
+                entityData[i]._EID = netObj.EID;
+                entityData[i]._entityPrefabType = netObj.PrefabType;
+                entityData[i]._ownership = netObj.Ownership;
+                entityData[i]._position = netObj.transform.position;
+                entityData[i]._rotation = netObj.transform.rotation;
+                entityData[i]._parent = 0;
 
                 ++i;
             }
@@ -553,37 +524,48 @@ public class NetworkManager : MonoBehaviour
                 }
             }
 
+            // Assign networked objects their server generated entity IDs.
+            _networkObjects.Clear();
             NetworkObject networkObj = null;
             EntityData entity;
             for (int index = 0; index < numEntities; ++index)
             {
                 entity = entityData[index];
-                networkObj = _networkObjects[index];
+                networkObj = netObjsList[index];
 
-                //netObj = Instantiate(_networkPrefabs[(PrefabTypes)entity.entityPrefabType], Vector3.zero, Quaternion.identity);
-                networkObj.ObjID = entity.entityID;
+                networkObj.EID = entity._EID;
 
-                Debug.Log("Entity with ID spawned: " + entity.entityID);
+                // Map network object to it's entity ID.
+                _networkObjects.Add(networkObj.EID, networkObj);
             }
         }
         // Server is requesting the required entities list.
-        else if (msgType == MessageTypes.EntitiesRequired)
+        else if (pckType == PacketTypes.EntitiesRequired)
         {
             Debug.Log("Entities Required message type received.");
 
-            _networkObjects.Clear();
-            _networkObjects.Add(Instantiate(_networkPrefabs[PrefabTypes.Brother], Vector3.zero, Quaternion.identity));
+            NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
+            foreach (NetworkObject netObj in netObjs)
+            {
+                Destroy(netObj.gameObject);
+            }
+
+            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.Brother], new Vector3(3.0f, 0.0f, 0.0f), Quaternion.identity));
 
 
-            numEntities = _networkObjects.Count;
+            numEntities = netObjsList.Count;
             entityData = new EntityData[numEntities];
+            int numServerEntities = 0;
 
             int i = 0;
-            foreach (NetworkObject netObj in _networkObjects)
+            foreach (NetworkObject netObj in netObjsList)
             {
-                entityData[i].entityID = netObj.ObjID;
-                entityData[i].entityPrefabType = (byte)netObj.PrefabType;
-                entityData[i].ownership = (byte)netObj.Ownership;
+                entityData[i]._EID = netObj.EID;
+                entityData[i]._entityPrefabType = netObj.PrefabType;
+                entityData[i]._ownership = netObj.Ownership;
+                entityData[i]._position = netObj.transform.position;
+                entityData[i]._rotation = netObj.transform.rotation;
+                entityData[i]._parent = 0;
 
                 ++i;
             }
@@ -593,95 +575,217 @@ public class NetworkManager : MonoBehaviour
                 fixed (EntityData* tempPtr = entityData)
                 {
                     IntPtr entitiesPtr = new IntPtr(tempPtr);
+
                     // Send required entity list to the server.
-                    sendRequiredEntities(entitiesPtr, ref numEntities);
+                    sendRequiredEntities(entitiesPtr, ref numEntities, ref numServerEntities);
                 }
             }
 
+            // Assign networked objects their server generated entity IDs.
+            _networkObjects.Clear();
             NetworkObject networkObj = null;
             EntityData entity;
             for (int index = 0; index < numEntities; ++index)
             {
                 entity = entityData[index];
-                networkObj = _networkObjects[index];
+                networkObj = netObjsList[index];
 
-                //netObj = Instantiate(_networkPrefabs[(PrefabTypes)entity.entityPrefabType], Vector3.zero, Quaternion.identity);
-                networkObj.ObjID = entity.entityID;
+                networkObj.EID = entity._EID;
 
-                Debug.Log("Entity with ID spawned: " + entity.entityID);
+                // Map network object to it's entity ID.
+                _networkObjects.Add(networkObj.EID, networkObj);
             }
+
+
+
+            // Process server entities
+            //EntityData[] serverEntityData = new EntityData[numServerEntities];
+            int entityDataSize = Marshal.SizeOf<EntityData>();
+
+            IntPtr serverEntityPtr = Marshal.AllocHGlobal(entityDataSize * numServerEntities);
+
+            PrefabTypes prefabType;
+            Ownership ownership;
+
+            // Get entities from the server.
+            getServerEntities(serverEntityPtr);
+
+            // Generate server entities for this client.
+            IntPtr tempserverEntityPtr = serverEntityPtr;
+            i = 0;
+            for (; i < numServerEntities; ++i)
+            {
+                entity = (EntityData)Marshal.PtrToStructure(serverEntityPtr, typeof(EntityData));
+                serverEntityPtr += entityDataSize;
+
+                //Debug.Log("Server Entity: " + entity._entityID);
+                //Debug.Log("Pos: " + entity._position);
+
+                prefabType = entity._entityPrefabType;
+                ownership = entity._ownership;
+
+
+                if (prefabType == PrefabTypes.Sister)
+                {
+                    prefabType = PrefabTypes.SisterPawn;
+                    ownership = Ownership.OtherClientOwned;
+                }
+                else if (prefabType == PrefabTypes.Brother)
+                {
+                    prefabType = PrefabTypes.BrotherPawn;
+                    ownership = Ownership.OtherClientOwned;
+                }
+
+
+                networkObj = Instantiate(_networkPrefabs[prefabType], entity._position, entity._rotation);
+
+                networkObj.EID = entity._EID;
+                networkObj.PrefabType = prefabType;
+                networkObj.Ownership = ownership;
+
+                // Map network object to it's entity ID.
+                _networkObjects.Add(networkObj.EID, networkObj);
+            }
+
+            //Array.Clear(serverEntityData, 0, numServerEntities);
+
+            Marshal.FreeHGlobal(tempserverEntityPtr);
         }
-        else if (msgType == MessageTypes.EmptyMsg)
+        else if (pckType == PacketTypes.EmptyMsg)
         {
             Debug.Log("Empty message type received.");
         }
-        else if (msgType == MessageTypes.ErrorMsg)
+        else if (pckType == PacketTypes.ErrorMsg)
         {
             Debug.Log("Error message type received.");
         }
         else
         {
-            Debug.Log("Wrong message type received: " + msgType);
+            Debug.Log("Wrong message type received: " + pckType);
         }
 
 
-        ReceiveTCPJob job = new ReceiveTCPJob();
-        receiveTCPJobHandle = job.Schedule();
+        ReceiveTCPJob receiveTCPJob = new ReceiveTCPJob();
+        receiveTCPJobHandle = receiveTCPJob.Schedule();
 
-        onStopJobs += job.stop;
+        ReceiveUDPJob receiveUDPJob = new ReceiveUDPJob();
+        receiveUDPJobHandle = receiveUDPJob.Schedule();
     }
 
 
     void receivePackets()
     {
-        receiveUDPData();
-
-
-        int transDataElements = -1;
-        int animDataElements = -1;
-        //IntPtr transDataHandle;
-        //IntPtr animDataHandle;
+        int transDataElements = 0;
+        int animDataElements = 0;
+        int entityDataElements = 0;
         IntPtr dataHandle;
+        int transDataSize = Marshal.SizeOf<TransformData>();
+        int animDataSize = Marshal.SizeOf<AnimData>();
+        int entityDataSize = Marshal.SizeOf<EntityData>();
 
 
-        getPacketHandleSizes(ref transDataElements, ref animDataElements);
+        getPacketHandleSizes(ref transDataElements, ref animDataElements, ref entityDataElements);
 
-        //transDataHandle = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>() * transDataElements);
-        //animDataHandle = Marshal.AllocHGlobal(Marshal.SizeOf<AnimData>() * animDataElements);
-
-        dataHandle = Marshal.AllocHGlobal((Marshal.SizeOf<TransformData>() * transDataElements) + (Marshal.SizeOf<AnimData>() * animDataElements));
+        dataHandle = Marshal.AllocHGlobal((transDataSize * transDataElements) + (animDataSize * animDataElements) + (entityDataSize * entityDataElements));
 
         getPacketHandles(dataHandle);
 
 
-        TransformData[] transData = new TransformData[transDataElements];
-        AnimData[] animData = new AnimData[animDataElements];
-
-
-        //transDataHandle = getTransformHandle();
+        //TransformData[] transData = new TransformData[transDataElements];
+        //AnimData[] animData = new AnimData[animDataElements];
+        //EntityData[] entityData = new EntityData[entityDataElements];
 
         IntPtr tempDataHandle = dataHandle;
+
+
+        TransformData transData;
+        //byte EID; // -1
+        NetworkObject netObj;
         for (int i = 0; i < transDataElements; ++i)
         {
-            transData[i] = (TransformData)Marshal.PtrToStructure(dataHandle, typeof(TransformData));
-            dataHandle += Marshal.SizeOf(typeof(TransformData));
+            transData = (TransformData)Marshal.PtrToStructure(dataHandle, typeof(TransformData));
+            dataHandle += transDataSize;
 
-            Debug.Log("objID: " + transData[i].objID);
-            Debug.Log("Pos: " + transData[i].pos.ToString());
-            Debug.Log("Rot: " + transData[i].rot.ToString());
+            //netObj = _networkObjects[transData._EID];
+
+            if (_networkObjects.TryGetValue(transData._EID, out netObj))
+            {
+                netObj.transform.position = transData._pos;
+                netObj.transform.rotation = transData._rot;
+            }
         }
 
+        AnimData animData;
+        for (int i = 0; i < animDataElements; ++i)
+        {
+            animData = (AnimData)Marshal.PtrToStructure(dataHandle, typeof(AnimData));
+            dataHandle += animDataSize;
+
+
+            if (_networkObjects.TryGetValue(animData._EID, out netObj))
+            {
+                //netObj.GetComponent<Animator>().Play(animData._state, 0);
+                netObj.Animator.Play(animData._state, 0);
+                //if (Animator.StringToHash("Walking") == animData._state)
+                //    netObj.GetComponent<Animator>().Play(animData._state);
+                //else if (Animator.StringToHash("Idle") == animData._state)
+                //    netObj.GetComponent<Animator>().Play(animData._state);
+                //else
+                //    Debug.LogError("State hashes does not match: Walking " + animData._state + " != " + Animator.StringToHash("Walking")
+                //        + "/n or Idle " + animData._state + " != " + Animator.StringToHash("Idle"));
+            }
+        }
+
+        PrefabTypes prefabType;
+        Ownership ownership;
+        EntityData entity;
+        NetworkObject networkObj;
+        for (int i = 0; i < entityDataElements; ++i)
+        {
+            entity = (EntityData)Marshal.PtrToStructure(dataHandle, typeof(EntityData));
+            dataHandle += entityDataSize;
+
+
+            prefabType = entity._entityPrefabType;
+            ownership = entity._ownership;
+
+
+            if (prefabType == PrefabTypes.Sister)
+            {
+                prefabType = PrefabTypes.SisterPawn;
+                ownership = Ownership.OtherClientOwned;
+            }
+            else if (prefabType == PrefabTypes.Brother)
+            {
+                prefabType = PrefabTypes.BrotherPawn;
+                ownership = Ownership.OtherClientOwned;
+            }
+
+
+            networkObj = Instantiate(_networkPrefabs[prefabType], entity._position, entity._rotation);
+
+            networkObj.EID = entity._EID;
+            networkObj.PrefabType = prefabType;
+            networkObj.Ownership = ownership;
+
+            Debug.Log("Entity Received: ");
+            Debug.Log("EID: " + entity._EID);
+            Debug.Log("Prefab Type: " + entity._entityPrefabType);
+            Debug.Log("Ownership: " + entity._ownership);
+
+            // Map network object to it's entity ID.
+            _networkObjects.Add(networkObj.EID, networkObj);
+        }
+
+
+
+
         // Clean up
-        Array.Clear(transData, 0, transData.Length);
-        Array.Clear(animData, 0, animData.Length);
+        //Array.Clear(transData, 0, transData.Length);
+        //Array.Clear(animData, 0, animData.Length);
+        //Array.Clear(entityData, 0, entityData.Length);
 
-        //Marshal.FreeHGlobal(tempTestFuck);
-        //Marshal.FreeHGlobal(animDataHandle);
         Marshal.FreeHGlobal(tempDataHandle);
-
-
-
-        //packetHandlesCleanUp();
 
 
 
@@ -695,14 +799,14 @@ public class NetworkManager : MonoBehaviour
         ////transform.rotation = rotation;
 
 
-        //MessageTypes msgType = MessageTypes.ConnectionAttempt;
+        //PacketTypes pckType = PacketTypes.ConnectionAttempt;
         //int objID = -1;
         //IntPtr data = IntPtr.Zero;
         //int numElements = -1;
         //byte[] byteData;
 
 
-        //_networkManager.receiveData(ref msgType, ref objID, ref data);
+        //_networkManager.receiveData(ref pckType, ref objID, ref data);
 
 
         //data = _networkManager.getReceiveData(ref numElements);
@@ -722,12 +826,12 @@ public class NetworkManager : MonoBehaviour
         //    {
         //        packetOffset = i * packetSize;
 
-        //        msgType = (MessageTypes)byteData[packetOffset];
+        //        pckType = (PacketTypes)byteData[packetOffset];
 
 
-        //        switch (msgType)
+        //        switch (pckType)
         //        {
-        //            case MessageTypes.TransformMsg:
+        //            case PacketTypes.TransformMsg:
         //                {
         //                    position.x = BitConverter.ToSingle(byteData, 3 + packetOffset);
         //                    position.y = BitConverter.ToSingle(byteData, 7 + packetOffset);
@@ -755,7 +859,7 @@ public class NetworkManager : MonoBehaviour
         //                    Debug.Log("Rot: " + rotation.ToString());
         //                }
         //                break;
-        //            case MessageTypes.Anim:
+        //            case PacketTypes.Anim:
         //                break;
         //            default:
         //                break;
@@ -776,7 +880,6 @@ public class NetworkManagerEditor : Editor
     SerializedProperty _ip;
     SerializedProperty _id;
     SerializedProperty _connectButton;
-    SerializedProperty _testObj;
 
     string _entListName = "Enter Save Name Here";
 
@@ -787,7 +890,6 @@ public class NetworkManagerEditor : Editor
         _ip = serializedObject.FindProperty("_ip");
         _id = serializedObject.FindProperty("_id");
         _connectButton = serializedObject.FindProperty("_connectButton");
-        _testObj = serializedObject.FindProperty("_testObj");
     }
 
     public override void OnInspectorGUI()
@@ -813,11 +915,6 @@ public class NetworkManagerEditor : Editor
 
         label.text = "Connect Button";
         EditorGUILayout.PropertyField(_connectButton, label);
-
-        label.text = "_testObj";
-        EditorGUILayout.PropertyField(_testObj, label);
-
-        //EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
 
         EditorGUILayout.Space(20.0f);
 

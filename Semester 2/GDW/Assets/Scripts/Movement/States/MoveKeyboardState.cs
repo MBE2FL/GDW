@@ -33,8 +33,8 @@ public class MoveKeyboardState : IPlayerState
             return Movement.JumpState;
 
         // Change to controller movement state.
-        if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
-            return Movement.MoveControllerState;
+        //if (Input.GetJoystickNames().Length > 0 && Input.GetJoystickNames()[0].Length != 0)
+        //    return Movement.MoveControllerState;
 
         // Change to push pull state.
         if (_moveable.holdingObject)
@@ -55,7 +55,6 @@ public class MoveKeyboardState : IPlayerState
         _force = Vector3.zero;
         _speed = 0.0f;
 
-        
 
         // Move only while on ground.
         if (_movement.OnGround)
