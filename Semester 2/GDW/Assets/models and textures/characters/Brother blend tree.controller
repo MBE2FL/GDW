@@ -89,19 +89,19 @@ AnimatorController:
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
-    m_Controller: {fileID: 0}
+    m_Controller: {fileID: 9100000}
   - m_Name: forward
     m_Type: 4
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
-    m_Controller: {fileID: 0}
+    m_Controller: {fileID: 9100000}
   - m_Name: speed
     m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
-    m_Controller: {fileID: 0}
+    m_Controller: {fileID: 9100000}
   m_AnimatorLayers:
   - serializedVersion: 5
     m_Name: Base Layer
@@ -178,7 +178,7 @@ BlendTree:
   m_Name: Brother blend tree
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 8012726937791573565, guid: 70d2702c03e235f438f0fbc39784600a,
+    m_Motion: {fileID: -4171984089437649494, guid: 25ec251d96ed1434ca3ae417b4725597,
       type: 3}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
@@ -187,7 +187,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 5841129280231920060, guid: 70d2702c03e235f438f0fbc39784600a,
+    m_Motion: {fileID: 3594955309651019112, guid: 25ec251d96ed1434ca3ae417b4725597,
       type: 3}
     m_Threshold: 3
     m_Position: {x: 0, y: 1}
