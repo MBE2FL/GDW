@@ -400,7 +400,31 @@ public class NetworkObject : MonoBehaviour
 
     public void deadReckon(TransformData _transData)
     {
-        //netObj.transform.position = transData._pos;
-        //netObj.transform.rotation = transData._rot;
+        transform.position = _transData._pos;
+        transform.rotation = _transData._rot;
+
+        _futurePosition = transform.position + _transData._vel * _networkManager.UpdateInterval;
+        _futureTime = Time.time + _networkManager.UpdateInterval;
+    }
+
+    private void Update()
+    {
+        if (_ownership != Ownership.ClientOwned)
+        {
+            if (Time.time > _futureTime)
+            {
+                if ((transform.position - _futurePosition).sqrMagnitude >= 0.25f)
+                {
+                    transform.position = _futurePosition;
+                }
+                return;
+            }
+            transform.position = Vector3.Lerp(_oldPosition, _futurePosition, (_futureTime - Time.time) / _futureTime);
+        }
+        else
+        {
+            Vector3 _playerPrediction = Vector3.Lerp(_oldPosition, _futurePosition, (_futureTime - Time.time) / _futureTime);
+            //if ((transform.position - _playerPrediction).sqrMagnitude >= ())
+        }
     }
 }
