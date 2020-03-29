@@ -51,7 +51,19 @@ public class NetworkObject : MonoBehaviour
     [SerializeField]
     PacketOptions _packetOptions;
 
+    [SerializeField]
+    private Vector3 _oldPosition;
+    [SerializeField]
+    private Quaternion _oldRotation;
+    [SerializeField]
+    private Vector3 _futurePosition;
+    [SerializeField]
+    private Quaternion _futureRotation;
+    [SerializeField]
+    private float _futureTime;
+
     Animator _animator;
+    Rigidbody _rigidBody;
     int _prevAnimState = -1;
     
 
@@ -133,6 +145,7 @@ public class NetworkObject : MonoBehaviour
         //_networkManager.NetworkObjects.Add(this);
 
         _animator = GetComponent<Animator>();
+        _rigidBody = GetComponent<Rigidbody>();
     }
 
     private void OnApplicationQuit()
@@ -187,49 +200,28 @@ public class NetworkObject : MonoBehaviour
 
     void sendData()
     {
-        // WARNING WOULD ONLY WORK WITH BLITTABLE TYPES I BELIEVE!
-
-        //Vector3 position = transform.position;
-        //Quaternion rotation = transform.rotation;
-
-        //float[] data = new float[7];
-
-        //data[0] = position.x;
-        //data[1] = position.y;
-        //data[2] = position.z;
-        //data[3] = rotation.x;
-        //data[4] = rotation.y;
-        //data[5] = rotation.z;
-        //data[6] = rotation.w;
-
-
-        //unsafe
-        //{
-        //    fixed(float* ptrData = data)
-        //    {
-        //        IntPtr dataPtr = new IntPtr(ptrData);
-        //        _networkManager.sendData((int)PacketTypes.TransformMsg, 0, dataPtr);
-        //    }
-        //}
-
-
         // Send all packet types.
         if (_packetOptions == PacketOptions.All)
         {
-            TransformData transData = new TransformData() { _EID = _EID, _pos = transform.position, _rot = transform.rotation };
-            IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+            IntPtr dataPtr;
 
-            Marshal.StructureToPtr(transData, dataPtr, false);
-            //Marshal.PtrToStructure(dataPtr, transData);
-            _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
+            if ((transform.position - _oldPosition).sqrMagnitude >= 0.25f || Quaternion.Dot(transform.rotation, _oldRotation) <= 0.95f)
+            {
+                TransformData transData = new TransformData()
+                { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
+                dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
 
-            Marshal.FreeHGlobal(dataPtr);
+                Marshal.StructureToPtr(transData, dataPtr, false);
+                //Marshal.PtrToStructure(dataPtr, transData);
+                _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
 
+                Marshal.FreeHGlobal(dataPtr);
+                _oldPosition = transform.position;
+                _oldRotation = transform.rotation;
+                Debug.Log("Threshold breched");
+            }
 
             int state = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-            
-            Debug.Log("EID " + _EID + " Anim State: " + state);
-            Debug.Log("State Should be: " + Animator.StringToHash("Walking"));
 
             if (_prevAnimState != state)
             {
@@ -251,14 +243,21 @@ public class NetworkObject : MonoBehaviour
             // Send transform packets.
             if ((_packetOptions & PacketOptions.Transform) == PacketOptions.Transform)
             {
-                TransformData transData = new TransformData() { _EID = _EID, _pos = transform.position, _rot = transform.rotation };
-                IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+                if ((transform.position - _oldPosition).sqrMagnitude >= 0.25f || Quaternion.Dot(transform.rotation, _oldRotation) <= 0.95f)
+                {
+                    TransformData transData = new TransformData()
+                    { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
+                    IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
 
-                Marshal.StructureToPtr(transData, dataPtr, false);
-                //Marshal.PtrToStructure(dataPtr, transData);
-                _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
+                    Marshal.StructureToPtr(transData, dataPtr, false);
+                    //Marshal.PtrToStructure(dataPtr, transData);
+                    _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
 
-                Marshal.FreeHGlobal(dataPtr);
+                    Marshal.FreeHGlobal(dataPtr);
+                    _oldPosition = transform.position;
+                    _oldRotation = transform.rotation;
+                    Debug.Log("Threshold breched");
+                }
             }
             // Send animation packets.
             else if ((_packetOptions & PacketOptions.Anim) == PacketOptions.Anim)
@@ -399,4 +398,9 @@ public class NetworkObject : MonoBehaviour
         #endregion OLD_BYTE_TEST
     }
 
+    public void deadReckon(TransformData _transData)
+    {
+        //netObj.transform.position = transData._pos;
+        //netObj.transform.rotation = transData._rot;
+    }
 }

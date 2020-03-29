@@ -6,6 +6,7 @@ struct TransformData : PacketData
 {
 	Vector3 _pos;
 	Quaternion _rot;
+	Vector3 _vel;
 };
 
 class TransformPacket : public Packet

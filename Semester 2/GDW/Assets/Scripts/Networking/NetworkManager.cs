@@ -61,6 +61,7 @@ public struct TransformData
     public byte _EID;
     public Vector3 _pos;
     public Quaternion _rot;
+    public Vector3 _vel;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -252,6 +253,14 @@ public class NetworkManager : MonoBehaviour
         set
         {
             _networkObjects = value;
+        }
+    }
+
+    public float UpdateInterval
+    {
+        get
+        {
+            return _updateInterval;
         }
     }
 
@@ -710,8 +719,7 @@ public class NetworkManager : MonoBehaviour
 
             if (_networkObjects.TryGetValue(transData._EID, out netObj))
             {
-                netObj.transform.position = transData._pos;
-                netObj.transform.rotation = transData._rot;
+                netObj.deadReckon(transData);
             }
         }
 
