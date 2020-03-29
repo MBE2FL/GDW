@@ -218,7 +218,6 @@ public class NetworkObject : MonoBehaviour
                 Marshal.FreeHGlobal(dataPtr);
                 _oldPosition = transform.position;
                 _oldRotation = transform.rotation;
-                Debug.Log("Threshold breched");
             }
 
             int state = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
@@ -256,7 +255,6 @@ public class NetworkObject : MonoBehaviour
                     Marshal.FreeHGlobal(dataPtr);
                     _oldPosition = transform.position;
                     _oldRotation = transform.rotation;
-                    Debug.Log("Threshold breched");
                 }
             }
             // Send animation packets.
@@ -424,7 +422,21 @@ public class NetworkObject : MonoBehaviour
         else
         {
             Vector3 _playerPrediction = Vector3.Lerp(_oldPosition, _futurePosition, (_futureTime - Time.time) / _futureTime);
-            //if ((transform.position - _playerPrediction).sqrMagnitude >= ())
+            if ((transform.position - _playerPrediction).sqrMagnitude >= 3.0f * 3.0f)
+            {
+                TransformData transData = new TransformData()
+                { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
+                IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+
+                Marshal.StructureToPtr(transData, dataPtr, false);
+                //Marshal.PtrToStructure(dataPtr, transData);
+                _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
+
+                Marshal.FreeHGlobal(dataPtr);
+                _oldPosition = transform.position;
+                _oldRotation = transform.rotation;
+                Debug.Log("Threshold breched");
+            }
         }
     }
 }
