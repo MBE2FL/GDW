@@ -1,11 +1,7 @@
-﻿  Packet.cpp
-  TransformPacket.cpp
-  ServerSide.cpp
+﻿  ServerSide.cpp
 C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(374,36): warning C4267: 'initializing': conversion from 'size_t' to 'int8_t', possible loss of data
 C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(445,36): warning C4267: 'initializing': conversion from 'size_t' to 'int8_t', possible loss of data
 C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(524,85): warning C4267: 'argument': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(727,21): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(831,21): warning C4018: '<': signed/unsigned mismatch
-  main.cpp
-  Generating Code...
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(729,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(833,21): warning C4018: '<': signed/unsigned mismatch
   GameServer.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe

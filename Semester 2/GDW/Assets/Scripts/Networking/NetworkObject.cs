@@ -57,11 +57,16 @@ public class NetworkObject : MonoBehaviour
     private Quaternion _lastKnownRot;
     [SerializeField]
     private Vector3 _lastKnownVel;
+    [SerializeField]
+    Vector3 _playerPrediction;
     //[SerializeField]
     //float _otherClientFutureTime = 1.0f;
     float _lastKnowTime = 0.0f;
     [SerializeField]
     float _threshold = 1.5f;
+
+    float _time = 0.0f;
+    bool _thresholdPassed = false;
 
     Animator _animator;
     Rigidbody _rigidBody;
@@ -404,7 +409,7 @@ public class NetworkObject : MonoBehaviour
         //transform.position = _transData._pos;
         transform.rotation = _transData._rot;
 
-        _lastKnownPos = transform.position;
+        _lastKnownPos = _transData._pos;
         _lastKnownVel = _transData._vel;
         //_oldRotation = transform.rotation;
 
@@ -436,9 +441,25 @@ public class NetworkObject : MonoBehaviour
         }
         else if (_ownership == Ownership.ClientOwned)
         {
-            Vector3 _playerPrediction = _lastKnownPos + _lastKnownVel * (Time.time - _lastKnowTime);
+            _playerPrediction = _lastKnownPos + _lastKnownVel * (Time.time - _lastKnowTime);
 
             if ((transform.position - _playerPrediction).sqrMagnitude >= _threshold * _threshold)
+            {
+                _thresholdPassed = true;
+                _time = 0.0f;
+
+                _lastKnownPos = transform.position;
+                //_oldRotation = transform.rotation;
+                _lastKnownVel = _rigidBody.velocity;
+                //_otherClientFutureTime = Time.time + _networkManager.UpdateInterval;
+                _lastKnowTime = Time.time;
+                Debug.Log("Threshold breached");
+            }
+
+            if (_thresholdPassed)
+                _time += Time.deltaTime;
+
+            if (_time >= _networkManager.LagTime && _thresholdPassed)
             {
                 TransformData transData = new TransformData()
                 { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
@@ -449,12 +470,9 @@ public class NetworkObject : MonoBehaviour
                 _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
 
                 Marshal.FreeHGlobal(dataPtr);
-                _lastKnownPos = transform.position;
-                //_oldRotation = transform.rotation;
-                _lastKnownVel = _rigidBody.velocity;
-                //_otherClientFutureTime = Time.time + _networkManager.UpdateInterval;
-                _lastKnowTime = Time.time;
-                Debug.Log("Threshold breached");
+
+                _time = 0.0f;
+                _thresholdPassed = false;
             }
         }
     }

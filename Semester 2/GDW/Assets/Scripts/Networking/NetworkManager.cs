@@ -265,6 +265,14 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
+    public float LagTime
+    {
+        get
+        {
+            return _lagTime;
+        }
+    }
+
 
     JobHandle connectJobHandle;
     JobHandle receiveTCPJobHandle;
@@ -400,12 +408,12 @@ public class NetworkManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.R))
         {
-            _lagTime += 0.05f;
+            _lagTime += 1.0f;
             Debug.Log("Update Interval: " + (_updateInterval + _lagTime));
         }
         else if (Input.GetKeyDown(KeyCode.T))
         {
-            _lagTime -= 0.05f;
+            _lagTime -= 1.0f;
             Debug.Log("Update Interval: " + (_updateInterval + _lagTime));
         }
 
@@ -425,10 +433,10 @@ public class NetworkManager : MonoBehaviour
             return;
 
 
-        float deltaTime = Time.time - _timeSinceLastUpdate;
-        _timeSinceLastUpdate = deltaTime;
+        //float deltaTime = Time.time - _timeSinceLastUpdate;
+        //_timeSinceLastUpdate = deltaTime;
 
-        _time -= deltaTime;
+        _time -= Time.deltaTime;
 
         if (_time <= 0.0f)
         {
