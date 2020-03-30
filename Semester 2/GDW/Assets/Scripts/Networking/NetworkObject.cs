@@ -52,19 +52,16 @@ public class NetworkObject : MonoBehaviour
     PacketOptions _packetOptions;
 
     [SerializeField]
-    private Vector3 _oldPosition;
+    private Vector3 _lastKnownPos;
     [SerializeField]
-    private Quaternion _oldRotation;
+    private Quaternion _lastKnownRot;
     [SerializeField]
-    private Vector3 _oldVel;
+    private Vector3 _lastKnownVel;
+    //[SerializeField]
+    //float _otherClientFutureTime = 1.0f;
+    float _lastKnowTime = 0.0f;
     [SerializeField]
-    private Vector3 _futurePosition;
-    [SerializeField]
-    private Quaternion _futureRotation;
-    [SerializeField]
-    private float _futureTime;
-    [SerializeField]
-    float _otherClientFutureTime;
+    float _threshold = 1.5f;
 
     Animator _animator;
     Rigidbody _rigidBody;
@@ -151,7 +148,7 @@ public class NetworkObject : MonoBehaviour
         _animator = GetComponent<Animator>();
         _rigidBody = GetComponent<Rigidbody>();
 
-        _oldPosition = transform.position;
+        _lastKnownPos = transform.position;
     }
 
     private void OnApplicationQuit()
@@ -407,11 +404,13 @@ public class NetworkObject : MonoBehaviour
         //transform.position = _transData._pos;
         transform.rotation = _transData._rot;
 
-        _oldPosition = transform.position;
+        _lastKnownPos = transform.position;
+        _lastKnownVel = _transData._vel;
         //_oldRotation = transform.rotation;
 
-        _futurePosition = _transData._pos + _transData._vel * _networkManager.UpdateInterval;
-        _futureTime = Time.time + _networkManager.UpdateInterval;
+        //_futurePosition = _transData._pos + _transData._vel * 0.5f;
+        //_futureTime = Time.time + 0.5f;
+        _lastKnowTime = Time.time;
 
         //Debug.Log("Old Pos: " + _oldPosition);
         //Debug.Log("Fut Pos: " + _futurePosition);
@@ -422,22 +421,24 @@ public class NetworkObject : MonoBehaviour
     {
         if (_ownership == Ownership.OtherClientOwned)
         {
-            if (Time.time > _futureTime)
-            {
-                if ((transform.position - _futurePosition).sqrMagnitude >= 0.25f)
-                {
-                    transform.position = _futurePosition;
-                    Debug.Log("Hard Set");
-                }
-                return;
-            }
-            transform.position = Vector3.Lerp(_oldPosition, _futurePosition, Time.time / _futureTime);
-            Debug.Log("Lerping");
+            //if (Time.time > _futureTime)
+            //{
+            //    if ((transform.position - _futurePosition).sqrMagnitude >= 0.25f)
+            //    {
+            //        transform.position = _futurePosition;
+            //        Debug.Log("Hard Set");
+            //    }
+            //    return;
+            //}
+            //transform.position = Vector3.Lerp(_oldPosition, _futurePosition, Time.time / _futureTime);
+            transform.position = _lastKnownPos + _lastKnownVel * (Time.time - _lastKnowTime);
+            Debug.Log("Dead Reckoning");
         }
         else if (_ownership == Ownership.ClientOwned)
         {
-            Vector3 _playerPrediction = _oldPosition + _oldVel * (Time.time / _otherClientFutureTime);
-            if ((transform.position - _playerPrediction).sqrMagnitude >= 3.0 * 3.0f)
+            Vector3 _playerPrediction = _lastKnownPos + _lastKnownVel * (Time.time - _lastKnowTime);
+
+            if ((transform.position - _playerPrediction).sqrMagnitude >= _threshold * _threshold)
             {
                 TransformData transData = new TransformData()
                 { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
@@ -448,10 +449,11 @@ public class NetworkObject : MonoBehaviour
                 _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
 
                 Marshal.FreeHGlobal(dataPtr);
-                _oldPosition = transform.position;
+                _lastKnownPos = transform.position;
                 //_oldRotation = transform.rotation;
-                _oldVel = _rigidBody.velocity;
-                _otherClientFutureTime = Time.time + _networkManager.UpdateInterval;
+                _lastKnownVel = _rigidBody.velocity;
+                //_otherClientFutureTime = Time.time + _networkManager.UpdateInterval;
+                _lastKnowTime = Time.time;
                 Debug.Log("Threshold breached");
             }
         }

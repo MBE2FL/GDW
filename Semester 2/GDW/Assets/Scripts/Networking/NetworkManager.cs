@@ -237,6 +237,7 @@ public class NetworkManager : MonoBehaviour
     [SerializeField]
     float _updateInterval = 0.066f; // 1s / 15ups = 0.066ms
     //float _updateInterval = 0.167f;
+    float _lagTime = 0.0f;
 
 
     [SerializeField]
@@ -397,15 +398,15 @@ public class NetworkManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Greater))
+        if (Input.GetKeyDown(KeyCode.R))
         {
-            _updateInterval *= 2.0f;
-            Debug.Log("Update Interval: " + _updateInterval);
+            _lagTime += 0.05f;
+            Debug.Log("Update Interval: " + (_updateInterval + _lagTime));
         }
-        else if (Input.GetKeyDown(KeyCode.Less))
+        else if (Input.GetKeyDown(KeyCode.T))
         {
-            _updateInterval *= 0.5f;
-            Debug.Log("Update Interval: " + _updateInterval);
+            _lagTime -= 0.05f;
+            Debug.Log("Update Interval: " + (_updateInterval + _lagTime));
         }
 
         // Connecting to server
@@ -442,7 +443,7 @@ public class NetworkManager : MonoBehaviour
             ////    onDataReceive.Invoke();
             receivePackets();
 
-            _time = _updateInterval;
+            _time = _updateInterval + _lagTime;
         }
     }
 
