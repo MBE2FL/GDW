@@ -74,6 +74,7 @@ public class ShaderBuilder : MonoBehaviour
     {
         //_path = Application.dataPath + "/Graphics Pipeline/Shaders/";
         //_shaderTemplatePath = Application.dataPath + "/Graphics Pipeline/Shaders/RayMarchTemplate.shader";
+#if UNITY_EDITOR
         switch (_buildType)
         {
             case BuildType.Rendering:
@@ -87,6 +88,7 @@ public class ShaderBuilder : MonoBehaviour
             default:
                 break;
         }
+#endif
     }
 
     // Start is called before the first frame update
@@ -99,6 +101,7 @@ public class ShaderBuilder : MonoBehaviour
 
     public void build()
     {
+#if UNITY_EDITOR
         //if ((int)_buildType != (int)_currentShader.ShaderType)
         //{
         //    Debug.LogError("Template shader is not the same type as the build type!");
@@ -169,6 +172,7 @@ public class ShaderBuilder : MonoBehaviour
 
 
         file.Clear();
+#endif
 
 
 #if UNITY_EDITOR
@@ -1331,12 +1335,13 @@ public class ShaderBuilder : MonoBehaviour
 
     // ********* Marching Cube Shader *********
 
-
+#if UNITY_EDITOR
     [MenuItem("Shader Builder/Build Command _F6")]
     static void BuildCommand()
     {
         //Camera.main.GetComponent<ShaderBuilder>().build();
     }
+#endif
 }
 
 

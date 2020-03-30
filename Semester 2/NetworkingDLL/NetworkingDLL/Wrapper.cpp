@@ -1,24 +1,111 @@
+// MAKE SURE pch.h is included in ALL .cpp files
+#include "pch.h"
 #include "Wrapper.h"
 
 ClientSide cs;
 
 
-void sendData(const Vector3& position, const Quaternion& rotation)
+// Implement functions
+PLUGIN_OUT void InitPlugin(CS_to_Plugin_Functions funcs)
 {
-	return cs.sendData(position, rotation);
+	// We just copy the struct over
+	CS_Functions = funcs;
 }
 
-void receiveData(Vector3& position, Quaternion& rotation)
+// Init the console. You can probably but this in the initplugin function
+// I suggest adding a bool to the function though to make the console optional
+// ( if(bool) InitConsole )
+PLUGIN_OUT void InitConsole()
 {
-	return cs.receiveData(position, rotation);
+	FILE* pConsole;
+	AllocConsole();
+	freopen_s(&pConsole, "CONOUT$", "wb", stdout);
+
+	std::cout << "Client plugin initialized.\n";
+	std::cout << "==============================================================================\n";
+
+	//std::cout << CS_Functions.multiplyVectors(Vector3(1, 2, 4), Vector3(2, 1, 2)).toString() << std::endl;
+	//std::cout << CS_Functions.multiplyInts(1, 2) << std::endl;
+	//std::cout << CS_Functions.GetFloat() << std::endl;
+
+	cs.setFuncs(CS_Functions);
 }
 
-bool connectToServer(const char* id)
+// This may or may not work, it's not tested yet
+PLUGIN_OUT void FreeTheConsole()
 {
-	return cs.connectToServer(id);
+	FreeConsole();
 }
 
-bool initNetwork(const char* ip, const char* id)
+// C++ always takes in C# strings as const char* and sends them back as const char*
+PLUGIN_OUT const char* OutputMessageToConsole(const char* msg)
 {
-	return cs.initNetwork(ip, id);
+	std::cout << msg << std::endl;
+	return msg;
+}
+
+
+PLUGIN_OUT bool initNetwork(const char* ip)
+{
+	return cs.initNetwork(ip);
+}
+
+PLUGIN_OUT void networkCleanup()
+{
+	return cs.networkCleanup();
+}
+
+PLUGIN_OUT bool connectToServer(const char* ip)
+{
+	return cs.connectToServer(ip);
+}
+
+PLUGIN_OUT bool queryConnectAttempt(int& id)
+{
+	return cs.queryConnectAttempt(id);
+}
+
+PLUGIN_OUT PacketTypes queryEntityRequest()
+{
+	return cs.queryEntityRequest();
+}
+
+PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities)
+{
+	return cs.sendStarterEntities(entities, numEntities);
+}
+
+PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities)
+{
+	return cs.sendRequiredEntities(entities, numEntities, numServerEntities);
+}
+
+PLUGIN_OUT void getServerEntities(EntityData* serverEntities)
+{
+	return cs.getServerEntities(serverEntities);
+}
+
+PLUGIN_OUT void sendData(const PacketTypes pckType, void* data)
+{
+	return cs.sendData(pckType, data);
+}
+
+PLUGIN_OUT void receiveUDPData()
+{
+	return cs.receiveUDPData();
+}
+
+PLUGIN_OUT void receiveTCPData()
+{
+	return cs.receiveTCPData();
+}
+
+PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements)
+{
+	return cs.getPacketHandleSizes(transDataElements, animDataElements, entityDataElements);
+}
+
+PLUGIN_OUT void getPacketHandles(void* dataHandle)
+{
+	return cs.getPacketHandles(dataHandle);
 }

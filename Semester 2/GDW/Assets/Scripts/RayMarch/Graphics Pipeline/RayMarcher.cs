@@ -395,6 +395,7 @@ public class RayMarcher : MonoBehaviour
     }
 
 
+#if UNITY_EDITOR
     [MenuItem("GameObject/Ray Marched/Sphere", false, 10)]
     static void CreateBox(MenuCommand menuCommand)
     {
@@ -416,6 +417,7 @@ public class RayMarcher : MonoBehaviour
         GameObjectUtility.SetParentAndAlign(obj, menuCommand.context as GameObject);
         Undo.RegisterCreatedObjectUndo(obj, obj.name);
     }
+#endif
 }
 
 #if UNITY_EDITOR
