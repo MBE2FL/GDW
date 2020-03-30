@@ -56,11 +56,15 @@ public class NetworkObject : MonoBehaviour
     [SerializeField]
     private Quaternion _oldRotation;
     [SerializeField]
+    private Vector3 _oldVel;
+    [SerializeField]
     private Vector3 _futurePosition;
     [SerializeField]
     private Quaternion _futureRotation;
     [SerializeField]
     private float _futureTime;
+    [SerializeField]
+    float _otherClientFutureTime;
 
     Animator _animator;
     Rigidbody _rigidBody;
@@ -146,6 +150,8 @@ public class NetworkObject : MonoBehaviour
 
         _animator = GetComponent<Animator>();
         _rigidBody = GetComponent<Rigidbody>();
+
+        _oldPosition = transform.position;
     }
 
     private void OnApplicationQuit()
@@ -205,20 +211,20 @@ public class NetworkObject : MonoBehaviour
         {
             IntPtr dataPtr;
 
-            if ((transform.position - _oldPosition).sqrMagnitude >= 0.25f || Quaternion.Dot(transform.rotation, _oldRotation) <= 0.95f)
-            {
-                TransformData transData = new TransformData()
-                { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
-                dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+            //if ((transform.position - _oldPosition).sqrMagnitude >= 0.25f || Quaternion.Dot(transform.rotation, _oldRotation) <= 0.95f)
+            //{
+            //    TransformData transData = new TransformData()
+            //    { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
+            //    dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
 
-                Marshal.StructureToPtr(transData, dataPtr, false);
-                //Marshal.PtrToStructure(dataPtr, transData);
-                _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
+            //    Marshal.StructureToPtr(transData, dataPtr, false);
+            //    //Marshal.PtrToStructure(dataPtr, transData);
+            //    _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
 
-                Marshal.FreeHGlobal(dataPtr);
-                _oldPosition = transform.position;
-                _oldRotation = transform.rotation;
-            }
+            //    Marshal.FreeHGlobal(dataPtr);
+            //    _oldPosition = transform.position;
+            //    _oldRotation = transform.rotation;
+            //}
 
             int state = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
 
@@ -242,20 +248,20 @@ public class NetworkObject : MonoBehaviour
             // Send transform packets.
             if ((_packetOptions & PacketOptions.Transform) == PacketOptions.Transform)
             {
-                if ((transform.position - _oldPosition).sqrMagnitude >= 0.25f || Quaternion.Dot(transform.rotation, _oldRotation) <= 0.95f)
-                {
-                    TransformData transData = new TransformData()
-                    { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
-                    IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+                //if ((transform.position - _oldPosition).sqrMagnitude >= 0.25f || Quaternion.Dot(transform.rotation, _oldRotation) <= 0.95f)
+                //{
+                //    TransformData transData = new TransformData()
+                //    { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
+                //    IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
 
-                    Marshal.StructureToPtr(transData, dataPtr, false);
-                    //Marshal.PtrToStructure(dataPtr, transData);
-                    _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
+                //    Marshal.StructureToPtr(transData, dataPtr, false);
+                //    //Marshal.PtrToStructure(dataPtr, transData);
+                //    _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
 
-                    Marshal.FreeHGlobal(dataPtr);
-                    _oldPosition = transform.position;
-                    _oldRotation = transform.rotation;
-                }
+                //    Marshal.FreeHGlobal(dataPtr);
+                //    _oldPosition = transform.position;
+                //    _oldRotation = transform.rotation;
+                //}
             }
             // Send animation packets.
             else if ((_packetOptions & PacketOptions.Anim) == PacketOptions.Anim)
@@ -398,31 +404,40 @@ public class NetworkObject : MonoBehaviour
 
     public void deadReckon(TransformData _transData)
     {
-        transform.position = _transData._pos;
+        //transform.position = _transData._pos;
         transform.rotation = _transData._rot;
 
-        _futurePosition = transform.position + _transData._vel * _networkManager.UpdateInterval;
+        _oldPosition = transform.position;
+        //_oldRotation = transform.rotation;
+
+        _futurePosition = _transData._pos + _transData._vel * _networkManager.UpdateInterval;
         _futureTime = Time.time + _networkManager.UpdateInterval;
+
+        //Debug.Log("Old Pos: " + _oldPosition);
+        //Debug.Log("Fut Pos: " + _futurePosition);
+        //Debug.Log("Fut Time: " + _futureTime);
     }
 
     private void Update()
     {
-        if (_ownership != Ownership.ClientOwned)
+        if (_ownership == Ownership.OtherClientOwned)
         {
             if (Time.time > _futureTime)
             {
                 if ((transform.position - _futurePosition).sqrMagnitude >= 0.25f)
                 {
                     transform.position = _futurePosition;
+                    Debug.Log("Hard Set");
                 }
                 return;
             }
-            transform.position = Vector3.Lerp(_oldPosition, _futurePosition, (_futureTime - Time.time) / _futureTime);
+            transform.position = Vector3.Lerp(_oldPosition, _futurePosition, Time.time / _futureTime);
+            Debug.Log("Lerping");
         }
-        else
+        else if (_ownership == Ownership.ClientOwned)
         {
-            Vector3 _playerPrediction = Vector3.Lerp(_oldPosition, _futurePosition, (_futureTime - Time.time) / _futureTime);
-            if ((transform.position - _playerPrediction).sqrMagnitude >= 3.0f * 3.0f)
+            Vector3 _playerPrediction = _oldPosition + _oldVel * (Time.time / _otherClientFutureTime);
+            if ((transform.position - _playerPrediction).sqrMagnitude >= 3.0 * 3.0f)
             {
                 TransformData transData = new TransformData()
                 { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
@@ -434,8 +449,10 @@ public class NetworkObject : MonoBehaviour
 
                 Marshal.FreeHGlobal(dataPtr);
                 _oldPosition = transform.position;
-                _oldRotation = transform.rotation;
-                Debug.Log("Threshold breched");
+                //_oldRotation = transform.rotation;
+                _oldVel = _rigidBody.velocity;
+                _otherClientFutureTime = Time.time + _networkManager.UpdateInterval;
+                Debug.Log("Threshold breached");
             }
         }
     }

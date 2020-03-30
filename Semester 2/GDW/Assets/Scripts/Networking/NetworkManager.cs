@@ -397,6 +397,17 @@ public class NetworkManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Greater))
+        {
+            _updateInterval *= 2.0f;
+            Debug.Log("Update Interval: " + _updateInterval);
+        }
+        else if (Input.GetKeyDown(KeyCode.Less))
+        {
+            _updateInterval *= 0.5f;
+            Debug.Log("Update Interval: " + _updateInterval);
+        }
+
         // Connecting to server
         if (!_connected && _connecting)
         {

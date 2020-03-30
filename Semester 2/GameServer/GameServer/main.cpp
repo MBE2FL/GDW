@@ -1,8 +1,11 @@
 #include "Server.h"
+//#include "CustomConsole.h"
 
 
 int main()
 {
+	CustomConsole* cc = CustomConsole::getInstance();
+
 	Server* server = new Server();
 
 	//Initialize Network
@@ -15,7 +18,14 @@ int main()
 	server->initUpdateThreads();
 
 	while (true)
+	{
 		server->update();
+		
+
+		
+
+		//cc->update();
+	}
 
 
 	delete server;

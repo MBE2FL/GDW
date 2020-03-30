@@ -19,6 +19,7 @@
 #include "TransformPacket.h"
 #include "EntityPacket.h"
 #include "AnimPacket.h"
+#include "CustomConsole.h"
 
 //#include <algorithm>
 //#include <iterator>
@@ -95,4 +96,7 @@ private:
 	//vector<SOCKET*> _clientTCPSockets;
 
 	sockaddr_in* _udpListenInfoBuf;
+
+
+	CustomConsole* _cc;
 };

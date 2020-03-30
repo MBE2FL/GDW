@@ -8,6 +8,10 @@ Server::Server()
 	_clients.reserve(MAX_CLIENTS);
 	//_clientTCPSockets.reserve(MAX_CLIENTS);
 	_softConnectClients.reserve(MAX_CLIENTS);
+
+	_cc = CustomConsole::getInstance();
+	//_cc->clearColour();
+	//_cc->writeToStatus(_clients.size() + _softConnectClients.size());
 }
 
 bool Server::initNetwork() {
@@ -315,7 +319,7 @@ void Server::listenForConnections()
 
 		++_clientIDs;
 
-
+		//_cc->writeToStatus(_clients.size() + _softConnectClients.size());
 		// Server capacity has been recahed.
 		//if (_clients.size() == MAX_CLIENTS)
 		//{
