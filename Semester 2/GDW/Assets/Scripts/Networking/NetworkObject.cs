@@ -58,15 +58,32 @@ public class NetworkObject : MonoBehaviour
     [SerializeField]
     private Vector3 _lastKnownVel;
     [SerializeField]
-    Vector3 _playerPrediction;
-    //[SerializeField]
-    //float _otherClientFutureTime = 1.0f;
     float _lastKnowTime = 0.0f;
+
+    [SerializeField]
+    Vector3 _playerPrediction;
+
+    [SerializeField]
+    Vector3 _prevPos;
+    [SerializeField]
+    Quaternion _prevRot;
+    [SerializeField]
+    Vector3 _prevVel;
+
+    [SerializeField]
+    float _time = 0.0f;
+
+    [SerializeField]
+    bool _thresholdPassed = false;
     [SerializeField]
     float _threshold = 1.5f;
 
-    float _time = 0.0f;
-    bool _thresholdPassed = false;
+
+    [SerializeField]
+    float _timeToConverge = 1.0f;
+    [SerializeField]
+    float _convergeTimer = 0.0f;
+
 
     Animator _animator;
     Rigidbody _rigidBody;
@@ -406,37 +423,49 @@ public class NetworkObject : MonoBehaviour
 
     public void deadReckon(TransformData _transData)
     {
-        //transform.position = _transData._pos;
-        transform.rotation = _transData._rot;
+        // Store current position, rotation and velocity of pawn.
+        _prevPos = transform.position;
+        _prevRot = transform.rotation;
+        _prevVel = _lastKnownVel;
 
+
+        // Update rotation to last known packet data.
+        //transform.rotation = _transData._rot;
+
+        // Last known packet data.
         _lastKnownPos = _transData._pos;
         _lastKnownVel = _transData._vel;
-        //_oldRotation = transform.rotation;
-
-        //_futurePosition = _transData._pos + _transData._vel * 0.5f;
-        //_futureTime = Time.time + 0.5f;
+        _lastKnownRot = _transData._rot;
         _lastKnowTime = Time.time;
 
-        //Debug.Log("Old Pos: " + _oldPosition);
-        //Debug.Log("Fut Pos: " + _futurePosition);
-        //Debug.Log("Fut Time: " + _futureTime);
+        // Reset convergence timer.
+        _convergeTimer = 0.0f;
     }
 
     private void Update()
     {
         if (_ownership == Ownership.OtherClientOwned)
         {
-            //if (Time.time > _futureTime)
-            //{
-            //    if ((transform.position - _futurePosition).sqrMagnitude >= 0.25f)
-            //    {
-            //        transform.position = _futurePosition;
-            //        Debug.Log("Hard Set");
-            //    }
-            //    return;
-            //}
-            //transform.position = Vector3.Lerp(_oldPosition, _futurePosition, Time.time / _futureTime);
-            transform.position = _lastKnownPos + _lastKnownVel * (Time.time - _lastKnowTime);
+            _convergeTimer += Time.deltaTime;
+            float interT = _convergeTimer / _timeToConverge;
+
+            if (interT < 1.0f)
+            {
+                Vector3 pos = Vector3.Lerp(_prevPos, _lastKnownPos, interT);
+                Vector3 vel = Vector3.Lerp(_prevVel, _lastKnownVel, interT);
+                Quaternion rot = Quaternion.Slerp(_prevRot, _lastKnownRot, interT);
+
+
+                transform.position = pos + vel * (Time.time - _lastKnowTime);
+                transform.rotation = rot;
+            }
+            else
+            {
+                transform.position = _lastKnownPos + _lastKnownVel * (Time.time - _lastKnowTime);
+                transform.rotation = _lastKnownRot;
+            }
+
+
             Debug.Log("Dead Reckoning");
         }
         else if (_ownership == Ownership.ClientOwned)
