@@ -522,7 +522,7 @@ public class NetworkManager : MonoBehaviour
             netObjsList.AddRange(netObjs);
 
             // Add any objects not in the scene.
-            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.Sister], Vector3.zero, Quaternion.identity));
+            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.SisterV2], Vector3.zero, Quaternion.identity));
 
 
             numEntities = netObjsList.Count;
@@ -579,7 +579,7 @@ public class NetworkManager : MonoBehaviour
                 Destroy(netObj.gameObject);
             }
 
-            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.Brother], new Vector3(3.0f, 0.0f, 0.0f), Quaternion.identity));
+            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.BrotherV2], new Vector3(3.0f, 0.0f, 0.0f), Quaternion.identity));
 
 
             numEntities = netObjsList.Count;
@@ -654,14 +654,14 @@ public class NetworkManager : MonoBehaviour
                 ownership = entity._ownership;
 
 
-                if (prefabType == PrefabTypes.Sister)
+                if (prefabType == PrefabTypes.SisterV2)
                 {
-                    prefabType = PrefabTypes.SisterPawn;
+                    prefabType = PrefabTypes.SisterV2Pawn;
                     ownership = Ownership.OtherClientOwned;
                 }
-                else if (prefabType == PrefabTypes.Brother)
+                else if (prefabType == PrefabTypes.BrotherV2)
                 {
-                    prefabType = PrefabTypes.BrotherPawn;
+                    prefabType = PrefabTypes.BrotherV2Pawn;
                     ownership = Ownership.OtherClientOwned;
                 }
 
@@ -778,14 +778,14 @@ public class NetworkManager : MonoBehaviour
             ownership = entity._ownership;
 
 
-            if (prefabType == PrefabTypes.Sister)
+            if (prefabType == PrefabTypes.SisterV2)
             {
-                prefabType = PrefabTypes.SisterPawn;
+                prefabType = PrefabTypes.SisterV2Pawn;
                 ownership = Ownership.OtherClientOwned;
             }
-            else if (prefabType == PrefabTypes.Brother)
+            else if (prefabType == PrefabTypes.BrotherV2)
             {
-                prefabType = PrefabTypes.BrotherPawn;
+                prefabType = PrefabTypes.BrotherV2Pawn;
                 ownership = Ownership.OtherClientOwned;
             }
 
