@@ -15,7 +15,9 @@ public class PuzzleManager : MonoBehaviour, IObserver
     private static extern int load(string filePath);
     [DllImport(DLL_NAME)]
     private static extern void logCurrPuzzles(string filePath, int currPuzzles);
-    
+
+    int minutes;
+    float seconds;
 
     void LogCurrPuzzles()
     {
@@ -43,11 +45,22 @@ public class PuzzleManager : MonoBehaviour, IObserver
     // Update is called once per frame
     void Update()
     {
+        float sec = Time.time;
+        minutes = (int)sec / 60;
+        
+        seconds = sec % 60;
+        //Debug.Log("Seconds: " + seconds + " Minutes: " + minutes);
+
         if (_currPuzzles == _puzzles.Count)
         {
             // Activate portal;
             //Debug.Log("All puzzles completed!");
             //GetComponent<PortalManager>().activatePortals();
+
+            //TODO send the time over to the server. 
+            //Get the leader board data from the server
+            //Display the leaderboard to the players.
+
         }
     }
 
