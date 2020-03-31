@@ -97,6 +97,12 @@ public class PuzzleManager : MonoBehaviour, IObserver
             // Activate portal;
             Debug.Log("All puzzles completed!");
             GetComponent<PortalManager>().activatePortals();
+            var gameManager = GameObject.FindObjectsOfType<GameManager>();
+            Leaderboard.PlayerTime playerTime;
+            playerTime.name = "";
+            playerTime.playTime.min = minutes;
+            playerTime.playTime.sec = seconds;
+            gameManager[0].GetComponent<Leaderboard>().playerTimes.Add(playerTime);
         }
     }
 }
