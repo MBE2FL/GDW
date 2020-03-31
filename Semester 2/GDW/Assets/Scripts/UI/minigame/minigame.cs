@@ -24,10 +24,6 @@ public class minigame: MonoBehaviour
     [SerializeField]
     private GameObject slideGame;
     [SerializeField]
-    private GameObject sisterCharacter;
-    [SerializeField]
-    private GameObject brotherCharacter;
-    [SerializeField]
     private Camera _camera;
 
     private Animator brotherAnimator;
@@ -41,6 +37,12 @@ public class minigame: MonoBehaviour
         sisterAnimator = sisterBar.GetComponent<Animator>();
     }
 
+    void enableMovement(bool active)
+    {
+        _camera.GetComponent<cameraMovement>().enabled = active;
+        _camera.GetComponent<cameraMovement>().sister.GetComponent<Movement>().enabled = active;
+        _camera.GetComponent<cameraMovement>().brother.GetComponent<Movement>().enabled = active;
+    }
     // Update is called once per frame
     void Update()
     {
@@ -104,9 +106,7 @@ public class minigame: MonoBehaviour
                         slideGame.SetActive(false);
 
                         //enables the movement of players and camera
-                        sisterCharacter.GetComponent<Movement>().enabled = true;
-                        brotherCharacter.GetComponent<Movement>().enabled = true;
-                        _camera.GetComponent<cameraMovement>().enabled = true;
+                        enableMovement(true);
                     }
                 }
             }
@@ -124,9 +124,7 @@ public class minigame: MonoBehaviour
             sisterAnimator.SetBool("gameStarted", true);
 
             //disables the movement of players and camera
-            sisterCharacter.GetComponent<Movement>().enabled = false;
-            brotherCharacter.GetComponent<Movement>().enabled = false;
-            _camera.GetComponent<cameraMovement>().enabled = false;
+            enableMovement(false);
         }
     }
 
