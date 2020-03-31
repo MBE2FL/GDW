@@ -15,6 +15,7 @@ public class focusing : MonoBehaviour
 
     private void Awake()
     {
+        _camera = GetComponent<Camera>();
         _camTrans = _camera.transform;
 
         _focusOnTarget = Focus();

@@ -38,6 +38,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
 
             //loads number of puzzles currently completed from the dll
             _currPuzzles = Load();
+            _currPuzzles = 0;
         }
         
     }
@@ -50,7 +51,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
         
         seconds = sec % 60;
         //Debug.Log("Seconds: " + seconds + " Minutes: " + minutes);
-
+        GetComponent<PortalManager>().activatePortals();
         if (_currPuzzles == _puzzles.Count)
         {
             // Activate portal;

@@ -28,9 +28,9 @@ public class PortalManager : MonoBehaviour
             obj.SetActive(true);
             obj.GetComponent<Animator>().SetTrigger("PortalActivate");
 
-            obj = portal.transform.Find("portal w_particles").transform.Find("Portal particles").gameObject;
+            obj = portal.transform.Find("Portal particles").gameObject;
             obj.SetActive(true);
-            obj.GetComponent<Animator>().SetTrigger("PortalActivate");
+            //obj.GetComponent<Animator>().SetTrigger("PortalActivate");
         }
     }
 }

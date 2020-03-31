@@ -26,7 +26,7 @@ public class PortalTexture : MonoBehaviour
 
         // TO-DO Make this dynamic. Will only work on initial game start.
         _camera2.targetTexture = new RenderTexture(Screen.width, Screen.height, 24);
-        //_portal2Mat.mainTexture = _camera2.targetTexture;
+        _portal2Mat.mainTexture = _camera2.targetTexture;
         _portal2Mat.SetTexture("_MainImage", _camera2.targetTexture);
 
 
@@ -42,7 +42,7 @@ public class PortalTexture : MonoBehaviour
 
         // TO-DO Make this dynamic. Will only work on initial game start.
         _camera1.targetTexture = new RenderTexture(Screen.width, Screen.height, 24);
-        //_portal1Mat.mainTexture = _camera1.targetTexture;
+        _portal1Mat.mainTexture = _camera1.targetTexture;
         _portal1Mat.mainTexture = _camera1.targetTexture;
         _portal1Mat.SetTexture("_MainImage", _camera1.targetTexture);
     }
