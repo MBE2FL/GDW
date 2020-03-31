@@ -1144,6 +1144,19 @@ MonoBehaviour:
   _prefabType: 0
   _ownership: 0
   _packetOptions: -1
+  _lastKnownPos: {x: 0, y: 0, z: 0}
+  _lastKnownRot: {x: 0, y: 0, z: 0, w: 0}
+  _lastKnownVel: {x: 0, y: 0, z: 0}
+  _lastKnowTime: 0
+  _playerPrediction: {x: 0, y: 0, z: 0}
+  _prevPos: {x: 0, y: 0, z: 0}
+  _prevRot: {x: 0, y: 0, z: 0, w: 0}
+  _prevVel: {x: 0, y: 0, z: 0}
+  _time: 0
+  _thresholdPassed: 0
+  _threshold: 0.5
+  _timeToConverge: 0.3
+  _convergeTimer: 0
 --- !u!1 &3429134451789160222
 GameObject:
   m_ObjectHideFlags: 0

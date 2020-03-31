@@ -137,7 +137,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd5b38bc8366c514e9cda6f7524f4bc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _objID: 0
+  _EID: 0
   _prefabType: 4
   _ownership: 1
-  _packetTypes: 1
+  _packetOptions: 0
+  _lastKnownPos: {x: 0, y: 0, z: 0}
+  _lastKnownRot: {x: 0, y: 0, z: 0, w: 0}
+  _lastKnownVel: {x: 0, y: 0, z: 0}
+  _lastKnowTime: 0
+  _playerPrediction: {x: 0, y: 0, z: 0}
+  _prevPos: {x: 0, y: 0, z: 0}
+  _prevRot: {x: 0, y: 0, z: 0, w: 0}
+  _prevVel: {x: 0, y: 0, z: 0}
+  _time: 0
+  _thresholdPassed: 0
+  _threshold: 0.5
+  _timeToConverge: 0.3
+  _convergeTimer: 0

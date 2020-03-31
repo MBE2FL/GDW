@@ -14,7 +14,11 @@ public enum PrefabTypes : byte
     SisterPawn,
     Rock,
     Tire,
-    Rope
+    RopeCoil,
+    SisterV2,
+    SisterV2Pawn,
+    BrotherV2,
+    BrotherV2Pawn
 }
 
 public enum Ownership : byte
