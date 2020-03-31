@@ -288,7 +288,8 @@ public class ExplodingMesh : MonoBehaviour
                 j++;
             }
 
-                buffer.Dispose();
+            buffer.Dispose();
+            normBuffer.Dispose();
         }
 
     }
@@ -363,6 +364,13 @@ public class ExplodingMesh : MonoBehaviour
             baseBuffer.Dispose();
             newVertBuffer.GetData(newVerts);
             newVertBuffer.Dispose();
+
+            vertBuffer.Dispose();
+            uvBuffer.Dispose();
+            normBuffer.Dispose();
+
+            triBuffer.Dispose();
+            newTriBuffer.Dispose();
 
         }
 
