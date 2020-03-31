@@ -39,13 +39,28 @@ public class Leaderboard : MonoBehaviour
     {
         if (playerTimes.Count > 0)
         {
-            line1.text = playerTimes[0].name;
+            line1.text = "1. " + playerTimes[0].name;
             time1.text = playerTimes[0].playTime.min.ToString() + ":" + playerTimes[0].playTime.sec.ToString();
         }
         if (playerTimes.Count > 1)
         {
-            line2.text = playerTimes[1].name;
+            line2.text = "2. " + playerTimes[1].name;
             time2.text = playerTimes[1].playTime.min.ToString() + ":" + playerTimes[1].playTime.sec.ToString();
+        }
+        if (playerTimes.Count > 2)
+        {
+            line3.text = "3. " + playerTimes[2].name;
+            time3.text = playerTimes[2].playTime.min.ToString() + ":" + playerTimes[2].playTime.sec.ToString();
+        }
+        if (playerTimes.Count > 3)
+        {
+            line4.text = "4. " + playerTimes[3].name;
+            time4.text = playerTimes[3].playTime.min.ToString() + ":" + playerTimes[3].playTime.sec.ToString();
+        }
+        if (playerTimes.Count > 4)
+        {
+            line5.text = "5. " + playerTimes[4].name;
+            time5.text = playerTimes[4].playTime.min.ToString() + ":" + playerTimes[4].playTime.sec.ToString();
         }
     }
 }
