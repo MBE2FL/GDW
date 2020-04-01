@@ -393,6 +393,7 @@ MonoBehaviour:
   time3: {fileID: 1692779416}
   time4: {fileID: 354584879}
   time5: {fileID: 856067286}
+  playerTimes: []
 --- !u!114 &838936483
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -588,14 +588,14 @@ void ClientSide::sendData(const PacketTypes pckType, void* data)
 	{
 		if (sendto(_clientUDPsocket, packet->_data, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
 		{
-			cout << "Failed to send packet on UDP socket!\n" << endl;
+			cout << "Failed to send packet on UDP socket!" << endl;
 		}
 	}
 	else
 	{
 		if (send(_clientTCPsocket, packet->_data, BUF_LEN, 0) == SOCKET_ERROR)
 		{
-			cout << "Failed to send packet on TCP socket!\n" << endl;
+			cout << "Failed to send packet on TCP socket!" << endl;
 		}
 	}
 
@@ -882,6 +882,64 @@ void ClientSide::getPacketHandles(void* dataHandle)
 	_animDataBuf.clear();
 	//_udpPacketBuf.clear();
 	_entityDataBuf.clear();
+}
+
+void ClientSide::getScores(int& numScores)
+{
+	char buf[BUF_LEN];
+	memset(buf, 0, BUF_LEN);
+
+	buf[PCK_TYPE_POS] = PacketTypes::ClientScoresRequest;
+	buf[NET_ID_POS] = _networkID;
+
+	// Send packet.
+	if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		cout << "Failed to send ClientScoresRequest packet on TCP socket!" << endl;
+	}
+
+	memset(buf, 0, BUF_LEN);
+	int bytesRecieved = -1;
+	int wsaError = -1;
+
+	bytesRecieved = recv(_clientTCPsocket, buf, BUF_LEN, 0);
+
+	wsaError = WSAGetLastError();
+
+	if (bytesRecieved > 0)
+	{
+		ScorePacket packet = ScorePacket(buf);
+		numScores = packet.getNumScores();
+		_scoresBuf = new ScoreData[numScores];
+		packet.deserialize(_scoresBuf);
+	}
+	else
+	{
+		cout << "Failed to receive scores packet on TCP socket! " << wsaError << endl;
+	}
+}
+
+ScoreData* ClientSide::getScoresHandle()
+{
+	return _scoresBuf;
+}
+
+void ClientSide::cleanupScoresHandle()
+{
+	delete _scoresBuf;
+	_scoresBuf = nullptr;
+}
+
+void ClientSide::sendScore(ScoreData scoreData)
+{
+	ScorePacket packet = ScorePacket(_networkID, 1);
+	packet.serialize(&scoreData);
+
+	// Send packet.
+	if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		cout << "Failed to send score packet on TCP socket!" << endl;
+	}
 }
 
 void ClientSide::setFuncs(const CS_to_Plugin_Functions& funcs)

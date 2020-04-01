@@ -5,16 +5,16 @@
 #include <vector>
 #include <algorithm>
 
-struct time
+struct Time
 {
 	int minutes;
 	float seconds;
 };
 
-struct playerTime
+struct PlayerTime
 {
-	std::string teamName;
-	time totalTime;
+	const char* teamName;
+	Time totalTime;
 };
 
 class Scoreboard
@@ -27,6 +27,8 @@ public:
 	void Write();
 
 	void Sort();
+
+	std::vector<PlayerTime>& getTimes();
 
 
 private:
@@ -44,6 +46,6 @@ private:
 	
 	//bool CompareTime(playerTime& t1, playerTime& t2);
 	
-	std::vector<playerTime> playerTimes;
+	std::vector<PlayerTime> playerTimes;
 };
 

@@ -9,6 +9,11 @@ Server::Server()
 	//_clientTCPSockets.reserve(MAX_CLIENTS);
 	_softConnectClients.reserve(MAX_CLIENTS);
 
+	_scoreboard = Scoreboard();
+	_scoreboard.Read();
+
+
+
 	_cc = CustomConsole::getInstance();
 	//_cc->clearColour();
 	//_cc->writeToStatus(_clients.size() + _softConnectClients.size());
@@ -602,6 +607,40 @@ void Server::processAnim(char buf[BUF_LEN], SOCKET* socket)
 	}
 }
 
+void Server::processScore(char buf[BUF_LEN])
+{
+	ScorePacket packet = ScorePacket(buf);
+	int8_t numScores = packet.getNumScores();
+	ScoreData time;
+
+	packet.deserialize(&time);
+
+	_scoreboard.getTimes().emplace_back(time);
+	_scoreboard.Sort();
+	_scoreboard.Write();
+}
+
+void Server::processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket)
+{
+	vector<PlayerTime> times = _scoreboard.getTimes();
+	int8_t netID = buf[NET_ID_POS];
+	ScorePacket packet = ScorePacket(netID, times.size());
+
+	vector<ScoreData> dataBuf = vector<ScoreData>(times.size());
+	for (PlayerTime time : times)
+	{
+		dataBuf.emplace_back(time);
+	}
+
+	packet.serialize(dataBuf.data());
+
+	// Send data to client.
+	if (send(*socket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		printf("Failed to send score data. %d\n", WSAGetLastError());
+	}
+}
+
 void Server::update()
 {
 	////////////////////
@@ -857,6 +896,12 @@ void Server::tcpUpdate()
 				case EntitiesUpdate:
 					break;
 				case EmptyMsg:
+					break;
+				case Score:
+					processScore(buf);
+					break;
+				case ClientScoresRequest:
+					processClientScoresRequest(buf, clientSocket);
 					break;
 				default:
 					break;

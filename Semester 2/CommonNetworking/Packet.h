@@ -23,7 +23,9 @@ enum PacketTypes : int8_t
 	EntitiesUpdate,
 	EntityIDs,
 	EmptyMsg,
-	ErrorMsg
+	ErrorMsg,
+	Score,
+	ClientScoresRequest
 };
 
 struct PacketData

@@ -82,6 +82,12 @@ public struct EntityData
     public byte _parent;
 }
 
+[StructLayout(LayoutKind.Sequential)]
+public struct ScoreData
+{
+    public PlayerTime _time;
+}
+
 
 
 
@@ -202,7 +208,20 @@ public class NetworkManager : MonoBehaviour
 
     public delegate void getPacketHandlesDelegate(IntPtr dataHandle);
     public getPacketHandlesDelegate getPacketHandles;
-#endregion DLL_VARIABLES
+
+
+    public delegate void getScoresDelegate(ref int numScores);
+    public getScoresDelegate getScores;
+
+    public delegate IntPtr getScoresHandleDelegate();
+    public getScoresHandleDelegate getScoresHandle;
+
+    public delegate void cleanupScoresHandleDelegate();
+    public cleanupScoresHandleDelegate cleanupScoresHandle;
+
+    public delegate void sendScoreDelegate(ScoreData scoreData);
+    public sendScoreDelegate sendScore;
+    #endregion DLL_VARIABLES
 
 
 
@@ -230,6 +249,7 @@ public class NetworkManager : MonoBehaviour
 
 
     GameManager _gameManager;
+
 
     [SerializeField]
     float _timeSinceLastUpdate = 0.0f;
@@ -311,7 +331,13 @@ public class NetworkManager : MonoBehaviour
         receiveTCPData = ManualPluginImporter.GetDelegate<receiveTCPDataDelegate>(_pluginHandle, "receiveTCPData");
         getPacketHandleSizes = ManualPluginImporter.GetDelegate<getPacketHandleSizesDelegate>(_pluginHandle, "getPacketHandleSizes");
         getPacketHandles = ManualPluginImporter.GetDelegate<getPacketHandlesDelegate>(_pluginHandle, "getPacketHandles");
-    }
+
+
+        getScores = ManualPluginImporter.GetDelegate<getScoresDelegate>(_pluginHandle, "getScores");
+        getScoresHandle = ManualPluginImporter.GetDelegate<getScoresHandleDelegate>(_pluginHandle, "getScoresHandle");
+        cleanupScoresHandle = ManualPluginImporter.GetDelegate<cleanupScoresHandleDelegate>(_pluginHandle, "cleanupScoresHandle");
+        sendScore = ManualPluginImporter.GetDelegate<sendScoreDelegate>(_pluginHandle, "sendScore");
+}
 
     private void Awake()
     {

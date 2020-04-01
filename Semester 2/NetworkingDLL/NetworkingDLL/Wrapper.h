@@ -37,6 +37,12 @@ extern "C"
 	PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements);
 	PLUGIN_OUT void getPacketHandles(void* dataHandle);
 
+
+	PLUGIN_OUT void getScores(int& numScores);
+	PLUGIN_OUT ScoreData* getScoresHandle();
+	PLUGIN_OUT void cleanupScoresHandle();
+	PLUGIN_OUT void sendScore(ScoreData scoreData);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

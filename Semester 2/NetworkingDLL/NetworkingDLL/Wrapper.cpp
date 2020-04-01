@@ -109,3 +109,23 @@ PLUGIN_OUT void getPacketHandles(void* dataHandle)
 {
 	return cs.getPacketHandles(dataHandle);
 }
+
+PLUGIN_OUT void getScores(int& numScores)
+{
+	return cs.getScores(numScores);
+}
+
+PLUGIN_OUT ScoreData* getScoresHandle()
+{
+	return cs.getScoresHandle();
+}
+
+PLUGIN_OUT void cleanupScoresHandle()
+{
+	return cs.cleanupScoresHandle();
+}
+
+PLUGIN_OUT void sendScore(ScoreData scoreData)
+{
+	return cs.sendScore(scoreData);
+}

@@ -9,14 +9,14 @@ void Scoreboard::Read()
 	if (in.is_open())
 	{
 		std::string buffer;
-		playerTime temp;
+		PlayerTime temp;
 
 		while (!in.eof())
 		{
 			std::getline(in, buffer);
 			if (buffer != "")
 			{
-				temp.teamName = buffer;
+				temp.teamName = buffer.c_str();
 
 				std::getline(in, buffer);
 				temp.totalTime.minutes = std::stoi(buffer);
@@ -47,7 +47,7 @@ void Scoreboard::Write()
 	}
 }
 
-bool CompareTime(playerTime& t1, playerTime& t2)
+bool CompareTime(PlayerTime& t1, PlayerTime& t2)
 {
 	float sec1 = (float)t1.totalTime.minutes * 60 + t1.totalTime.seconds;
 	float sec2 = (float)t2.totalTime.minutes * 60 + t2.totalTime.seconds;
@@ -58,5 +58,10 @@ bool CompareTime(playerTime& t1, playerTime& t2)
 void Scoreboard::Sort()
 {
 	std::sort(playerTimes.begin(), playerTimes.end(), CompareTime);
+}
+
+std::vector<PlayerTime>& Scoreboard::getTimes()
+{
+	return playerTimes;
 }
 

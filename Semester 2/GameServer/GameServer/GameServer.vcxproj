@@ -131,10 +131,11 @@
     <ClCompile Include="..\..\CommonNetworking\CustomConsole.cpp" />
     <ClCompile Include="..\..\CommonNetworking\EntityPacket.cpp" />
     <ClCompile Include="..\..\CommonNetworking\Packet.cpp" />
+    <ClCompile Include="..\..\CommonNetworking\Scoreboard.cpp" />
+    <ClCompile Include="..\..\CommonNetworking\ScorePacket.cpp" />
     <ClCompile Include="..\..\CommonNetworking\Transform.cpp" />
     <ClCompile Include="..\..\CommonNetworking\TransformPacket.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Scoreboard.cpp" />
     <ClCompile Include="ServerSide.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -142,9 +143,10 @@
     <ClInclude Include="..\..\CommonNetworking\CustomConsole.h" />
     <ClInclude Include="..\..\CommonNetworking\EntityPacket.h" />
     <ClInclude Include="..\..\CommonNetworking\Packet.h" />
+    <ClInclude Include="..\..\CommonNetworking\Scoreboard.h" />
+    <ClInclude Include="..\..\CommonNetworking\ScorePacket.h" />
     <ClInclude Include="..\..\CommonNetworking\Transform.h" />
     <ClInclude Include="..\..\CommonNetworking\TransformPacket.h" />
-    <ClInclude Include="Scoreboard.h" />
     <ClInclude Include="Server.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

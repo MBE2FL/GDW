@@ -42,11 +42,14 @@
     <ClCompile Include="..\..\CommonNetworking\EntityPacket.cpp">
       <Filter>Source Files\Packets</Filter>
     </ClCompile>
-    <ClCompile Include="Scoreboard.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\CommonNetworking\CustomConsole.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonNetworking\ScorePacket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonNetworking\Scoreboard.cpp">
+      <Filter>Source Files\Packets</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -68,11 +71,14 @@
     <ClInclude Include="..\..\CommonNetworking\EntityPacket.h">
       <Filter>Header Files\Packets</Filter>
     </ClInclude>
-    <ClInclude Include="Scoreboard.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\CommonNetworking\CustomConsole.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonNetworking\ScorePacket.h">
+      <Filter>Header Files\Packets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonNetworking\Scoreboard.h">
+      <Filter>Header Files\Packets</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

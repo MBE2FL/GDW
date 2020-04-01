@@ -16,6 +16,7 @@
 #include "TransformPacket.h"
 #include "AnimPacket.h"
 #include "EntityPacket.h"
+#include "ScorePacket.h"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -81,6 +82,12 @@ public:
 	void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements);
 	void getPacketHandles(void* dataHandle);
 
+	
+	void getScores(int& numScores);
+	ScoreData* getScoresHandle();
+	void cleanupScoresHandle();
+	void sendScore(ScoreData scoreData);
+
 
 	void setFuncs(const CS_to_Plugin_Functions& funcs);
 
@@ -106,4 +113,7 @@ private:
 	vector<TransformData> _transDataBuf;
 	vector<AnimData> _animDataBuf;
 	vector<EntityData> _entityDataBuf;
+
+
+	ScoreData* _scoresBuf;
 };

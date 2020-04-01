@@ -20,6 +20,7 @@
 #include "EntityPacket.h"
 #include "AnimPacket.h"
 #include "CustomConsole.h"
+#include "ScorePacket.h"
 
 //#include <algorithm>
 //#include <iterator>
@@ -71,6 +72,8 @@ public:
 
 	void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen);
 	void processAnim(char buf[BUF_LEN], SOCKET* socket);
+	void processScore(char buf[BUF_LEN]);
+	void processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket);
 
 	void update();
 	void initUpdateThreads();
@@ -96,6 +99,9 @@ private:
 	//vector<SOCKET*> _clientTCPSockets;
 
 	sockaddr_in* _udpListenInfoBuf;
+
+
+	Scoreboard _scoreboard;
 
 
 	CustomConsole* _cc;

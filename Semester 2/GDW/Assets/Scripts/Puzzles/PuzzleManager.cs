@@ -98,7 +98,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
             Debug.Log("All puzzles completed!");
             GetComponent<PortalManager>().activatePortals();
             var gameManager = GameObject.FindObjectsOfType<GameManager>();
-            Leaderboard.PlayerTime playerTime;
+            PlayerTime playerTime;
             playerTime.name = "";
             playerTime.playTime.min = minutes;
             playerTime.playTime.sec = seconds;
