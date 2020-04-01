@@ -15,7 +15,7 @@ public struct PlayTime
     public float sec;
 }
 
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
 [Serializable]
 public struct PlayerTime
 {

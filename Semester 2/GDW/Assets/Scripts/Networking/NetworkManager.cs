@@ -221,6 +221,16 @@ public class NetworkManager : MonoBehaviour
 
     public delegate void sendScoreDelegate(ScoreData scoreData);
     public sendScoreDelegate sendScore;
+
+
+    public delegate void receiveLobbyDataDelegate();
+    public static receiveLobbyDataDelegate receiveLobbyData;
+
+    public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref int numChars);
+    public getNumLobbyPacketsDelegate getNumLobbyPackets;
+
+    public delegate void getLobbyPacketHandlesDelegate(IntPtr dataHandle);
+    public getLobbyPacketHandlesDelegate getLobbyPacketHandles;
     #endregion DLL_VARIABLES
 
 
@@ -337,7 +347,12 @@ public class NetworkManager : MonoBehaviour
         getScoresHandle = ManualPluginImporter.GetDelegate<getScoresHandleDelegate>(_pluginHandle, "getScoresHandle");
         cleanupScoresHandle = ManualPluginImporter.GetDelegate<cleanupScoresHandleDelegate>(_pluginHandle, "cleanupScoresHandle");
         sendScore = ManualPluginImporter.GetDelegate<sendScoreDelegate>(_pluginHandle, "sendScore");
-}
+
+
+        receiveLobbyData = ManualPluginImporter.GetDelegate<receiveLobbyDataDelegate>(_pluginHandle, "receiveLobbyData");
+        getNumLobbyPackets = ManualPluginImporter.GetDelegate<getNumLobbyPacketsDelegate>(_pluginHandle, "getNumLobbyPackets");
+        getLobbyPacketHandles = ManualPluginImporter.GetDelegate<getLobbyPacketHandlesDelegate>(_pluginHandle, "getLobbyPacketHandles");
+    }
 
     private void Awake()
     {

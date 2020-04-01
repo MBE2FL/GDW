@@ -942,6 +942,127 @@ void ClientSide::sendScore(ScoreData scoreData)
 	}
 }
 
+void ClientSide::receiveLobbyData()
+{
+	char buf[BUF_LEN];
+
+	memset(buf, 0, BUF_LEN);
+
+	int bytesReceived = -1;
+	int wsaError = -1;
+
+
+	// Reveive updates from the server.
+	bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
+
+	wsaError = WSAGetLastError();
+
+
+	// Received data from server.
+	if (bytesReceived > 0)
+	{
+		// Retrieve network ID of incomming message.
+		int8_t networkID = buf[NET_ID_POS];
+
+		if (networkID == _networkID)
+		{
+			cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+			return;
+		}
+
+
+		PacketTypes pckType = static_cast<PacketTypes>(buf[PCK_TYPE_POS]);
+
+		switch (pckType)
+		{
+		case ConnectionAttempt:
+			break;
+		case ConnectionAccepted:
+			break;
+		case ConnectionFailed:
+			break;
+		case ServerFull:
+			break;
+		case EntitiesQuery:
+			break;
+		case EntitiesStart:
+			break;
+		case EntitiesNoStart:
+			break;
+		case EntitiesRequired:
+			break;
+		case EntitiesUpdate:
+		{
+			// Deserialize and store entity data.
+			EntityPacket packet = EntityPacket(buf);
+			int8_t numEntities = packet.getNumEntities();
+			EntityData* entityData = new EntityData[numEntities];
+
+			packet.deserialize(entityData);
+
+			cout << "Received " << static_cast<int>(numEntities) << " server entities, from another client." << endl;
+
+			if (numEntities > 0)
+			{
+				_entityDataBuf.insert(_entityDataBuf.end(), entityData, entityData + numEntities);
+
+				delete[] entityData;
+			}
+			return;
+		}
+		case LobbyChat:
+		{
+			ChatPacket packet = ChatPacket(buf);
+			ChatData chatData = ChatData();
+
+			packet.deserialize(&chatData);
+
+			cout << "Received chat msg from " << static_cast<int>(networkID) << ": " << chatData._msg << endl;
+
+			_chatDataBuf.emplace_back(chatData);
+			break;
+		}
+		case EmptyMsg:
+			break;
+		case ErrorMsg:
+			break;
+		default:
+			break;
+		}
+	}
+	else if (wsaError == SOCKET_ERROR)
+	{
+		//cout << "TCP Receive Error, " << WSAGetLastError() << endl;
+	}
+}
+
+void ClientSide::getNumLobbyPackets(int& numMsgs, int& numChars)
+{
+	numMsgs = _chatDataBuf.size();
+
+	for (ChatData chat : _chatDataBuf)
+	{
+		numChars += chat._msgSize;
+	}
+}
+
+void ClientSide::getLobbyPacketHandles(void* dataHandle)
+{
+	// Copy data to c# handle.
+	char* byteDatahandle = reinterpret_cast<char*>(dataHandle);
+	size_t offset = 0;
+
+	memcpy(byteDatahandle, _chatDataBuf.data(), sizeof(ChatData) * _chatDataBuf.size());
+	offset += sizeof(ChatData) * _chatDataBuf.size();
+
+	//memcpy(&byteDatahandle[offset], _animDataBuf.data(), sizeof(AnimData) * _animDataBuf.size());
+	//offset += sizeof(AnimData) * _animDataBuf.size();
+
+
+	// Clean up.
+	_chatDataBuf.clear();
+}
+
 void ClientSide::setFuncs(const CS_to_Plugin_Functions& funcs)
 {
 	_funcs = funcs;

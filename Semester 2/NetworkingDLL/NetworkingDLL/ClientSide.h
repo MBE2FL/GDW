@@ -17,6 +17,7 @@
 #include "AnimPacket.h"
 #include "EntityPacket.h"
 #include "ScorePacket.h"
+#include "ChatPacket.h"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -89,6 +90,11 @@ public:
 	void sendScore(ScoreData scoreData);
 
 
+	void receiveLobbyData();
+	void getNumLobbyPackets(int& numMsgs, int& numChars);
+	void getLobbyPacketHandles(void* dataHandle);
+
+
 	void setFuncs(const CS_to_Plugin_Functions& funcs);
 
 private:
@@ -116,4 +122,6 @@ private:
 
 
 	ScoreData* _scoresBuf;
+
+	vector<ChatData> _chatDataBuf;
 };

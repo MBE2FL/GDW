@@ -129,3 +129,18 @@ PLUGIN_OUT void sendScore(ScoreData scoreData)
 {
 	return cs.sendScore(scoreData);
 }
+
+PLUGIN_OUT void receiveLobbyData()
+{
+	return cs.receiveLobbyData();
+}
+
+PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& numChars)
+{
+	return cs.getNumLobbyPackets(numMsgs, numChars);
+}
+
+PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle)
+{
+	return cs.getLobbyPacketHandles(dataHandle);
+}
