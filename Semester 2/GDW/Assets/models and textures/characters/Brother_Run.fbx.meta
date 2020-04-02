@@ -18,6 +18,12 @@ ModelImporter:
   - first:
       74: 3594955309651019112
     second: Brother running
+  - first:
+      74: 5908593454653978933
+    second: brother skeleton.002|brother walk.002
+  - first:
+      74: -4171984089437649494
+    second: brother skeleton.002|brother walk.001
   externalObjects: {}
   materials:
     materialImportMode: 1
@@ -76,10 +82,10 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: borther walking
+      name: brother skeleton.002|brother walk.001
       takeName: brother skeleton.002|brother walk.001
       internalID: 0
-      firstFrame: 0
+      firstFrame: 10
       lastFrame: 67
       wrapMode: 0
       orientationOffsetY: 0
@@ -108,7 +114,7 @@ ModelImporter:
       name: Brother running
       takeName: brother skeleton.002|brother walk.002
       internalID: 0
-      firstFrame: 0
+      firstFrame: 10
       lastFrame: 75
       wrapMode: 0
       orientationOffsetY: 0
