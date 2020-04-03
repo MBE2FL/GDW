@@ -168,36 +168,18 @@ void Server::listenForConnections()
 		{
 			printf("Accept() failed %d\n", WSAGetLastError());
 			closesocket(clientSocket);
-			//freeaddrinfo(_ptr);
-			//WSACleanup();
-			system("pause");
 		}
-
-		//u_long mode = 1;// 0 for blocking mode
-		//ioctlsocket(clientSocket, FIONBIO, &mode);
 
 
 		sockaddr_in fromUDPAddr;
 		int fromUDPLen = sizeof(fromUDPAddr);
 
-
 		// Wait for udp connection as well.
-		unsigned int timeouts = 0;
-		while (timeouts < MAX_TIMEOUTS)
+		clock_t startClock = clock();
+		float totalTime = 0.0f;
+		while (totalTime <= MAX_CONNECT_ATTEMPT_TIME)
 		{
-			// Specify time for a timeout to occur.
-			timeval timeout;
-			timeout.tv_sec = 5;
-			timeout.tv_usec = 0;
-
-			fd_set fds;
-			FD_ZERO(&fds);
-			FD_SET(_serverUDP_socket, &fds);
-
-			int wsaError = -1;
-
-			// Wait for the specified time to detect if the UDP socket has any messages.
-			wsaError = select(NULL, &fds, NULL, NULL, &timeout);
+			totalTime = (clock() - startClock) / static_cast<float>(CLOCKS_PER_SEC);
 
 			// Messaged was received on the UDP socket, but on a different thread.
 			if (_udpListenInfoBuf)
@@ -206,51 +188,25 @@ void Server::listenForConnections()
 				break;
 			}
 
-			switch (wsaError)
-			{
-				// Error occured while waiting for UDP response.
-			case SOCKET_ERROR:
-				printf("Select() failed %d\n", WSAGetLastError());
-				closesocket(clientSocket);
-				//freeaddrinfo(_ptr);
-				//WSACleanup();
-				break;
-				// Timeout while waiting for UDP response.
-			case 0:
-				cout << "UDP connect attempt timeout!" << endl;
-				++timeouts;
-				continue;
-				// Message available on UDP socket.
-			default:
-			{
-				// UDP connection received. Store sockaddr info, and notify client on TCP socket.
-				char buf[BUF_LEN];
-				memset(buf, 0, BUF_LEN);
-				int bytesReceived = -1;
-
-				bytesReceived = recvfrom(_serverUDP_socket, buf, BUF_LEN, 0, (sockaddr*)& fromUDPAddr, &fromUDPLen);
-
-				// Could check the type of message received as well?
-
-				if (bytesReceived == SOCKET_ERROR)
-				{
-					timeouts = MAX_TIMEOUTS + 1;
-					continue;
-				}
-			}
-			break;
-			}
-
-
-			break;
 		}
 
-
-		// Client UDP connection could not be established.
-		if (timeouts >= MAX_TIMEOUTS)
+		char buf[BUF_LEN];
+		memset(buf, 0, BUF_LEN);
+		if (totalTime > MAX_CONNECT_ATTEMPT_TIME)
 		{
-			closesocket(clientSocket);
 			cout << "Client UDP connection could not be established." << endl;
+
+			buf[PCK_TYPE_POS] = PacketTypes::ConnectionFailed;
+
+			if (send(clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+			{
+				cout << "Could not notify client their connect attempt failed! " << WSAGetLastError() << endl;
+			}
+
+			delete _udpListenInfoBuf;
+			_udpListenInfoBuf = nullptr;
+
+			closesocket(clientSocket);
 			continue;
 		}
 
@@ -261,23 +217,8 @@ void Server::listenForConnections()
 		//thread::id threadID = std::this_thread::get_id();
 
 
-
-		// Find first available index.
-		//int8_t index = 0;
-		//vector<SOCKET*>::const_iterator it;
-		//for (it = _clientTCPSockets.cbegin(); it != _clientTCPSockets.cend(); ++it)
-		//{
-		//	if (*it == nullptr)
-		//	{
-		//		break;
-		//	}
-
-		//	++index;
-		//}
-
-
 		// Send a connection accepted message back to the client.
-		char buf[BUF_LEN];
+		//char buf[BUF_LEN];
 		memset(buf, 0, BUF_LEN);
 
 		buf[PCK_TYPE_POS] = PacketTypes::ConnectionAccepted;
@@ -319,12 +260,10 @@ void Server::listenForConnections()
 		client->_udpSockAddrLen = fromUDPLen;
 		client->_tcpSocket = clientSocket;
 
-		//_clients.insert(_clients.begin() + index, client);
 		_softConnectClients.insert(_softConnectClients.begin() + _clientIDs, client);
 
 		++_clientIDs;
 
-		//_cc->writeToStatus(_clients.size() + _softConnectClients.size());
 		// Server capacity has been recahed.
 		//if (_clients.size() == MAX_CLIENTS)
 		//{
@@ -332,9 +271,8 @@ void Server::listenForConnections()
 
 		//}
 
-
-		// Connection successfuly established. Store client's TCP socket.
-		//_clientTCPSockets.insert(_clientTCPSockets.begin() + index, new SOCKET(clientSocket));
+		delete _udpListenInfoBuf;
+		_udpListenInfoBuf = nullptr;
 	}
 }
 
@@ -756,7 +694,6 @@ void Server::udpUpdate()
 		wsaError = WSAGetLastError();
 
 		// Packet recieved
-		// wsaError != WSAEWOULDBLOCK && 
 		if (bytesReceived > 0)
 		{
 			PacketTypes msgType = static_cast<PacketTypes>(buf[PCK_TYPE_POS]);

@@ -55,7 +55,7 @@ PLUGIN_OUT void networkCleanup()
 	return cs.networkCleanup();
 }
 
-PLUGIN_OUT bool connectToServer(const char* ip)
+PLUGIN_OUT void connectToServer(const char* ip)
 {
 	return cs.connectToServer(ip);
 }

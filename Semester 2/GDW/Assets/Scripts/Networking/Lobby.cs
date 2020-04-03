@@ -74,6 +74,9 @@ public class Lobby : MonoBehaviour
         _networkManager = GetComponent<NetworkManager>();
 
         NetworkManager.onServerConnect += onServerConnect;
+
+        ReceiveMsgJob receiveMsgJob = new ReceiveMsgJob();
+        _receiveMsgJobHandle = receiveMsgJob.Schedule();
     }
 
     private void OnApplicationQuit()
@@ -109,9 +112,6 @@ public class Lobby : MonoBehaviour
 
     void onServerConnect()
     {
-        ReceiveMsgJob receiveMsgJob = new ReceiveMsgJob();
-        _receiveMsgJobHandle = receiveMsgJob.Schedule();
-
         _connectButton.gameObject.SetActive(false);
     }
 

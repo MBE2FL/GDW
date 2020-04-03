@@ -22,6 +22,7 @@
 #include "CustomConsole.h"
 #include "ScorePacket.h"
 #include "ChatPacket.h"
+#include <ctime>
 
 //#include <algorithm>
 //#include <iterator>
@@ -35,12 +36,14 @@ using std::vector;
 using std::thread;
 using std::mutex;
 using std::lock_guard;
+using std::clock;
 
 
 #define PORT "5000"
 #define BUF_LEN 512
 #define MAX_CLIENTS 2
 #define MAX_TIMEOUTS 4
+#define MAX_CONNECT_ATTEMPT_TIME 3.0f
 
 
 struct Client

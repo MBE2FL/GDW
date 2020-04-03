@@ -121,7 +121,7 @@ void ClientSide::networkCleanup()
 	cout << "Network Cleanup" << endl;
 }
 
-bool ClientSide::connectToServer(const char* ip)
+void ClientSide::connectToServer(const char* ip)
 {
 	//Connect to the server
 	if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
@@ -129,200 +129,85 @@ bool ClientSide::connectToServer(const char* ip)
 		closesocket(_clientTCPsocket);
 		freeaddrinfo(_ptr);
 		WSACleanup();
-		return false;
+		return;
 	}
 
 	char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
 
-	PacketTypes pckType;
-
 	buf[PCK_TYPE_POS] = PacketTypes::ConnectionAttempt;
-
-	unsigned int timeouts = 0;
-	while (timeouts < MAX_TIMEOUTS)
-	{
-		// Send udp socket info over to server.
-		if (sendto(_clientUDPsocket, buf, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
-		{
-			printf("Unable to connect UDP to server: %d\n", WSAGetLastError());
-			closesocket(_clientUDPsocket);
-			freeaddrinfo(_ptr);
-			WSACleanup();
-			system("pause");
-			return false;
-		}
-
-		// Wait for reply from server of UDP acception.
-		timeval timeout;
-		timeout.tv_sec = 2;
-		timeout.tv_usec = 500000;
-
-		fd_set fds;
-		FD_ZERO(&fds);
-		FD_SET(_clientTCPsocket, &fds);
-
-		int wsaError = -1;
-
-		wsaError = select(NULL, &fds, NULL, NULL, &timeout);
-
 		
-
-		// Socker error
-		if (wsaError == SOCKET_ERROR)
-		{
-			printf("Select() failed %d\n", WSAGetLastError());
-			closesocket(_clientTCPsocket);
-			freeaddrinfo(_ptr);
-			WSACleanup();
-			return false;
-		}
-		// Timeout
-		else if (wsaError == 0)
-		{
-			cout << "UDP connect attempt timeout!" << endl;
-			++timeouts;
-			continue;
-		}
-		// Socket ready for reading.
-		else
-		{
-			//cout << "UDP Connected: " << wsaError << endl;
-			//cout << WSAGetLastError() << endl;
-			break;
-		}
-	}
-
-
-	// Client UDP connection could not be established.
-	if (timeouts >= MAX_TIMEOUTS)
+	// Send udp socket info over to server.
+	if (sendto(_clientUDPsocket, buf, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
 	{
-		cout << "Server UDP connection could not be established." << endl;
-		return false;
+		printf("Unable to connect UDP to server: %d\n", WSAGetLastError());
+		closesocket(_clientUDPsocket);
+		freeaddrinfo(_ptr);
+		WSACleanup();
+		return;
 	}
 
 
-	memset(buf, 0, BUF_LEN);
-
-	if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
+	clock_t startClock = clock();
+	clock_t startTimerClock = clock();
+	totalConnectAttemptTime = 0;
+	int sendTimer = 0;
+	while (!_connected && (totalConnectAttemptTime <= MAX_CONNECT_ATTEMPT_TIME))
 	{
-		pckType = static_cast<PacketTypes>(buf[PCK_TYPE_POS]);
-		switch (pckType)
+		_status = ConnectionStatus::Connecting;
+		totalConnectAttemptTime = (clock() - startClock) / CLOCKS_PER_SEC;
+		sendTimer = (clock() - startTimerClock) / CLOCKS_PER_SEC;
+
+		if (sendTimer >= 4)
 		{
-		case PacketTypes::ConnectionAccepted:
-		{
-			_networkID = buf[NET_ID_POS];
-			//id = _networkID;
-			//cout << "ID: " << id << endl;
-			//cout << "ID: " << int(_networkID) << endl;
-			_connected = true;
-		}
-		break;
-		default:
-			cout << "Unexpected message type receieved for connection attempt!" << endl;
-			//return false;
-			return false;
-			break;
+			cout << "UDP Connect Attempt Timeout!" << endl;
+
+			// Send udp socket info over to server.
+			if (sendto(_clientUDPsocket, buf, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
+			{
+				printf("Unable to connect UDP to server: %d\n", WSAGetLastError());
+				closesocket(_clientUDPsocket);
+				freeaddrinfo(_ptr);
+				WSACleanup();
+				return;
+			}
+
+			startTimerClock = clock();
 		}
 	}
-	else 
-		printf("recv() error: %d\n", WSAGetLastError());
-
-	// Call c# function.
-	//_funcs.connectedToServer();
-
-
-
-	//if (_connected)
-	//{
-	//	memset(buf, 0, BUF_LEN);
-
-	//	// Check whether server is requesting the starting entities for the level, or the client's required entities.
-	//	if (recv(_clientTCPsocket, buf, BUF_LEN, 0) > 0)
-	//	{
-	//		pckType = static_cast<MessageTypes>(buf[PCK_TYPE_POS]);
-	//		switch (pckType)
-	//		{
-	//		case MessageTypes::EntitiesStart:
-	//		{
-	//			if (!sendStarterEntities(entities, numEntities))
-	//				return false;
-
-	//			// Receive server assigned entity ids.
-	//			memset(buf, 0, BUF_LEN);
-	//			int bytesReceived = -1;
-
-	//			bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
-
-
-	//			if (bytesReceived > 0)
-	//			{
-	//				pckType = static_cast<MessageTypes>(buf[PCK_TYPE_POS]);
-
-	//				if (pckType != MessageTypes::EntityIDs)
-	//				{
-	//					cout << "Was expecting to receive server assigned entity ids!" << endl;
-	//					return false;
-	//				}
-
-	//				int8_t numEntitesReturned = buf[DATA_START_POS];
-
-	//				if (numEntitesReturned != numEntities)
-	//				{
-	//					cout << "Was expecting to receive, " << int(numEntities) << " server assigned entity ids, but received " << int(numEntitesReturned)<<  " instead!" << endl;
-	//					return false;
-	//				}
-
-	//				cout << "Received " << int(numEntitesReturned) << " server assigned entity ids." << endl;
-
-	//				if (numEntities > 0)
-	//				{
-	//					int8_t* entityIDs = new int8_t[numEntities];
-	//					memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
-	//					for (int i = 0; i < numEntities; ++i)
-	//					{
-	//						entities[i]._entityID = entityIDs[i];
-	//					}
-
-	//					delete[] entityIDs;
-	//					entityIDs = nullptr;
-	//				}
-	//			}
-	//			else
-	//			{
-	//				cout << "Failed to receive server assigned entity ids! " << WSAGetLastError() << endl;
-	//				return false;
-	//			}
-
-
-
-	//		}
-	//		break;
-	//		case MessageTypes::EntitiesRequired:
-	//		{
-	//			if (!sendRequiredEntities(entities, numEntities))
-	//				return false;
-	//		}
-	//			break;
-	//		default:
-	//			cout << "Unexpected message type receieved for entities request!" << endl;
-	//			return false;
-	//			break;
-	//		}
-	//	}
-	//}
-
-
-
-	return true;
 }
 
-bool ClientSide::queryConnectAttempt(int& id)
+void ClientSide::processConnectAttempt(PacketTypes pckType, char buf[BUF_LEN])
+{
+	if (pckType == PacketTypes::ConnectionAccepted)
+	{
+		_networkID = buf[NET_ID_POS];
+		_connected = true;
+		_status = ConnectionStatus::Connected;
+		cout << "Connected to the server!" << endl;
+	}
+	else if (pckType == PacketTypes::ConnectionFailed)
+	{
+		totalConnectAttemptTime = MAX_CONNECT_ATTEMPT_TIME + 1;
+		_status = ConnectionStatus::ConnectionFailedStatus;
+		cout << "Failed to connect to the server!" << endl;
+	}
+	else
+	{
+		totalConnectAttemptTime = MAX_CONNECT_ATTEMPT_TIME + 1;
+		_status = ConnectionStatus::ServerFullStatus;
+		cout << "The Server is full!" << endl;
+	}
+}
+
+ConnectionStatus ClientSide::queryConnectAttempt(int& id)
 {
 	if (_connected)
+	{
 		id = _networkID;
+	}
 
-	return _connected;
+	return _status;
 }
 
 PacketTypes ClientSide::queryEntityRequest()
@@ -961,27 +846,18 @@ void ClientSide::receiveLobbyData()
 	// Received data from server.
 	if (bytesReceived > 0)
 	{
-		// Retrieve network ID of incomming message.
-		int8_t networkID = buf[NET_ID_POS];
-
-		if (networkID == _networkID)
-		{
-			cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
-			return;
-		}
-
-
 		PacketTypes pckType = static_cast<PacketTypes>(buf[PCK_TYPE_POS]);
 
 		switch (pckType)
 		{
-		case ConnectionAttempt:
-			break;
 		case ConnectionAccepted:
+			processConnectAttempt(pckType, buf);
 			break;
 		case ConnectionFailed:
+			processConnectAttempt(pckType, buf);
 			break;
 		case ServerFull:
+			processConnectAttempt(pckType, buf);
 			break;
 		case EntitiesQuery:
 			break;
@@ -993,6 +869,15 @@ void ClientSide::receiveLobbyData()
 			break;
 		case EntitiesUpdate:
 		{
+			// Retrieve network ID of incomming message.
+			int8_t networkID = buf[NET_ID_POS];
+
+			if (networkID == _networkID)
+			{
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+				return;
+			}
+
 			// Deserialize and store entity data.
 			EntityPacket packet = EntityPacket(buf);
 			int8_t numEntities = packet.getNumEntities();
@@ -1012,6 +897,15 @@ void ClientSide::receiveLobbyData()
 		}
 		case LobbyChat:
 		{
+			// Retrieve network ID of incomming message.
+			int8_t networkID = buf[NET_ID_POS];
+
+			if (networkID == _networkID)
+			{
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+				return;
+			}
+
 			ChatPacket packet = ChatPacket(buf);
 			ChatData chatData = ChatData();
 
@@ -1025,6 +919,15 @@ void ClientSide::receiveLobbyData()
 		}
 		case LobbyTeamName:
 		{
+			// Retrieve network ID of incomming message.
+			int8_t networkID = buf[NET_ID_POS];
+
+			if (networkID == _networkID)
+			{
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+				return;
+			}
+
 			ChatPacket packet = ChatPacket(buf);
 			_teamNameBuf = new ChatData();	// CLEAN UP
 
@@ -1035,8 +938,10 @@ void ClientSide::receiveLobbyData()
 			break;
 		}
 		case EmptyMsg:
+			cout << "Empty message received." << endl;
 			break;
 		case ErrorMsg:
+			cout << "Error message received: " << wsaError << endl;
 			break;
 		default:
 			break;

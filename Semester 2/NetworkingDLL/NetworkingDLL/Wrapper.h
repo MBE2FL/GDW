@@ -22,7 +22,7 @@ extern "C"
 
 	PLUGIN_OUT bool initNetwork(const char* ip);
 	PLUGIN_OUT void networkCleanup();
-	PLUGIN_OUT bool connectToServer(const char* ip);
+	PLUGIN_OUT void connectToServer(const char* ip);
 	PLUGIN_OUT bool queryConnectAttempt(int& id);
 	PLUGIN_OUT PacketTypes queryEntityRequest();
 	PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities);

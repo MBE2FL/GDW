@@ -1,16 +1,10 @@
-﻿  AnimPacket.cpp
-  ChatPacket.cpp
-  EntityPacket.cpp
-  Packet.cpp
-  ScorePacket.cpp
-  TransformPacket.cpp
-  ServerSide.cpp
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(379,36): warning C4267: 'initializing': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(450,36): warning C4267: 'initializing': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(529,85): warning C4267: 'argument': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(627,54): warning C4267: 'argument': conversion from 'size_t' to 'int8_t', possible loss of data
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(838,21): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(951,21): warning C4018: '<': signed/unsigned mismatch
+﻿  ServerSide.cpp
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(317,36): warning C4267: 'initializing': conversion from 'size_t' to 'int8_t', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(388,36): warning C4267: 'initializing': conversion from 'size_t' to 'int8_t', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(467,85): warning C4267: 'argument': conversion from 'size_t' to 'int8_t', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(565,54): warning C4267: 'argument': conversion from 'size_t' to 'int8_t', possible loss of data
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(775,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\GameServer\ServerSide.cpp(888,21): warning C4018: '<': signed/unsigned mismatch
   main.cpp
   Generating Code...
   GameServer.vcxproj -> C:\Users\Maxke\Desktop\GDW 3 Repo\GDW\Semester 2\GameServer\x64\Debug\GameServer.exe

@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <iterator>
+#include <ctime>
 
 
 // Networking
@@ -31,6 +32,7 @@
 #define BUF_LEN 512
 #define UPDATE_INTERVAL 0.100 //seconds
 #define MAX_TIMEOUTS 8
+#define MAX_CONNECT_ATTEMPT_TIME 8.0f
 
 using std::cout;
 using std::endl;
@@ -41,6 +43,17 @@ using std::vector;
 using std::unordered_map;
 using std::unordered_set;
 using std::copy;
+using std::clock;
+
+
+enum ConnectionStatus : int8_t
+{
+	Connected,
+	Connecting,
+	Disconected,
+	ConnectionFailedStatus,
+	ServerFullStatus,
+};
 
 
 // This struct also needs to be the same as in C#, if you want more functions just add it here and there.
@@ -67,8 +80,9 @@ public:
 	bool initTCP(const char* ip);
 	void networkCleanup();
 
-	bool connectToServer(const char* ip);
-	bool queryConnectAttempt(int& id);
+	void connectToServer(const char* ip);
+	void processConnectAttempt(PacketTypes pckType, char buf[BUF_LEN]);
+	ConnectionStatus queryConnectAttempt(int& id);
 
 	PacketTypes queryEntityRequest();
 	bool sendStarterEntities(EntityData* entities, int numEntities);
@@ -106,6 +120,8 @@ private:
 	addrinfo* _ptr = nullptr;
 	string _serverIP = "";
 	int8_t _networkID = NULL;
+	int totalConnectAttemptTime;
+	ConnectionStatus _status = Disconected;
 
 
 	unordered_map<PacketTypes, unordered_map<int8_t, Packet*>> _udpPacketBuf = unordered_map<PacketTypes, unordered_map<int8_t, Packet*>>();

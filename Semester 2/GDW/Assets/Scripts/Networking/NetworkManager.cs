@@ -58,6 +58,15 @@ public enum PacketTypes : byte
     LobbyTeamName
 }
 
+public enum ConnectionStatus : byte
+{
+    Connected,
+    Connecting,
+    Disconected,
+    ConnectionFailedStatus,
+    ServerFullStatus,
+};
+
 
 [StructLayout(LayoutKind.Sequential)]
 public struct TransformData
@@ -106,6 +115,8 @@ struct ConnectJob : IJob
     {
         // Attempt to establish a connection to the server.
         NetworkManager.connectToServer(Marshal.PtrToStringAnsi(_ip));
+
+        Debug.Log("ConnectJob Stopped");
     }
 }
 
@@ -178,10 +189,10 @@ public class NetworkManager : MonoBehaviour
     public delegate void networkCleanupDelegate();
     public networkCleanupDelegate networkCleanup;
 
-    public delegate bool connectToServerDelegate(string ip);
+    public delegate void connectToServerDelegate(string ip);
     public static connectToServerDelegate connectToServer;
 
-    public delegate bool queryConnectAttemptDelegate(ref int id);
+    public delegate ConnectionStatus queryConnectAttemptDelegate(ref int id);
     public queryConnectAttemptDelegate queryConnectAttempt;
 
     public delegate PacketTypes queryEntityRequestDelegate();
@@ -474,20 +485,36 @@ public class NetworkManager : MonoBehaviour
         if (!_connected && _connecting)
         {
             // Connected to server
-            if (queryConnectAttempt(ref _id))
+            //if (queryConnectAttempt(ref _id))
+            //{
+            //    // Notify all listeners.
+            //    if (onServerConnect != null)
+            //        onServerConnect.Invoke();
+            //}
+            ConnectionStatus status = queryConnectAttempt(ref _id);
+            if (status == ConnectionStatus.Connected)
             {
                 // Notify all listeners.
                 if (onServerConnect != null)
                     onServerConnect.Invoke();
             }
+            else if (status == ConnectionStatus.ConnectionFailedStatus)
+            {
+                Debug.Log("Failed to connect to the server!");
+                _connecting = false;
+            }
+            else if (status == ConnectionStatus.ServerFullStatus)
+            {
+                Debug.Log("The server is full!");
+                _connecting = false;
+            }
         }
 
-        if (!_connected || !_gameManager.LevelInProgress)
+
+        // Don't perform any game update loops, unless the client is connected and in a level.
+        if (!_connected && !_gameManager.LevelInProgress)
             return;
 
-
-        //float deltaTime = Time.time - _timeSinceLastUpdate;
-        //_timeSinceLastUpdate = deltaTime;
 
         _time -= Time.deltaTime;
 
