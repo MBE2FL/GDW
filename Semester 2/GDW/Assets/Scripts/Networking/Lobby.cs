@@ -43,6 +43,13 @@ public class Lobby : MonoBehaviour
     InputField _teamNameInput;
     Image _teamNameImage;
 
+    string teamName = "";
+
+    public string getTeamName()
+    {
+        return teamName;
+    }
+
     public string IPAddr
     {
         get
