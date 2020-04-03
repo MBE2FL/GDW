@@ -9,7 +9,7 @@ Server::Server()
 	//_clientTCPSockets.reserve(MAX_CLIENTS);
 	_softConnectClients.reserve(MAX_CLIENTS);
 
-	_scoreboard = Scoreboard();
+	
 	_scoreboard.Read();
 
 
