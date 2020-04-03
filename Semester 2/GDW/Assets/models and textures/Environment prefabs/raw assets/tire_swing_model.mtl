@@ -1,16 +1,5 @@
 # Blender MTL File: 'tire_swing_model.blend'
-# Material Count: 2
-
-newmtl Material.000
-Ns 225.000000
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.450000
-d 1.000000
-illum 2
-map_Kd Tire\\Assets for Review 1\\atlas.png
+# Material Count: 1
 
 newmtl Material.002
 Ns 225.000000
@@ -21,4 +10,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd extra environmental stuff\\atlas.png
+map_Kd C:\\Users\\Admin\\Big_Atlas.jpg

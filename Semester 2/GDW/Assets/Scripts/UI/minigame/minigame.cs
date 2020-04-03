@@ -13,7 +13,7 @@ public class minigame: MonoBehaviour
 
     public bool gameComplete = false;
 
-    float endDelay = 1.5f;
+    float endDelay = 0.75f;
 
     [SerializeField]
     private GameObject sisterBar;
@@ -69,7 +69,7 @@ public class minigame: MonoBehaviour
                 if (endDelay <= 0)
                 {
                     //resets the end delay
-                    endDelay = 3.0f;
+                    endDelay = 0.75f;
 
                     //starts animation for sister again
                     sisterAnimator.enabled = true;
@@ -84,7 +84,7 @@ public class minigame: MonoBehaviour
                     float offsetB = Vector3.Magnitude (hitBar.transform.localPosition - brotherBar.transform.localPosition);
 
                     // if both players get it in the the green area
-                    if(offsetS <=  hitBar.transform.lossyScale.x * 10 && offsetB <= hitBar.transform.lossyScale.x * 10)
+                    if(offsetS <=  hitBar.transform.lossyScale.x * 9.8f && offsetB <= hitBar.transform.lossyScale.x * 9.8f)
                     {
                         Debug.Log("ye did it");
                         stage++;
