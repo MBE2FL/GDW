@@ -13,7 +13,7 @@ struct Time
 
 struct PlayerTime
 {
-	const char* teamName;
+	char* teamName;
 	Time totalTime;
 };
 

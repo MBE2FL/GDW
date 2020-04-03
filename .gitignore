@@ -1,0 +1,18 @@
+
+*.log
+
+*.tlog
+
+Semester 2/GameServer/GameServer/x64/Debug/ServerSide.obj
+
+Semester 2/GameServer/GameServer/x64/Debug/Transform.obj
+
+*.idb
+
+*.pdb
+
+*.lastbuildstate
+
+Semester 2/GameServer/GameServer/x64/Release/ServerSide.obj
+
+Semester 2/GameServer/GameServer/x64/Release/Transform.obj
