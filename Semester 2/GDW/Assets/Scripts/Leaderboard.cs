@@ -103,7 +103,7 @@ public class Leaderboard : MonoBehaviour
     {
         // Get all the scores currently stored on the server.
         int numScores = 0;
-        _networkManager.getScores(ref numScores);
+        _networkManager.getNumScores(ref numScores);
 
         ScoreData scoreData;
         IntPtr scoreHandle;

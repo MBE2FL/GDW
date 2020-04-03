@@ -38,7 +38,8 @@ extern "C"
 	PLUGIN_OUT void getPacketHandles(void* dataHandle);
 
 
-	PLUGIN_OUT void getScores(int& numScores);
+	PLUGIN_OUT void requestScores();
+	PLUGIN_OUT void getNumScores(int& numScores);
 	PLUGIN_OUT ScoreData* getScoresHandle();
 	PLUGIN_OUT void cleanupScoresHandle();
 

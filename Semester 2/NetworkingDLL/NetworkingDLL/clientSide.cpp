@@ -781,7 +781,7 @@ void ClientSide::getPacketHandles(void* dataHandle)
 	_entityDataBuf.clear();
 }
 
-void ClientSide::getScores(int& numScores)
+void ClientSide::requestScores()
 {
 	char buf[BUF_LEN];
 	memset(buf, 0, BUF_LEN);
@@ -794,26 +794,11 @@ void ClientSide::getScores(int& numScores)
 	{
 		cout << "Failed to send ClientScoresRequest packet on TCP socket!" << endl;
 	}
+}
 
-	memset(buf, 0, BUF_LEN);
-	int bytesRecieved = -1;
-	int wsaError = -1;
-
-	bytesRecieved = recv(_clientTCPsocket, buf, BUF_LEN, 0);
-
-	wsaError = WSAGetLastError();
-
-	if (bytesRecieved > 0)
-	{
-		ScorePacket packet = ScorePacket(buf);
-		numScores = packet.getNumScores();
-		_scoresBuf = new ScoreData[numScores];
-		packet.deserialize(_scoresBuf);
-	}
-	else
-	{
-		cout << "Failed to receive scores packet on TCP socket! " << wsaError << endl;
-	}
+void ClientSide::getNumScores(int& numScores)
+{
+	numScores = _numScores;
 }
 
 ScoreData* ClientSide::getScoresHandle()
@@ -894,6 +879,15 @@ void ClientSide::receiveLobbyData()
 				delete[] entityData;
 			}
 			return;
+		}
+		case Score:
+		{
+			ScorePacket packet = ScorePacket(buf);
+			_numScores = packet.getNumScores();
+			_scoresBuf = new ScoreData[_numScores];
+			packet.deserialize(_scoresBuf);
+
+			break;
 		}
 		case LobbyChat:
 		{

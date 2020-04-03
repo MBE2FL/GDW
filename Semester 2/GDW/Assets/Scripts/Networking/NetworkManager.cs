@@ -225,8 +225,11 @@ public class NetworkManager : MonoBehaviour
     public getPacketHandlesDelegate getPacketHandles;
 
 
-    public delegate void getScoresDelegate(ref int numScores);
-    public getScoresDelegate getScores;
+    public delegate void requestScoresDelegate();
+    public requestScoresDelegate requestScores;
+
+    public delegate void getNumScoresDelegate(ref int numScores);
+    public getNumScoresDelegate getNumScores;
 
     public delegate IntPtr getScoresHandleDelegate();
     public getScoresHandleDelegate getScoresHandle;
@@ -367,7 +370,8 @@ public class NetworkManager : MonoBehaviour
         getPacketHandles = ManualPluginImporter.GetDelegate<getPacketHandlesDelegate>(_pluginHandle, "getPacketHandles");
 
 
-        getScores = ManualPluginImporter.GetDelegate<getScoresDelegate>(_pluginHandle, "getScores");
+        requestScores = ManualPluginImporter.GetDelegate<requestScoresDelegate>(_pluginHandle, "requestScores");
+        getNumScores = ManualPluginImporter.GetDelegate<getNumScoresDelegate>(_pluginHandle, "getNumScores");
         getScoresHandle = ManualPluginImporter.GetDelegate<getScoresHandleDelegate>(_pluginHandle, "getScoresHandle");
         cleanupScoresHandle = ManualPluginImporter.GetDelegate<cleanupScoresHandleDelegate>(_pluginHandle, "cleanupScoresHandle");
 

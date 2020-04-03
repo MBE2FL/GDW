@@ -110,9 +110,14 @@ PLUGIN_OUT void getPacketHandles(void* dataHandle)
 	return cs.getPacketHandles(dataHandle);
 }
 
-PLUGIN_OUT void getScores(int& numScores)
+PLUGIN_OUT void requestScores()
 {
-	return cs.getScores(numScores);
+	return cs.requestScores();
+}
+
+PLUGIN_OUT void getNumScores(int& numScores)
+{
+	return cs.getNumScores(numScores);
 }
 
 PLUGIN_OUT ScoreData* getScoresHandle()

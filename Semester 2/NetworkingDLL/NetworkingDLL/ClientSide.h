@@ -98,7 +98,8 @@ public:
 	void getPacketHandles(void* dataHandle);
 
 	
-	void getScores(int& numScores);
+	void requestScores();
+	void getNumScores(int& numScores);
 	ScoreData* getScoresHandle();
 	void cleanupScoresHandle();
 
@@ -136,6 +137,7 @@ private:
 	vector<EntityData> _entityDataBuf;
 
 
+	int _numScores = 0;
 	ScoreData* _scoresBuf;
 
 	vector<ChatData> _chatDataBuf;
