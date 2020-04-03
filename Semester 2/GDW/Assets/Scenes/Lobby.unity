@@ -528,7 +528,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -116.6, y: 0}
+  m_AnchoredPosition: {x: -116.6001, y: 0}
   m_SizeDelta: {x: 221.1, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &363399634
@@ -586,7 +586,18 @@ MonoBehaviour:
       m_Calls: []
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2127521886}
+        m_MethodName: onTeamNameChange
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_CaretColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_CustomCaretColor: 0
   m_SelectionColor: {r: 0.65882355, g: 0.80784315, b: 1, a: 0.7529412}
@@ -607,7 +618,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.2783019, b: 0.3057162, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -711,7 +722,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 367379703}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2127521886}
+        m_MethodName: sendMsg
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &367379703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -761,7 +783,7 @@ GameObject:
   - component: {fileID: 416679737}
   - component: {fileID: 416679736}
   m_Layer: 5
-  m_Name: IP input
+  m_Name: IP Input
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -964,7 +986,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 417965767}
   m_OnClick:
     m_PersistentCalls:
@@ -2202,7 +2224,7 @@ GameObject:
   - component: {fileID: 1689879164}
   - component: {fileID: 1689879163}
   m_Layer: 5
-  m_Name: Chat input
+  m_Name: Chat Input
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2409,7 +2431,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1694914475}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2127521886}
+        m_MethodName: connect
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1694914475
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2684,7 +2717,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -59.9, y: -32}
+  m_AnchoredPosition: {x: -59.899902, y: -32}
   m_SizeDelta: {x: 109.8, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2022898092
@@ -2729,7 +2762,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2022898093}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2127521886}
+        m_MethodName: sendTeamName
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2022898093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2777,6 +2821,7 @@ GameObject:
   - component: {fileID: 2127521885}
   - component: {fileID: 2127521884}
   - component: {fileID: 2127521883}
+  - component: {fileID: 2127521886}
   - component: {fileID: 2127521882}
   m_Layer: 0
   m_Name: Game Manager
@@ -2825,7 +2870,6 @@ MonoBehaviour:
   _connecting: 0
   _ip: 127.0.0.1
   _id: 2
-  _connectButton: {fileID: 0}
   _timeSinceLastUpdate: 0
   _updateInterval: 0.167
 --- !u!114 &2127521884
@@ -2849,7 +2893,7 @@ MonoBehaviour:
   _brotherPawn: {fileID: 7360140317179989268, guid: 93f904845ee663541848181343654efb,
     type: 3}
   _brotherPP: {fileID: 0}
-  _levelInProgress: 1
+  _levelInProgress: 0
 --- !u!4 &2127521885
 Transform:
   m_ObjectHideFlags: 0
@@ -2864,3 +2908,15 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2127521886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2127521881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a32a9f2813f72ce41815b8c99e18cf95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

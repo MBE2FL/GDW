@@ -9,7 +9,7 @@ struct ScoreData : PacketData
 
 	ScoreData() {}
 
-	ScoreData(PlayerTime time)
+	ScoreData(const PlayerTime& time)
 	{
 		_time = time;
 	}

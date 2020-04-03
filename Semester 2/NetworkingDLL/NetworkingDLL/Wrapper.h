@@ -41,11 +41,10 @@ extern "C"
 	PLUGIN_OUT void getScores(int& numScores);
 	PLUGIN_OUT ScoreData* getScoresHandle();
 	PLUGIN_OUT void cleanupScoresHandle();
-	PLUGIN_OUT void sendScore(ScoreData scoreData);
 
 
 	PLUGIN_OUT void receiveLobbyData();
-	PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& numChars);
+	PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg);
 	PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle);
 
 #ifdef __cplusplus

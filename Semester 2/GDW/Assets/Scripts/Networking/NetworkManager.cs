@@ -51,7 +51,11 @@ public enum PacketTypes : byte
     EntitiesUpdate,
     EntityIDs,
     EmptyMsg,
-    ErrorMsg
+    ErrorMsg,
+    Score,
+    ClientScoresRequest,
+    LobbyChat,
+    LobbyTeamName
 }
 
 
@@ -219,14 +223,11 @@ public class NetworkManager : MonoBehaviour
     public delegate void cleanupScoresHandleDelegate();
     public cleanupScoresHandleDelegate cleanupScoresHandle;
 
-    public delegate void sendScoreDelegate(ScoreData scoreData);
-    public sendScoreDelegate sendScore;
-
 
     public delegate void receiveLobbyDataDelegate();
     public static receiveLobbyDataDelegate receiveLobbyData;
 
-    public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref int numChars);
+    public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref bool newTeamNameMsg);
     public getNumLobbyPacketsDelegate getNumLobbyPackets;
 
     public delegate void getLobbyPacketHandlesDelegate(IntPtr dataHandle);
@@ -248,9 +249,6 @@ public class NetworkManager : MonoBehaviour
 
     [SerializeField]
     int _id = 0;
-
-    [SerializeField]
-    GameObject _connectButton;
 
 
     public static event Action onServerConnect;
@@ -303,6 +301,14 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
+    public int ID
+    {
+        get
+        {
+            return _id;
+        }
+    }
+
 
     JobHandle connectJobHandle;
     JobHandle receiveTCPJobHandle;
@@ -310,6 +316,13 @@ public class NetworkManager : MonoBehaviour
 
     public static bool stopJobs = false;
 
+    public bool Connected
+    {
+        get
+        {
+            return _connected;
+        }
+    }
 
 
 
@@ -346,7 +359,6 @@ public class NetworkManager : MonoBehaviour
         getScores = ManualPluginImporter.GetDelegate<getScoresDelegate>(_pluginHandle, "getScores");
         getScoresHandle = ManualPluginImporter.GetDelegate<getScoresHandleDelegate>(_pluginHandle, "getScoresHandle");
         cleanupScoresHandle = ManualPluginImporter.GetDelegate<cleanupScoresHandleDelegate>(_pluginHandle, "cleanupScoresHandle");
-        sendScore = ManualPluginImporter.GetDelegate<sendScoreDelegate>(_pluginHandle, "sendScore");
 
 
         receiveLobbyData = ManualPluginImporter.GetDelegate<receiveLobbyDataDelegate>(_pluginHandle, "receiveLobbyData");
@@ -501,34 +513,21 @@ public class NetworkManager : MonoBehaviour
         _initialized = initNetwork(_ip);
     }
 
-    public void connect()
+    public void connect(string ip)
     {
         // Only attempt to establish a connection to the server iff, no connection has already been made.
         if (!_connected && !_connecting)
         {
+            _ip = ip;
+
             ConnectJob job = new ConnectJob();
             job._ip = Marshal.StringToHGlobalAnsi(_ip);
-
-
-
-
-            //job._entities = Marshal.GetIUnknownForObject(entities);
-            //job._entities = IntPtr.Zero;
-
-
-            //job._networkManager;
-            //Marshal.StructureToPtr<NetworkManager>(this, job._networkManager, false);
-
-
             connectJobHandle = job.Schedule();
-
-            //jobHandle.Complete();
-
 
             _connecting = true;
 
-            _connectButton.GetComponent<Button>().interactable = false;
-            _connectButton.GetComponentInChildren<Text>().text = "Connecting...";
+            //_connectButton.GetComponent<Button>().interactable = false;
+            //_connectButton.GetComponentInChildren<Text>().text = "Connecting...";
         }
     }
 
@@ -538,7 +537,7 @@ public class NetworkManager : MonoBehaviour
         _connecting = false;
 
 
-        _connectButton.SetActive(false);
+        //_connectButton.SetActive(false);
         // For some reason won't turn on/off game objects.
         //_connectingButton.SetActive(false);
 
@@ -948,7 +947,6 @@ public class NetworkManagerEditor : Editor
     SerializedProperty _connected;
     SerializedProperty _ip;
     SerializedProperty _id;
-    SerializedProperty _connectButton;
 
     string _entListName = "Enter Save Name Here";
 
@@ -958,7 +956,6 @@ public class NetworkManagerEditor : Editor
         _connected = serializedObject.FindProperty("_connected");
         _ip = serializedObject.FindProperty("_ip");
         _id = serializedObject.FindProperty("_id");
-        _connectButton = serializedObject.FindProperty("_connectButton");
     }
 
     public override void OnInspectorGUI()
@@ -981,9 +978,6 @@ public class NetworkManagerEditor : Editor
 
         label.text = "Network ID";
         EditorGUILayout.PropertyField(_id, label);
-
-        label.text = "Connect Button";
-        EditorGUILayout.PropertyField(_connectButton, label);
 
         EditorGUILayout.Space(20.0f);
 

@@ -26,7 +26,8 @@ enum PacketTypes : int8_t
 	ErrorMsg,
 	Score,
 	ClientScoresRequest,
-	LobbyChat
+	LobbyChat,
+	LobbyTeamName
 };
 
 struct PacketData

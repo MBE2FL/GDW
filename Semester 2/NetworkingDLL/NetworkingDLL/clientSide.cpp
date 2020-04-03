@@ -187,8 +187,8 @@ bool ClientSide::connectToServer(const char* ip)
 		// Socket ready for reading.
 		else
 		{
-			cout << "UDP Connected: " << wsaError << endl;
-			cout << WSAGetLastError() << endl;
+			//cout << "UDP Connected: " << wsaError << endl;
+			//cout << WSAGetLastError() << endl;
 			break;
 		}
 	}
@@ -214,7 +214,7 @@ bool ClientSide::connectToServer(const char* ip)
 			_networkID = buf[NET_ID_POS];
 			//id = _networkID;
 			//cout << "ID: " << id << endl;
-			cout << "ID: " << int(_networkID) << endl;
+			//cout << "ID: " << int(_networkID) << endl;
 			_connected = true;
 		}
 		break;
@@ -565,6 +565,18 @@ void ClientSide::sendData(const PacketTypes pckType, void* data)
 		break;
 	case Anim:
 		packet = new AnimPacket(_networkID);
+		udpPacket = false;
+		break;
+	case Score:
+		packet = new ScorePacket(_networkID, 1);
+		udpPacket = false;
+		break;
+	case LobbyChat:
+		packet = new ChatPacket(_networkID);
+		udpPacket = false;
+		break;
+	case LobbyTeamName:
+		packet = new ChatPacket(pckType, _networkID);
 		udpPacket = false;
 		break;
 	default:
@@ -930,18 +942,6 @@ void ClientSide::cleanupScoresHandle()
 	_scoresBuf = nullptr;
 }
 
-void ClientSide::sendScore(ScoreData scoreData)
-{
-	ScorePacket packet = ScorePacket(_networkID, 1);
-	packet.serialize(&scoreData);
-
-	// Send packet.
-	if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
-	{
-		cout << "Failed to send score packet on TCP socket!" << endl;
-	}
-}
-
 void ClientSide::receiveLobbyData()
 {
 	char buf[BUF_LEN];
@@ -1018,8 +1018,20 @@ void ClientSide::receiveLobbyData()
 			packet.deserialize(&chatData);
 
 			cout << "Received chat msg from " << static_cast<int>(networkID) << ": " << chatData._msg << endl;
+			delete[] chatData._msg;
 
 			_chatDataBuf.emplace_back(chatData);
+			break;
+		}
+		case LobbyTeamName:
+		{
+			ChatPacket packet = ChatPacket(buf);
+			_teamNameBuf = new ChatData();	// CLEAN UP
+
+			packet.deserialize(_teamNameBuf);	// CLEAN UP
+
+			cout << "Received team name msg from " << static_cast<int>(networkID) << ": " << _teamNameBuf->_msg << endl;
+			break;
 			break;
 		}
 		case EmptyMsg:
@@ -1036,14 +1048,10 @@ void ClientSide::receiveLobbyData()
 	}
 }
 
-void ClientSide::getNumLobbyPackets(int& numMsgs, int& numChars)
+void ClientSide::getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg)
 {
 	numMsgs = _chatDataBuf.size();
-
-	for (ChatData chat : _chatDataBuf)
-	{
-		numChars += chat._msgSize;
-	}
+	newTeamNameMsg = _teamNameBuf;
 }
 
 void ClientSide::getLobbyPacketHandles(void* dataHandle)
@@ -1055,8 +1063,16 @@ void ClientSide::getLobbyPacketHandles(void* dataHandle)
 	memcpy(byteDatahandle, _chatDataBuf.data(), sizeof(ChatData) * _chatDataBuf.size());
 	offset += sizeof(ChatData) * _chatDataBuf.size();
 
-	//memcpy(&byteDatahandle[offset], _animDataBuf.data(), sizeof(AnimData) * _animDataBuf.size());
-	//offset += sizeof(AnimData) * _animDataBuf.size();
+	if (_teamNameBuf)
+	{
+		memcpy(&byteDatahandle[offset], _teamNameBuf, sizeof(ChatData));
+		offset += sizeof(ChatData);
+
+		// Clean up
+		delete[] _teamNameBuf->_msg;
+		delete _teamNameBuf;
+		_teamNameBuf = nullptr;
+	}
 
 
 	// Clean up.

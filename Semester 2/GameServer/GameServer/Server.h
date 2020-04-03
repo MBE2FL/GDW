@@ -21,6 +21,7 @@
 #include "AnimPacket.h"
 #include "CustomConsole.h"
 #include "ScorePacket.h"
+#include "ChatPacket.h"
 
 //#include <algorithm>
 //#include <iterator>
@@ -74,6 +75,8 @@ public:
 	void processAnim(char buf[BUF_LEN], SOCKET* socket);
 	void processScore(char buf[BUF_LEN]);
 	void processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket);
+	void processChat(char buf[BUF_LEN]);
+	void processTeamName(char buf[BUF_LEN]);
 
 	void update();
 	void initUpdateThreads();

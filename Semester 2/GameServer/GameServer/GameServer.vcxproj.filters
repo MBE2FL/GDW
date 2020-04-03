@@ -51,6 +51,9 @@
     <ClCompile Include="..\..\CommonNetworking\Scoreboard.cpp">
       <Filter>Source Files\Packets</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\CommonNetworking\ChatPacket.cpp">
+      <Filter>Source Files\Packets</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -78,6 +81,9 @@
       <Filter>Header Files\Packets</Filter>
     </ClInclude>
     <ClInclude Include="..\..\CommonNetworking\Scoreboard.h">
+      <Filter>Header Files\Packets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CommonNetworking\ChatPacket.h">
       <Filter>Header Files\Packets</Filter>
     </ClInclude>
   </ItemGroup>

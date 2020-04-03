@@ -3,6 +3,14 @@ using std::ifstream;
 using std::ofstream;
 
 
+Scoreboard::Scoreboard()
+{
+}
+
+Scoreboard::~Scoreboard()
+{
+}
+
 void Scoreboard::Read()
 {
 	ifstream in("Scoreboard.txt");

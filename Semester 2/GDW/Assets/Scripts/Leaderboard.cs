@@ -134,7 +134,9 @@ public class Leaderboard : MonoBehaviour
 
         // Send the new score to the server.
         ScoreData scoreData = new ScoreData() { _time = playerTime };
-        _networkManager.sendScore(scoreData);
+        IntPtr dataHandle = Marshal.AllocHGlobal(Marshal.SizeOf<ScoreData>());
+        Marshal.StructureToPtr(scoreData, dataHandle, false);
+        _networkManager.sendData(PacketTypes.Score, dataHandle);
 
         // Add and sort the new score into our current leaderboard.
         playerTimes.Add(playerTime);

@@ -87,11 +87,10 @@ public:
 	void getScores(int& numScores);
 	ScoreData* getScoresHandle();
 	void cleanupScoresHandle();
-	void sendScore(ScoreData scoreData);
 
 
 	void receiveLobbyData();
-	void getNumLobbyPackets(int& numMsgs, int& numChars);
+	void getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg);
 	void getLobbyPacketHandles(void* dataHandle);
 
 
@@ -124,4 +123,5 @@ private:
 	ScoreData* _scoresBuf;
 
 	vector<ChatData> _chatDataBuf;
+	ChatData* _teamNameBuf;
 };

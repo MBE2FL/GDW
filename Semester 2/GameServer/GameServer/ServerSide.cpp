@@ -611,11 +611,11 @@ void Server::processScore(char buf[BUF_LEN])
 {
 	ScorePacket packet = ScorePacket(buf);
 	int8_t numScores = packet.getNumScores();
-	ScoreData time;
+	ScoreData scoreData;
 
-	packet.deserialize(&time);
+	packet.deserialize(&scoreData);
 
-	_scoreboard.getTimes().emplace_back(time);
+	_scoreboard.getTimes().emplace_back(scoreData._time);
 	_scoreboard.Sort();
 	_scoreboard.Write();
 }
@@ -638,6 +638,76 @@ void Server::processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket)
 	if (send(*socket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 	{
 		printf("Failed to send score data. %d\n", WSAGetLastError());
+	}
+}
+
+void Server::processChat(char buf[BUF_LEN])
+{
+	// Retrieve network id of incomming message.
+	int8_t networkID = buf[NET_ID_POS];
+
+
+	// Extract data (FOR DEBUG ONLY).
+	//ChatData chatData;
+	//ChatPacket packet = ChatPacket(buf);
+	//packet.deserialize(&chatData);
+	//cout << "Received chat msg from " << static_cast<int>(networkID) << ": " << chatData._msg << endl;
+	//delete[] chatData._msg;
+
+
+	// Send data to all other clients.
+	Client* client;
+	vector<Client*>::const_iterator it;
+	for (it = _softConnectClients.cbegin(); it != _softConnectClients.cend(); ++it)
+	{
+		client = *it;
+
+		// Don't send back to the same client who sent the data.
+		if (client->_id == networkID)
+		{
+			continue;
+		}
+
+		// Send data to other clients.
+		if (send(client->_tcpSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			printf("Failed to send chat data. %d\n", WSAGetLastError());
+		}
+	}
+}
+
+void Server::processTeamName(char buf[BUF_LEN])
+{
+	// Retrieve network id of incomming message.
+	int8_t networkID = buf[NET_ID_POS];
+
+
+	// Extract data (FOR DEBUG ONLY).
+	ChatData chatData;
+	ChatPacket packet = ChatPacket(buf);
+	packet.deserialize(&chatData);
+	cout << "Received team name msg from " << static_cast<int>(networkID) << ": " << chatData._msg << endl;
+	delete[] chatData._msg;
+
+
+	// Send data to all other clients.
+	Client* client;
+	vector<Client*>::const_iterator it;
+	for (it = _softConnectClients.cbegin(); it != _softConnectClients.cend(); ++it)
+	{
+		client = *it;
+
+		// Don't send back to the same client who sent the data.
+		if (client->_id == networkID)
+		{
+			continue;
+		}
+
+		// Send data to other clients.
+		if (send(client->_tcpSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			printf("Failed to send team name data. %d\n", WSAGetLastError());
+		}
 	}
 }
 
@@ -794,6 +864,15 @@ void Server::tcpSoftUpdate()
 					break;
 				case EntityIDs:
 					break;
+				case ClientScoresRequest:
+					processClientScoresRequest(buf, clientSocket);
+					break;
+				case LobbyChat:
+					processChat(buf);
+					break;
+				case LobbyTeamName:
+					processTeamName(buf);
+					break;
 				default:
 					break;
 				}
@@ -899,9 +978,6 @@ void Server::tcpUpdate()
 					break;
 				case Score:
 					processScore(buf);
-					break;
-				case ClientScoresRequest:
-					processClientScoresRequest(buf, clientSocket);
 					break;
 				default:
 					break;

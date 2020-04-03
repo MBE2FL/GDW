@@ -125,19 +125,14 @@ PLUGIN_OUT void cleanupScoresHandle()
 	return cs.cleanupScoresHandle();
 }
 
-PLUGIN_OUT void sendScore(ScoreData scoreData)
-{
-	return cs.sendScore(scoreData);
-}
-
 PLUGIN_OUT void receiveLobbyData()
 {
 	return cs.receiveLobbyData();
 }
 
-PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& numChars)
+PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg)
 {
-	return cs.getNumLobbyPackets(numMsgs, numChars);
+	return cs.getNumLobbyPackets(numMsgs, newTeamNameMsg);
 }
 
 PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle)

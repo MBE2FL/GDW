@@ -9,6 +9,7 @@ ScorePacket::ScorePacket(int8_t networkID)
 ScorePacket::ScorePacket(int8_t networkID, int8_t numScores)
 	: Packet(networkID)
 {
+	_data[PCK_TYPE_POS] = PacketTypes::Score;
 	_data[DATA_START_POS] = numScores;
 }
 
