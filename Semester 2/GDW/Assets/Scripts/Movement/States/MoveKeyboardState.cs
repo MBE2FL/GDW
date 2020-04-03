@@ -15,6 +15,7 @@ public class MoveKeyboardState : IPlayerState
     Vector3 _force;
     float _speed = 0.0f;
     float _speedRamp = 1.0f;
+    float idleValue = 1.0f;
 
     public void Entry(Movement movement, Rigidbody rb, Transform transform, Moveable moveable, Animator animator)
     {
@@ -114,7 +115,7 @@ public class MoveKeyboardState : IPlayerState
                 _speed = 8.0f * 7.0f;
 
             _force.Normalize();
-            
+
             if (Input.GetKey(KeyCode.LeftShift))
             {
                 if (_speedRamp < 3.0f)
@@ -127,10 +128,22 @@ public class MoveKeyboardState : IPlayerState
                     _speedRamp -= 0.07f;
 
             }
-            _animator.SetFloat("speed", _speedRamp);
+
+            
             _speed *= _speedRamp;
             _rb.AddForce(_force * _speed);
 
+            if (_force == Vector3.zero)
+            {
+                if (idleValue > 0.0f)
+                    idleValue = -0.07f;
+                else
+                    idleValue = 0.0f;
+
+                _animator.SetFloat("speed", idleValue);
+            }
+            else
+                _animator.SetFloat("speed", _speedRamp);
 
             Vector3 localVel = _transform.InverseTransformDirection(_rb.velocity);
             if (_movement.Angle > 5.0f)
