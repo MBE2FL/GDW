@@ -18,8 +18,7 @@ public class toggleMenu : MonoBehaviour
     void enableMovement(bool active)
     {
         _camera.GetComponent<cameraMovement>().enabled = active;
-        _camera.GetComponent<cameraMovement>().sister.GetComponent<Movement>().enabled = active;
-        _camera.GetComponent<cameraMovement>().brother.GetComponent<Movement>().enabled = active;
+        _camera.GetComponent<cameraMovement>().Player.GetComponent<Movement>().enabled = active;
     }
     // Update is called once per frame
     void Update()

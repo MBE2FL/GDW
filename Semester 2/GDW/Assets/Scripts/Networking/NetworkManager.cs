@@ -477,6 +477,18 @@ public class NetworkManager : MonoBehaviour
 
 
         _lobby = GetComponent<Lobby>();
+
+
+        SceneManager.sceneLoaded += onSceneLoaded;
+    }
+
+    private void onSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+    {
+        SceneManager.SetActiveScene(scene);
+
+        loadEntities();
+
+        Camera.main.GetComponent<cameraMovement>().setPlayer(_lobby.CharChoice);
     }
 
     private void OnApplicationQuit()
@@ -497,6 +509,9 @@ public class NetworkManager : MonoBehaviour
         _networkObjects.Clear();
 
         GameManager.onPlay -= play;
+
+
+        SceneManager.sceneLoaded -= onSceneLoaded;
 
 
         // Not sure if this works
@@ -648,6 +663,12 @@ public class NetworkManager : MonoBehaviour
 
     public void play()
     {
+        // Load the first level.
+        SceneManager.LoadScene("regan's test scene");
+    }
+
+    public void loadEntities()
+    {
         // Receive server's entity request.
         PacketTypes pckType = PacketTypes.EmptyMsg;
         queryEntityRequest(ref pckType);
@@ -681,9 +702,6 @@ public class NetworkManager : MonoBehaviour
         if (pckType == PacketTypes.EntitiesStart)
         {
             Debug.Log("Starter entities message type received.");
-
-            // Load first level.
-            SceneManager.LoadScene("regan's test scene");
 
 
             // Retrieve all networked objects in the scene.
