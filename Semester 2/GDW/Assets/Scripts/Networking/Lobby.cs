@@ -46,6 +46,8 @@ public class Lobby : MonoBehaviour
     Image _brotherButtonImage;
     Button _sisterButton;
     Button _brotherButton;
+    Text _playersText;
+    Button _playButton;
     bool _inLobby = true;
     CharacterChoices _charChoice = CharacterChoices.NoChoice;
 
@@ -104,6 +106,10 @@ public class Lobby : MonoBehaviour
         _brotherButtonImage = canvas.transform.Find("Play as brother").GetComponent<Image>();
         _sisterButton = canvas.transform.Find("Play as sister").GetComponent<Button>();
         _brotherButton = canvas.transform.Find("Play as brother").GetComponent<Button>();
+
+        _playersText = canvas.transform.Find("Players text").GetComponent<Text>();
+
+        _playButton = canvas.transform.Find("Play").GetComponent<Button>();
     }
 
     // Start is called before the first frame update
@@ -139,8 +145,21 @@ public class Lobby : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Update lobby only while we are connected to the server, and we are in the lobby.
         if (_networkManager.Connected && _inLobby)
+        {
             receiveMsgs();
+
+            // If both characters are selected, then enable the play button.
+            if ((_charChoice != CharacterChoices.NoChoice) && (!_sisterButton.interactable || !_brotherButton.interactable))
+            {
+                _playButton.interactable = true;
+            }
+            else
+            {
+                _playButton.interactable = false;
+            }
+        }
     }
 
     public void connect()
@@ -155,6 +174,8 @@ public class Lobby : MonoBehaviour
     {
         _connectButton.gameObject.SetActive(false);
         _connectText.text = "Connected";
+
+        _playersText.text += "\nPlayer " + _networkManager.ID + " Joined (You)";
     }
 
     void onServerConnectFail()
@@ -242,11 +263,14 @@ public class Lobby : MonoBehaviour
         int numMsgs = 0;
         int newTeamNameMsg = 0;
         int newCharChoice = 0;
+        int numNewPlayers = 0;
         int chatDataSize = Marshal.SizeOf<ChatData>();
         int charChoiceDataSize = Marshal.SizeOf<CharChoiceData>();
+        int newPlayerSize = Marshal.SizeOf<byte>();
         ChatData chatData;
         CharChoiceData charChoiceData;
-        _networkManager.getNumLobbyPackets(ref numMsgs, ref newTeamNameMsg, ref newCharChoice);
+        byte newPlayer;
+        _networkManager.getNumLobbyPackets(ref numMsgs, ref newTeamNameMsg, ref newCharChoice, ref numNewPlayers);
 
         int totalSize;
         //if (newTeamNameMsg)
@@ -254,7 +278,7 @@ public class Lobby : MonoBehaviour
         //else
         //    totalSize = chatDataSize * numMsgs;
 
-        totalSize = (chatDataSize * numMsgs) + (chatDataSize * newTeamNameMsg) + (charChoiceDataSize * newCharChoice);
+        totalSize = (chatDataSize * numMsgs) + (chatDataSize * newTeamNameMsg) + (charChoiceDataSize * newCharChoice) + (newPlayerSize * numNewPlayers);
 
         IntPtr dataHandle = Marshal.AllocHGlobal(totalSize);
         IntPtr tempDataHandle = dataHandle;
@@ -325,6 +349,18 @@ public class Lobby : MonoBehaviour
                 }
             }
         }
+
+
+        // Receive new players.
+        for (int i = 0; i < numNewPlayers; ++i)
+        {
+            //newPlayer = Marshal.PtrToStructure<byte>(dataHandle);
+            newPlayer = Marshal.ReadByte(dataHandle);
+            dataHandle += newPlayerSize;
+
+            _playersText.text += "\nPlayer " + newPlayer + " Joined (Other)";
+        }
+
 
         Marshal.FreeHGlobal(tempDataHandle);
     }

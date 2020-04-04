@@ -135,9 +135,9 @@ PLUGIN_OUT void receiveLobbyData()
 	return cs.receiveLobbyData();
 }
 
-PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice)
+PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers)
 {
-	return cs.getNumLobbyPackets(numMsgs, newTeamNameMsg, newCharChoice);
+	return cs.getNumLobbyPackets(numMsgs, newTeamNameMsg, newCharChoice, numNewPlayers);
 }
 
 PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle)

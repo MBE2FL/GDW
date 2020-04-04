@@ -106,7 +106,7 @@ public:
 
 
 	void receiveLobbyData();
-	void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice);
+	void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers);
 	void getLobbyPacketHandles(void* dataHandle);
 
 
@@ -144,4 +144,8 @@ private:
 	vector<ChatData> _chatDataBuf;
 	ChatData* _teamNameBuf = nullptr;
 	CharChoiceData* _charChoiceBuf = nullptr;
+	vector<uint8_t> _lobbyPlayersBuf;
+
+	PacketTypes _entityQueryBuf = PacketTypes::EmptyMsg;
+	char* _entityIDsBuf = nullptr;
 };
