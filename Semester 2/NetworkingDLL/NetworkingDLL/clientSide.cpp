@@ -123,12 +123,15 @@ void ClientSide::networkCleanup()
 
 void ClientSide::connectToServer(const char* ip)
 {
+	_status = ConnectionStatus::Connecting;
+
 	//Connect to the server
 	if (connect(_clientTCPsocket, _ptr->ai_addr, (int)_ptr->ai_addrlen) == SOCKET_ERROR) {
 		printf("Unable to connect TCP to server: %d\n", WSAGetLastError());
-		closesocket(_clientTCPsocket);
-		freeaddrinfo(_ptr);
-		WSACleanup();
+		_status = ConnectionStatus::ConnectionFailedStatus;
+		//closesocket(_clientTCPsocket);
+		//freeaddrinfo(_ptr);
+		//WSACleanup();
 		return;
 	}
 
@@ -141,9 +144,10 @@ void ClientSide::connectToServer(const char* ip)
 	if (sendto(_clientUDPsocket, buf, BUF_LEN, 0, _ptr->ai_addr, _ptr->ai_addrlen) == SOCKET_ERROR)
 	{
 		printf("Unable to connect UDP to server: %d\n", WSAGetLastError());
-		closesocket(_clientUDPsocket);
-		freeaddrinfo(_ptr);
-		WSACleanup();
+		_status = ConnectionStatus::ConnectionFailedStatus;
+		//closesocket(_clientUDPsocket);
+		//freeaddrinfo(_ptr);
+		//WSACleanup();
 		return;
 	}
 
@@ -175,6 +179,13 @@ void ClientSide::connectToServer(const char* ip)
 			startTimerClock = clock();
 		}
 	}
+
+	if (!_connected && totalConnectAttemptTime > MAX_CONNECT_ATTEMPT_TIME)
+		_status = ConnectionStatus::ConnectionFailedStatus;
+	else if (_connected)
+	{
+		_status = ConnectionStatus::Connected;
+	}
 }
 
 void ClientSide::processConnectAttempt(PacketTypes pckType, char buf[BUF_LEN])
@@ -200,14 +211,17 @@ void ClientSide::processConnectAttempt(PacketTypes pckType, char buf[BUF_LEN])
 	}
 }
 
-ConnectionStatus ClientSide::queryConnectAttempt(int& id)
+void ClientSide::queryConnectAttempt(int& id, ConnectionStatus& status)
 {
 	if (_connected)
 	{
 		id = _networkID;
 	}
+	cout << "Status: " << static_cast<int>(_status) << endl;
+	status = _status;
 
-	return _status;
+	if ((_status == ConnectionFailedStatus) || (_status == ServerFullStatus))
+		_status = Disconected;
 }
 
 PacketTypes ClientSide::queryEntityRequest()
@@ -287,7 +301,7 @@ bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 			return false;
 		}
 
-		int8_t numEntitesReturned = buf[DATA_START_POS];
+		uint8_t numEntitesReturned = buf[DATA_START_POS];
 
 		if (numEntitesReturned != numEntities)
 		{
@@ -299,7 +313,7 @@ bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 
 		if (numEntities > 0)
 		{
-			int8_t* entityIDs = new int8_t[numEntities];
+			uint8_t* entityIDs = new uint8_t[numEntities];
 			memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
 			for (int i = 0; i < numEntities; ++i)
 			{
@@ -400,13 +414,13 @@ bool ClientSide::sendRequiredEntities(EntityData* entities, int& numEntities, in
 
 			//numEntities = buf[DATA_START_POS] - '0';
 
-			int8_t numEntitiesReturned = buf[DATA_START_POS];
+			uint8_t numEntitiesReturned = buf[DATA_START_POS];
 			numEntities = numEntitiesReturned;
 			cout << "Received " << static_cast<int>(numEntitiesReturned) << " server assigned entity ids." << endl;
 
 			if (numEntities > 0)
 			{
-				int8_t* entityIDs = new int8_t[numEntities];
+				uint8_t* entityIDs = new uint8_t[numEntities];
 				memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
 				for (int i = 0; i < numEntities; ++i)
 				{
@@ -462,6 +476,10 @@ void ClientSide::sendData(const PacketTypes pckType, void* data)
 		break;
 	case LobbyTeamName:
 		packet = new ChatPacket(pckType, _networkID);
+		udpPacket = false;
+		break;
+	case LobbyCharChoice:
+		packet = new CharChoicePacket(_networkID);
 		udpPacket = false;
 		break;
 	default:
@@ -524,11 +542,11 @@ void ClientSide::receiveUDPData()
 	if (sError != SOCKET_ERROR && bytes_received > 0)
 	{
 		// Retrieve network ID of incomming message.
-		int8_t networkID = buf[NET_ID_POS];
+		uint8_t networkID = buf[NET_ID_POS];
 
 		if (networkID == _networkID)
 		{
-			cout << "Same Network ID, UDP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+			cout << "Same Network ID, UDP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
 			return;
 		}
 
@@ -584,11 +602,11 @@ void ClientSide::receiveTCPData()
 	if (bytesReceived > 0)
 	{
 		// Retrieve network ID of incomming message.
-		int8_t networkID = buf[NET_ID_POS];
+		uint8_t networkID = buf[NET_ID_POS];
 
 		if (networkID == _networkID)
 		{
-			cout << "Same Network ID, TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+			cout << "Same Network ID, TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
 			return;
 		}
 
@@ -630,7 +648,7 @@ void ClientSide::receiveTCPData()
 		{
 			// Deserialize and store entity data.
 			EntityPacket packet = EntityPacket(buf);
-			int8_t numEntities = packet.getNumEntities();
+			uint8_t numEntities = packet.getNumEntities();
 			EntityData* entityData = new EntityData[numEntities];
 
 			packet.deserialize(entityData);
@@ -667,7 +685,7 @@ void ClientSide::getPacketHandleSizes(int& transDataElements, int& animDataEleme
 
 
 #pragma region OldMap
-	//unordered_map<int8_t, Packet*> currObjMap;
+	//unordered_map<uint8_t, Packet*> currObjMap;
 
 
 	//Packet* packet = nullptr;
@@ -676,7 +694,7 @@ void ClientSide::getPacketHandleSizes(int& transDataElements, int& animDataEleme
 	//AnimData animData;
 
 
-	//int8_t objID = -1;
+	//uint8_t objID = -1;
 
 	//// Search through each type of packet.
 	//for (auto pckType : _udpPacketBuf)
@@ -755,7 +773,7 @@ void ClientSide::getPacketHandles(void* dataHandle)
 
 	//			vector<Packet*> animPackets = objKV.second;
 	//			AnimData animData;
-	//			int8_t objID;
+	//			uint8_t objID;
 
 	//			for (Packet* animPck : animPackets)
 	//			{
@@ -855,17 +873,17 @@ void ClientSide::receiveLobbyData()
 		case EntitiesUpdate:
 		{
 			// Retrieve network ID of incomming message.
-			int8_t networkID = buf[NET_ID_POS];
+			uint8_t networkID = buf[NET_ID_POS];
 
 			if (networkID == _networkID)
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
 				return;
 			}
 
 			// Deserialize and store entity data.
 			EntityPacket packet = EntityPacket(buf);
-			int8_t numEntities = packet.getNumEntities();
+			uint8_t numEntities = packet.getNumEntities();
 			EntityData* entityData = new EntityData[numEntities];
 
 			packet.deserialize(entityData);
@@ -892,11 +910,11 @@ void ClientSide::receiveLobbyData()
 		case LobbyChat:
 		{
 			// Retrieve network ID of incomming message.
-			int8_t networkID = buf[NET_ID_POS];
+			uint8_t networkID = buf[NET_ID_POS];
 
 			if (networkID == _networkID)
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
 				return;
 			}
 
@@ -914,11 +932,11 @@ void ClientSide::receiveLobbyData()
 		case LobbyTeamName:
 		{
 			// Retrieve network ID of incomming message.
-			int8_t networkID = buf[NET_ID_POS];
+			uint8_t networkID = buf[NET_ID_POS];
 
 			if (networkID == _networkID)
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(int8_t(buf[PCK_TYPE_POS])) << endl;
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
 				return;
 			}
 
@@ -929,6 +947,24 @@ void ClientSide::receiveLobbyData()
 
 			cout << "Received team name msg from " << static_cast<int>(networkID) << ": " << _teamNameBuf->_msg << endl;
 			break;
+		}
+		case LobbyCharChoice:
+		{
+			// Retrieve network ID of incomming message.
+			uint8_t networkID = buf[NET_ID_POS];
+
+			if (networkID == _networkID)
+			{
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
+				return;
+			}
+
+			CharChoicePacket packet = CharChoicePacket(buf);
+			_charChoiceBuf = new CharChoiceData();	// CLEAN UP
+
+			packet.deserialize(_charChoiceBuf);
+
+			cout << "Received character choice from " << static_cast<int>(networkID) << ": " << static_cast<int>(_charChoiceBuf->_charChoice) << endl;
 			break;
 		}
 		case EmptyMsg:
@@ -947,10 +983,15 @@ void ClientSide::receiveLobbyData()
 	}
 }
 
-void ClientSide::getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg)
+void ClientSide::getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice)
 {
 	numMsgs = _chatDataBuf.size();
-	newTeamNameMsg = _teamNameBuf;
+
+	if (_teamNameBuf)
+		newTeamNameMsg = 1;
+
+	if (_charChoiceBuf)
+		newCharChoice = 1;
 }
 
 void ClientSide::getLobbyPacketHandles(void* dataHandle)
@@ -971,6 +1012,16 @@ void ClientSide::getLobbyPacketHandles(void* dataHandle)
 		delete[] _teamNameBuf->_msg;
 		delete _teamNameBuf;
 		_teamNameBuf = nullptr;
+	}
+
+	if (_charChoiceBuf)
+	{
+		memcpy(&byteDatahandle[offset], _charChoiceBuf, sizeof(CharChoiceData));
+		offset += sizeof(CharChoiceData);
+
+		// Clean up
+		delete _charChoiceBuf;
+		_charChoiceBuf = nullptr;
 	}
 
 

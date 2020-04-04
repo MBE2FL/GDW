@@ -1,12 +1,12 @@
 #include "ScorePacket.h"
 
-ScorePacket::ScorePacket(int8_t networkID)
+ScorePacket::ScorePacket(uint8_t networkID)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = PacketTypes::Score;
 }
 
-ScorePacket::ScorePacket(int8_t networkID, int8_t numScores)
+ScorePacket::ScorePacket(uint8_t networkID, uint8_t numScores)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = PacketTypes::Score;
@@ -28,7 +28,7 @@ void ScorePacket::deserialize(void* data)
 	memcpy(data, &_data[DATA_START_POS + 1], sizeof(ScoreData) * _data[DATA_START_POS]);
 }
 
-int8_t ScorePacket::getNumScores() const
+uint8_t ScorePacket::getNumScores() const
 {
 	return _data[DATA_START_POS];
 }

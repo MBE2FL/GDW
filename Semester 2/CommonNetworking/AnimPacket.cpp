@@ -1,12 +1,12 @@
 #include "AnimPacket.h"
 
-//AnimPacket::AnimPacket(int8_t networkID, int8_t objID)
+//AnimPacket::AnimPacket(uint8_t networkID, uint8_t objID)
 //	: Packet(networkID, objID)
 //{
 //	_data[PCK_TYPE_POS] = MessageTypes::Anim;
 //}
 
-AnimPacket::AnimPacket(int8_t networkID)
+AnimPacket::AnimPacket(uint8_t networkID)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = PacketTypes::Anim;
@@ -27,7 +27,7 @@ void AnimPacket::deserialize(void* data)
 	memcpy(data, &_data[DATA_START_POS], sizeof(AnimData));
 }
 
-//void AnimPacket::deserialize(int8_t& objID, void* data)
+//void AnimPacket::deserialize(uint8_t& objID, void* data)
 //{
 //	//objID = _data[OBJ_ID_POS];
 //

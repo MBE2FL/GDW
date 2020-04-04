@@ -55,7 +55,8 @@ public enum PacketTypes : byte
     Score,
     ClientScoresRequest,
     LobbyChat,
-    LobbyTeamName
+    LobbyTeamName,
+    LobbyCharChoice
 }
 
 public enum ConnectionStatus : byte
@@ -65,6 +66,13 @@ public enum ConnectionStatus : byte
     Disconected,
     ConnectionFailedStatus,
     ServerFullStatus,
+};
+
+public enum CharacterChoices : byte
+{
+    NoChoice,
+    SisterChoice,
+    BrotherChoice
 };
 
 
@@ -98,9 +106,16 @@ public struct EntityData
 [StructLayout(LayoutKind.Sequential)]
 public struct ScoreData
 {
+    public byte _EID;
     public PlayerTime _time;
 }
 
+[StructLayout(LayoutKind.Sequential)]
+public struct CharChoiceData
+{
+    public byte _EID;
+    public CharacterChoices _charChoice;
+};
 
 
 
@@ -114,6 +129,7 @@ struct ConnectJob : IJob
     public void Execute()
     {
         // Attempt to establish a connection to the server.
+        NetworkManager.Connecting = true;
         NetworkManager.connectToServer(Marshal.PtrToStringAnsi(_ip));
 
         Debug.Log("ConnectJob Stopped");
@@ -192,7 +208,7 @@ public class NetworkManager : MonoBehaviour
     public delegate void connectToServerDelegate(string ip);
     public static connectToServerDelegate connectToServer;
 
-    public delegate ConnectionStatus queryConnectAttemptDelegate(ref int id);
+    public delegate void queryConnectAttemptDelegate(ref int id, ref ConnectionStatus status);
     public queryConnectAttemptDelegate queryConnectAttempt;
 
     public delegate PacketTypes queryEntityRequestDelegate();
@@ -241,7 +257,7 @@ public class NetworkManager : MonoBehaviour
     public delegate void receiveLobbyDataDelegate();
     public static receiveLobbyDataDelegate receiveLobbyData;
 
-    public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref bool newTeamNameMsg);
+    public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref int newTeamNameMsg, ref int newCharChoice);
     public getNumLobbyPacketsDelegate getNumLobbyPackets;
 
     public delegate void getLobbyPacketHandlesDelegate(IntPtr dataHandle);
@@ -255,8 +271,8 @@ public class NetworkManager : MonoBehaviour
 
     [SerializeField]
     bool _connected = false;
-    [SerializeField]
-    bool _connecting = false;
+
+    static bool _connecting = false;
 
     [SerializeField]
     string _ip = "127.0.0.1";
@@ -264,8 +280,12 @@ public class NetworkManager : MonoBehaviour
     [SerializeField]
     int _id = 0;
 
+    [SerializeField]
+    ConnectionStatus _status = ConnectionStatus.Disconected;
+
 
     public static event Action onServerConnect;
+    public static event Action onServerConnectFail;
     public event Action onDataSend;
     public event Action onDataReceive;
 
@@ -320,6 +340,18 @@ public class NetworkManager : MonoBehaviour
         get
         {
             return _id;
+        }
+    }
+
+    public static bool Connecting
+    {
+        get
+        {
+            return _connecting;
+        }
+        set
+        {
+            _connecting = value;
         }
     }
 
@@ -495,22 +527,43 @@ public class NetworkManager : MonoBehaviour
             //    if (onServerConnect != null)
             //        onServerConnect.Invoke();
             //}
-            ConnectionStatus status = queryConnectAttempt(ref _id);
-            if (status == ConnectionStatus.Connected)
+            queryConnectAttempt(ref _id, ref _status);
+
+            switch (_status)
             {
-                // Notify all listeners.
-                if (onServerConnect != null)
-                    onServerConnect.Invoke();
-            }
-            else if (status == ConnectionStatus.ConnectionFailedStatus)
-            {
-                Debug.Log("Failed to connect to the server!");
-                _connecting = false;
-            }
-            else if (status == ConnectionStatus.ServerFullStatus)
-            {
-                Debug.Log("The server is full!");
-                _connecting = false;
+                case ConnectionStatus.Connected:
+                    // Notify all listeners.
+                    if (onServerConnect != null)
+                        onServerConnect.Invoke();
+                    break;
+                case ConnectionStatus.Connecting:
+                    Debug.Log("Connecting...");
+                    break;
+                case ConnectionStatus.Disconected:
+                    _connecting = false;
+                    Debug.Log("Disconnected");
+
+                    if (onServerConnectFail != null)
+                        onServerConnectFail.Invoke();
+                    break;
+                case ConnectionStatus.ConnectionFailedStatus:
+                    _connecting = false;
+                    _status = ConnectionStatus.Disconected;
+                    Debug.Log("Failed to connect to the server!");
+
+                    if (onServerConnectFail != null)
+                        onServerConnectFail.Invoke();
+                    break;
+                case ConnectionStatus.ServerFullStatus:
+                    _connecting = false;
+                    _status = ConnectionStatus.Disconected;
+                    Debug.Log("The server is full!");
+
+                    if (onServerConnectFail != null)
+                        onServerConnectFail.Invoke();
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -555,10 +608,7 @@ public class NetworkManager : MonoBehaviour
             job._ip = Marshal.StringToHGlobalAnsi(_ip);
             connectJobHandle = job.Schedule();
 
-            _connecting = true;
-
-            //_connectButton.GetComponent<Button>().interactable = false;
-            //_connectButton.GetComponentInChildren<Text>().text = "Connecting...";
+            //_connecting = true;
         }
     }
 
@@ -976,6 +1026,7 @@ public class NetworkManagerEditor : Editor
 {
     SerializedProperty _intialized;
     SerializedProperty _connected;
+    SerializedProperty _status;
     SerializedProperty _ip;
     SerializedProperty _id;
 
@@ -985,6 +1036,7 @@ public class NetworkManagerEditor : Editor
     {
         _intialized = serializedObject.FindProperty("_initialized");
         _connected = serializedObject.FindProperty("_connected");
+        _status = serializedObject.FindProperty("_status");
         _ip = serializedObject.FindProperty("_ip");
         _id = serializedObject.FindProperty("_id");
     }
@@ -1003,6 +1055,11 @@ public class NetworkManagerEditor : Editor
 
         label.text = "Connected";
         EditorGUILayout.Toggle(label, _connected.boolValue);
+
+        EditorGUI.BeginDisabledGroup(true);
+        label.text = "Status";
+        EditorGUILayout.PropertyField(_status, label);
+        EditorGUI.EndDisabledGroup();
 
         label.text = "IP Address";
         EditorGUILayout.PropertyField(_ip, label);

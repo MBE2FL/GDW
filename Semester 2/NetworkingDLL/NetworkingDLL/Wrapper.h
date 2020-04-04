@@ -23,7 +23,7 @@ extern "C"
 	PLUGIN_OUT bool initNetwork(const char* ip);
 	PLUGIN_OUT void networkCleanup();
 	PLUGIN_OUT void connectToServer(const char* ip);
-	PLUGIN_OUT bool queryConnectAttempt(int& id);
+	PLUGIN_OUT void queryConnectAttempt(int& id, ConnectionStatus& status);
 	PLUGIN_OUT PacketTypes queryEntityRequest();
 	PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities);
 	PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
@@ -45,7 +45,7 @@ extern "C"
 
 
 	PLUGIN_OUT void receiveLobbyData();
-	PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg);
+	PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice);
 	PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle);
 
 #ifdef __cplusplus

@@ -60,9 +60,9 @@ PLUGIN_OUT void connectToServer(const char* ip)
 	return cs.connectToServer(ip);
 }
 
-PLUGIN_OUT bool queryConnectAttempt(int& id)
+PLUGIN_OUT void queryConnectAttempt(int& id, ConnectionStatus& status)
 {
-	return cs.queryConnectAttempt(id);
+	return cs.queryConnectAttempt(id, status);
 }
 
 PLUGIN_OUT PacketTypes queryEntityRequest()
@@ -135,9 +135,9 @@ PLUGIN_OUT void receiveLobbyData()
 	return cs.receiveLobbyData();
 }
 
-PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg)
+PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice)
 {
-	return cs.getNumLobbyPackets(numMsgs, newTeamNameMsg);
+	return cs.getNumLobbyPackets(numMsgs, newTeamNameMsg, newCharChoice);
 }
 
 PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle)

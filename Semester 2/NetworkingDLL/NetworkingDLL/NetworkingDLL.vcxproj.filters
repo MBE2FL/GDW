@@ -60,6 +60,9 @@
     <ClInclude Include="..\..\CommonNetworking\ChatPacket.h">
       <Filter>Header Files\Packets</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\CommonNetworking\CharChoicePacket.h">
+      <Filter>Header Files\Packets</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Wrapper.cpp">
@@ -95,8 +98,11 @@
     <ClCompile Include="..\..\CommonNetworking\ScorePacket.cpp">
       <Filter>Source Files\Packets</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\CommonNetworking\CharChoicePacket.cpp">
+      <Filter>Source Files\Packets</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\CommonNetworking\ChatPacket.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Packets</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

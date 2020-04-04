@@ -1,12 +1,12 @@
 #include "ChatPacket.h"
 
-ChatPacket::ChatPacket(int8_t networkID)
+ChatPacket::ChatPacket(uint8_t networkID)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = PacketTypes::LobbyChat;
 }
 
-ChatPacket::ChatPacket(PacketTypes pckType, int8_t networkID)
+ChatPacket::ChatPacket(PacketTypes pckType, uint8_t networkID)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = pckType;
