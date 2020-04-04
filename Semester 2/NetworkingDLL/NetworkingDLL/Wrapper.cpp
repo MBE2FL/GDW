@@ -45,9 +45,9 @@ PLUGIN_OUT const char* OutputMessageToConsole(const char* msg)
 }
 
 
-PLUGIN_OUT bool initNetwork(const char* ip)
+PLUGIN_OUT bool initNetwork()
 {
-	return cs.initNetwork(ip);
+	return cs.initNetwork();
 }
 
 PLUGIN_OUT void networkCleanup()
@@ -65,24 +65,29 @@ PLUGIN_OUT void queryConnectAttempt(int& id, ConnectionStatus& status)
 	return cs.queryConnectAttempt(id, status);
 }
 
-PLUGIN_OUT PacketTypes queryEntityRequest()
+PLUGIN_OUT void queryEntityRequest(PacketTypes& query)
 {
-	return cs.queryEntityRequest();
+	return cs.queryEntityRequest(query);
 }
 
-PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities)
+PLUGIN_OUT PacketTypes sendStarterEntities(EntityData* entities, int numEntities)
 {
 	return cs.sendStarterEntities(entities, numEntities);
 }
 
-PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities)
+PLUGIN_OUT PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities)
 {
 	return cs.sendRequiredEntities(entities, numEntities, numServerEntities);
 }
 
-PLUGIN_OUT void getServerEntities(EntityData* serverEntities)
+PLUGIN_OUT PacketTypes sendEntities(EntityData* entities, int& numEntities)
 {
-	return cs.getServerEntities(serverEntities);
+	return cs.sendEntities(entities, numEntities);
+}
+
+PLUGIN_OUT void getServerEntities(EntityData* serverEntities, int& numServerEntities)
+{
+	return cs.getServerEntities(serverEntities, numServerEntities);
 }
 
 PLUGIN_OUT void sendData(const PacketTypes pckType, void* data)

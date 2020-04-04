@@ -9,6 +9,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 #endif
 using Unity.Jobs;
+using UnityEngine.SceneManagement;
 
 
 // This struct needs to be in the same order as in C++
@@ -199,7 +200,7 @@ public class NetworkManager : MonoBehaviour
 
 
 
-    public delegate bool initNetworkDelegate(string ip);
+    public delegate bool initNetworkDelegate();
     public initNetworkDelegate initNetwork;
 
     public delegate void networkCleanupDelegate();
@@ -211,16 +212,19 @@ public class NetworkManager : MonoBehaviour
     public delegate void queryConnectAttemptDelegate(ref int id, ref ConnectionStatus status);
     public queryConnectAttemptDelegate queryConnectAttempt;
 
-    public delegate PacketTypes queryEntityRequestDelegate();
+    public delegate void queryEntityRequestDelegate(ref PacketTypes query);
     public static queryEntityRequestDelegate queryEntityRequest;
 
-    public delegate bool sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
+    public delegate PacketTypes sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
     public static sendStarterEntitiesDelegate sendStarterEntities;
 
-    public delegate bool sendRequiredEntitiesDelegate(IntPtr entities, ref int numEntities, ref int numServerEntities);
+    public delegate PacketTypes sendRequiredEntitiesDelegate(IntPtr entities, ref int numEntities, ref int numServerEntities);
     public static sendRequiredEntitiesDelegate sendRequiredEntities;
 
-    public delegate void getServerEntitiesDelegate(IntPtr serverEntities);
+    public delegate PacketTypes sendEntitiesDelegate(IntPtr entities, ref int numEntities);
+    public static sendEntitiesDelegate sendEntities;
+
+    public delegate void getServerEntitiesDelegate(IntPtr serverEntities, ref int numServerEntities);
     public getServerEntitiesDelegate getServerEntities;
 
 
@@ -290,6 +294,7 @@ public class NetworkManager : MonoBehaviour
 
 
     GameManager _gameManager;
+    Lobby _lobby;
 
 
     [SerializeField]
@@ -402,6 +407,7 @@ public class NetworkManager : MonoBehaviour
         queryEntityRequest = ManualPluginImporter.GetDelegate<queryEntityRequestDelegate>(_pluginHandle, "queryEntityRequest");
         sendStarterEntities = ManualPluginImporter.GetDelegate<sendStarterEntitiesDelegate>(_pluginHandle, "sendStarterEntities");
         sendRequiredEntities = ManualPluginImporter.GetDelegate<sendRequiredEntitiesDelegate>(_pluginHandle, "sendRequiredEntities");
+        sendEntities = ManualPluginImporter.GetDelegate<sendEntitiesDelegate>(_pluginHandle, "sendEntities");
         getServerEntities = ManualPluginImporter.GetDelegate<getServerEntitiesDelegate>(_pluginHandle, "getServerEntities");
 
 
@@ -457,7 +463,7 @@ public class NetworkManager : MonoBehaviour
         }
 
 
-        DontDestroyOnLoad(this.gameObject);
+        //DontDestroyOnLoad(this.gameObject);
     }
 
     // Start is called before the first frame update
@@ -468,6 +474,9 @@ public class NetworkManager : MonoBehaviour
         _gameManager = GetComponent<GameManager>();
 
         GameManager.onPlay += play;
+
+
+        _lobby = GetComponent<Lobby>();
     }
 
     private void OnApplicationQuit()
@@ -605,7 +614,7 @@ public class NetworkManager : MonoBehaviour
 
     void initializeNetworkManager()
     {
-        _initialized = initNetwork(_ip);
+        _initialized = initNetwork();
     }
 
     public void connect(string ip)
@@ -639,7 +648,29 @@ public class NetworkManager : MonoBehaviour
 
     public void play()
     {
-        PacketTypes pckType = queryEntityRequest();
+        // Receive server's entity request.
+        PacketTypes pckType = PacketTypes.EmptyMsg;
+        queryEntityRequest(ref pckType);
+
+        if (pckType != PacketTypes.ErrorMsg)
+        {
+            float timer = 0.0f;
+            while ((pckType == PacketTypes.EntitiesQuery) && (timer <= 6.0f))
+            {
+                if (timer >= 3.0f)
+                {
+                     queryEntityRequest(ref pckType);
+
+                    if (pckType == PacketTypes.ErrorMsg)
+                        break;
+
+                    timer = 0.0f;
+                }
+
+                timer += Time.deltaTime;
+            }
+        }
+
         Debug.Log(pckType);
 
         List<NetworkObject> netObjsList = new List<NetworkObject>();
@@ -649,12 +680,27 @@ public class NetworkManager : MonoBehaviour
         // Server is requesting the starting entities list.
         if (pckType == PacketTypes.EntitiesStart)
         {
+            Debug.Log("Starter entities message type received.");
+
+            // Load first level.
+            SceneManager.LoadScene("regan's test scene");
+
+
             // Retrieve all networked objects in the scene.
             NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
             netObjsList.AddRange(netObjs);
 
+            // Destroy all placeholder network objects.
+            foreach (NetworkObject netObj in netObjs)
+            {
+                Destroy(netObj.gameObject);
+            }
+
             // Add any objects not in the scene.
-            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.SisterV2], Vector3.zero, Quaternion.identity));
+            if (_lobby.CharChoice == CharacterChoices.SisterChoice)
+                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.SisterV2], Vector3.zero, Quaternion.identity));
+            else
+                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.BrotherV2], Vector3.zero, Quaternion.identity));
 
 
             numEntities = netObjsList.Count;
@@ -674,44 +720,26 @@ public class NetworkManager : MonoBehaviour
                 ++i;
             }
 
+            sendEntitiesToServer(entityData, numEntities);
 
-            unsafe
-            {
-                fixed (EntityData* tempPtr = entityData)
-                {
-                    IntPtr entitiesPtr = new IntPtr(tempPtr);
-                    // Send starting entity list to the server.
-                    sendStarterEntities(entitiesPtr, numEntities);
-                }
-            }
-
-            // Assign networked objects their server generated entity IDs.
-            _networkObjects.Clear();
-            NetworkObject networkObj = null;
-            EntityData entity;
-            for (int index = 0; index < numEntities; ++index)
-            {
-                entity = entityData[index];
-                networkObj = netObjsList[index];
-
-                networkObj.EID = entity._EID;
-
-                // Map network object to it's entity ID.
-                _networkObjects.Add(networkObj.EID, networkObj);
-            }
+            receiveEntitiesFromServer();
         }
         // Server is requesting the required entities list.
         else if (pckType == PacketTypes.EntitiesRequired)
         {
-            Debug.Log("Entities Required message type received.");
+            Debug.Log("Required entities message type received.");
 
+            // Destroy all placeholder network objects.
             NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
             foreach (NetworkObject netObj in netObjs)
             {
                 Destroy(netObj.gameObject);
             }
 
-            netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.BrotherV2], new Vector3(3.0f, 0.0f, 0.0f), Quaternion.identity));
+            if (_lobby.CharChoice == CharacterChoices.SisterChoice)
+                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.SisterV2], Vector3.zero, Quaternion.identity));
+            else
+                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.BrotherV2], Vector3.zero, Quaternion.identity));
 
 
             numEntities = netObjsList.Count;
@@ -731,86 +759,9 @@ public class NetworkManager : MonoBehaviour
                 ++i;
             }
 
-            unsafe
-            {
-                fixed (EntityData* tempPtr = entityData)
-                {
-                    IntPtr entitiesPtr = new IntPtr(tempPtr);
+            sendEntitiesToServer(entityData, numEntities);
 
-                    // Send required entity list to the server.
-                    sendRequiredEntities(entitiesPtr, ref numEntities, ref numServerEntities);
-                }
-            }
-
-            // Assign networked objects their server generated entity IDs.
-            _networkObjects.Clear();
-            NetworkObject networkObj = null;
-            EntityData entity;
-            for (int index = 0; index < numEntities; ++index)
-            {
-                entity = entityData[index];
-                networkObj = netObjsList[index];
-
-                networkObj.EID = entity._EID;
-
-                // Map network object to it's entity ID.
-                _networkObjects.Add(networkObj.EID, networkObj);
-            }
-
-
-
-            // Process server entities
-            //EntityData[] serverEntityData = new EntityData[numServerEntities];
-            int entityDataSize = Marshal.SizeOf<EntityData>();
-
-            IntPtr serverEntityPtr = Marshal.AllocHGlobal(entityDataSize * numServerEntities);
-
-            PrefabTypes prefabType;
-            Ownership ownership;
-
-            // Get entities from the server.
-            getServerEntities(serverEntityPtr);
-
-            // Generate server entities for this client.
-            IntPtr tempserverEntityPtr = serverEntityPtr;
-            i = 0;
-            for (; i < numServerEntities; ++i)
-            {
-                entity = (EntityData)Marshal.PtrToStructure(serverEntityPtr, typeof(EntityData));
-                serverEntityPtr += entityDataSize;
-
-                //Debug.Log("Server Entity: " + entity._entityID);
-                //Debug.Log("Pos: " + entity._position);
-
-                prefabType = entity._entityPrefabType;
-                ownership = entity._ownership;
-
-
-                if (prefabType == PrefabTypes.SisterV2)
-                {
-                    prefabType = PrefabTypes.SisterV2Pawn;
-                    ownership = Ownership.OtherClientOwned;
-                }
-                else if (prefabType == PrefabTypes.BrotherV2)
-                {
-                    prefabType = PrefabTypes.BrotherV2Pawn;
-                    ownership = Ownership.OtherClientOwned;
-                }
-
-
-                networkObj = Instantiate(_networkPrefabs[prefabType], entity._position, entity._rotation);
-
-                networkObj.EID = entity._EID;
-                networkObj.PrefabType = prefabType;
-                networkObj.Ownership = ownership;
-
-                // Map network object to it's entity ID.
-                _networkObjects.Add(networkObj.EID, networkObj);
-            }
-
-            //Array.Clear(serverEntityData, 0, numServerEntities);
-
-            Marshal.FreeHGlobal(tempserverEntityPtr);
+            receiveEntitiesFromServer();
         }
         else if (pckType == PacketTypes.EmptyMsg)
         {
@@ -826,13 +777,118 @@ public class NetworkManager : MonoBehaviour
         }
 
 
-        ReceiveTCPJob receiveTCPJob = new ReceiveTCPJob();
-        receiveTCPJobHandle = receiveTCPJob.Schedule();
+        //ReceiveTCPJob receiveTCPJob = new ReceiveTCPJob();
+        //receiveTCPJobHandle = receiveTCPJob.Schedule();
 
-        ReceiveUDPJob receiveUDPJob = new ReceiveUDPJob();
-        receiveUDPJobHandle = receiveUDPJob.Schedule();
+        //ReceiveUDPJob receiveUDPJob = new ReceiveUDPJob();
+        //receiveUDPJobHandle = receiveUDPJob.Schedule();
     }
 
+    void sendEntitiesToServer(EntityData[] entityData, int numEntities)
+    {
+        //unsafe
+        //{
+        //    fixed (EntityData* tempPtr = entityData)
+        //    {
+        //        IntPtr entitiesPtr = new IntPtr(tempPtr);
+        //        // Send starting entity list to the server.
+        //        //sendStarterEntities(entitiesPtr, numEntities);
+        //        sendEntities(entitiesPtr, ref numEntities);
+        //    }
+        //}
+
+        // Send entities to the server.
+        int entityDataSize = Marshal.SizeOf<EntityData>();
+        IntPtr dataHandle = Marshal.AllocHGlobal(entityDataSize * numEntities);
+        IntPtr tempDataHandle = dataHandle;
+
+        foreach (EntityData entity in entityData)
+        {
+            Marshal.StructureToPtr(entity, dataHandle, false);
+            dataHandle += entityDataSize;
+        }
+
+        sendEntities(dataHandle, ref numEntities);
+
+        Marshal.FreeHGlobal(tempDataHandle);
+    }
+
+    void receiveEntitiesFromServer()
+    {
+        // Assign networked objects their server generated entity IDs.
+        int numEntities = 0;
+        int entityDataSize = Marshal.SizeOf<EntityData>();
+        getServerEntities(IntPtr.Zero, ref numEntities);
+
+        float timer = 0.0f;
+        while ((numEntities <= 0) && (timer <= 6.0f))
+        {
+            if (timer >= 3.0f)
+            {
+                getServerEntities(IntPtr.Zero, ref numEntities);
+
+                if (numEntities >= 0)
+                    break;
+
+                timer = 0.0f;
+            }
+
+            timer += Time.deltaTime;
+        }
+
+
+        if (numEntities <= 0)
+            return;
+
+
+        IntPtr dataHandle = Marshal.AllocHGlobal(entityDataSize * numEntities);
+        IntPtr tempDataHandle = dataHandle;
+        getServerEntities(dataHandle, ref numEntities);
+
+
+
+        _networkObjects.Clear();
+        NetworkObject networkObj = null;
+        EntityData entity;
+        PrefabTypes prefabType;
+        Ownership ownership;
+
+        for (int i = 0; i < numEntities; ++i)
+        {
+            entity = (EntityData)Marshal.PtrToStructure(dataHandle, typeof(EntityData));
+            dataHandle += entityDataSize;
+
+            //Debug.Log("Server Entity: " + entity._entityID);
+            //Debug.Log("Pos: " + entity._position);
+
+            prefabType = entity._entityPrefabType;
+            ownership = entity._ownership;
+
+
+            if (prefabType == PrefabTypes.SisterV2)
+            {
+                prefabType = PrefabTypes.SisterV2Pawn;
+                ownership = Ownership.OtherClientOwned;
+            }
+            else if (prefabType == PrefabTypes.BrotherV2)
+            {
+                prefabType = PrefabTypes.BrotherV2Pawn;
+                ownership = Ownership.OtherClientOwned;
+            }
+
+
+            networkObj = Instantiate(_networkPrefabs[prefabType], entity._position, entity._rotation);
+
+            networkObj.EID = entity._EID;
+            networkObj.PrefabType = prefabType;
+            networkObj.Ownership = ownership;
+
+            // Map network object to it's entity ID.
+            _networkObjects.Add(networkObj.EID, networkObj);
+        }
+
+        Marshal.FreeHGlobal(tempDataHandle);
+    }
 
     void receivePackets()
     {

@@ -73,6 +73,7 @@ public:
 	void processClientEntityRequest(SOCKET* clientSocket);
 	void processStarterEntities(SOCKET* clientSocket, char buf[BUF_LEN]);
 	void processRequiredEntities(SOCKET* clientSocket, char buf[BUF_LEN]);
+	void processEntities(SOCKET* clientSocket, char buf[BUF_LEN]);
 	void sendEntitiesToClient(SOCKET* clientSocket);
 
 	void processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, const int& fromLen);

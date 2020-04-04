@@ -34,6 +34,7 @@
 #define UPDATE_INTERVAL 0.100 //seconds
 #define MAX_TIMEOUTS 8
 #define MAX_CONNECT_ATTEMPT_TIME 8.0f
+#define MAX_ENTITY_TIME 6
 
 using std::cout;
 using std::endl;
@@ -76,19 +77,20 @@ class PLUGIN_OUT ClientSide
 public:
 	ClientSide();
 
-	bool initNetwork(const char* ip);
-	bool initUDP(const char* ip);
-	bool initTCP(const char* ip);
+	bool initNetwork();
+	bool initUDP();
+	bool initTCP();
 	void networkCleanup();
 
 	void connectToServer(const char* ip);
 	void processConnectAttempt(PacketTypes pckType, char buf[BUF_LEN]);
 	void queryConnectAttempt(int& id, ConnectionStatus& status);
 
-	PacketTypes queryEntityRequest();
-	bool sendStarterEntities(EntityData* entities, int numEntities);
-	bool sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
-	void getServerEntities(EntityData* serverEntities);
+	void queryEntityRequest(PacketTypes& query);
+	PacketTypes sendStarterEntities(EntityData* entities, int numEntities);
+	PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
+	PacketTypes sendEntities(EntityData* entities, int& numEntities);
+	void getServerEntities(EntityData* serverEntities, int& numServerEntities);
 
 
 	void sendData(const PacketTypes pckType, void* data);
@@ -129,9 +131,6 @@ private:
 	unordered_map<PacketTypes, unordered_map<uint8_t, Packet*>> _udpPacketBuf = unordered_map<PacketTypes, unordered_map<uint8_t, Packet*>>();
 	unordered_map<PacketTypes, unordered_map<uint8_t, vector<PacketData>>> _tcpPacketBuf = unordered_map<PacketTypes, unordered_map<uint8_t, vector<PacketData>>>();
 
-	EntityData* _receivedEntitiesBuf = nullptr;
-	uint8_t _numEntitiesReceived = 0;
-
 
 	vector<TransformData> _transDataBuf;
 	vector<AnimData> _animDataBuf;
@@ -147,5 +146,8 @@ private:
 	vector<uint8_t> _lobbyPlayersBuf;
 
 	PacketTypes _entityQueryBuf = PacketTypes::EmptyMsg;
-	char* _entityIDsBuf = nullptr;
+	char _entityIDsBuf[BUF_LEN];
+	char _entityUpdatesBuf[BUF_LEN];
+	//EntityData* _receivedEntitiesBuf = nullptr;
+	//uint8_t _numEntitiesReceived = 0;
 };

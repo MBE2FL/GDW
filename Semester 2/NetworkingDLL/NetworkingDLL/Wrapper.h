@@ -20,14 +20,15 @@ extern "C"
 	PLUGIN_OUT void FreeTheConsole();
 	PLUGIN_OUT const char* OutputMessageToConsole(const char* msg);
 
-	PLUGIN_OUT bool initNetwork(const char* ip);
+	PLUGIN_OUT bool initNetwork();
 	PLUGIN_OUT void networkCleanup();
 	PLUGIN_OUT void connectToServer(const char* ip);
 	PLUGIN_OUT void queryConnectAttempt(int& id, ConnectionStatus& status);
-	PLUGIN_OUT PacketTypes queryEntityRequest();
-	PLUGIN_OUT bool sendStarterEntities(EntityData* entities, int numEntities);
-	PLUGIN_OUT bool sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
-	PLUGIN_OUT void getServerEntities(EntityData* serverEntities);
+	PLUGIN_OUT void queryEntityRequest(PacketTypes& query);
+	PLUGIN_OUT PacketTypes sendStarterEntities(EntityData* entities, int numEntities);
+	PLUGIN_OUT PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
+	PLUGIN_OUT PacketTypes sendEntities(EntityData* entities, int& numEntities);
+	PLUGIN_OUT void getServerEntities(EntityData* serverEntities, int& numServerEntities);
 
 
 	PLUGIN_OUT void sendData(const PacketTypes pckType, void* data);

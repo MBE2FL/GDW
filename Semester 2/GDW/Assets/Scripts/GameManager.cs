@@ -32,6 +32,20 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void Awake()
+    {
+        //GameManager[] objs = FindObjectsOfType<GameManager>();
+
+        //if (objs.Length > 1)
+        //{
+        //    Destroy(gameObject);
+        //}
+        //else
+        //{
+        //    DontDestroyOnLoad(gameObject);
+        //}
+        DontDestroyOnLoad(gameObject);
+    }
 
     // Start is called before the first frame update
     void Start()
