@@ -329,7 +329,7 @@ void Server::listenForConnections()
 			}
 		}
 
-		// Iff there is a buffered team name, then send it to the new client.
+		// Iff there is a buffered character choice, then send it to the new client.
 		CharacterChoices charChoice;
 		Client* otherClient;
 		for (int i = 0; i < _softConnectClients.size(); ++i)
@@ -344,13 +344,72 @@ void Server::listenForConnections()
 			}
 
 			CharChoiceData charChoiceData = CharChoiceData();
-			charChoiceData._charChoice = otherClient->_charChoice;
+			charChoiceData._charChoice = charChoice;
 			CharChoicePacket packet = CharChoicePacket(otherClient->_id);
 			packet.serialize(&charChoiceData);
+			cout << "Sent buffered character choice to " << static_cast<int>(otherClient->_id) << ": " << static_cast<int>(charChoiceData._charChoice) << endl;
 
-			if (send(otherClient->_tcpSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+			if (send(clientSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 			{
 				printf("Failed to send character choice to client %d\n", WSAGetLastError());
+				closesocket(clientSocket);
+				freeaddrinfo(_ptr);
+				WSACleanup();
+				system("pause");
+				return;
+			}
+		}
+
+		// Send all other connected players to the client.
+		for (int i = 0; i < _softConnectClients.size(); ++i)
+		{
+			otherClient = _softConnectClients[i];
+			charChoice = otherClient->_charChoice;
+
+			// Don't send new client to itself.
+			if (client->_id == otherClient->_id)
+			{
+				continue;
+			}
+
+			cout << "Sent buffered client to " << static_cast<int>(otherClient->_id) << endl;
+
+			memset(buf, 0, BUF_LEN);
+			buf[PCK_TYPE_POS] = LobbyPlayer;
+			buf[NET_ID_POS] = otherClient->_id;
+
+			if (send(clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+			{
+				printf("Failed to send lobby player to client %d\n", WSAGetLastError());
+				closesocket(clientSocket);
+				freeaddrinfo(_ptr);
+				WSACleanup();
+				system("pause");
+				return;
+			}
+		}
+
+		// Send new client to all other connected players.
+		for (int i = 0; i < _softConnectClients.size(); ++i)
+		{
+			otherClient = _softConnectClients[i];
+			charChoice = otherClient->_charChoice;
+
+			// Don't send new client to itself.
+			if (client->_id == otherClient->_id)
+			{
+				continue;
+			}
+
+			cout << "Sent new client to " << static_cast<int>(otherClient->_id) << endl;
+
+			memset(buf, 0, BUF_LEN);
+			buf[PCK_TYPE_POS] = LobbyPlayer;
+			buf[NET_ID_POS] = client->_id;
+
+			if (send(otherClient->_tcpSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+			{
+				printf("Failed to send lobby player to client %d\n", WSAGetLastError());
 				closesocket(otherClient->_tcpSocket);
 				freeaddrinfo(_ptr);
 				WSACleanup();

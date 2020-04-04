@@ -45,7 +45,7 @@ extern "C"
 
 
 	PLUGIN_OUT void receiveLobbyData();
-	PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice);
+	PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers);
 	PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle);
 
 #ifdef __cplusplus

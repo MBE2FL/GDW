@@ -30,7 +30,8 @@ enum PacketTypes : uint8_t
 	ClientScoresRequest,
 	LobbyChat,
 	LobbyTeamName,
-	LobbyCharChoice
+	LobbyCharChoice,
+	LobbyPlayer
 };
 
 enum CharacterChoices : uint8_t

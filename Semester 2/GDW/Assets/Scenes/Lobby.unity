@@ -1068,7 +1068,7 @@ GameObject:
   - component: {fileID: 417965767}
   - component: {fileID: 417965766}
   m_Layer: 5
-  m_Name: Start Game
+  m_Name: Play
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1339,7 +1339,7 @@ GameObject:
   - component: {fileID: 760907601}
   - component: {fileID: 760907600}
   m_Layer: 5
-  m_Name: PLayers text
+  m_Name: Players text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3368,7 +3368,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _initialized: 0
   _connected: 0
-  _ip: 127.0.0.1
   _id: 2
   _status: 2
   _timeSinceLastUpdate: 0

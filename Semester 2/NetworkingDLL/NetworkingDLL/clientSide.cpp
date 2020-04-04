@@ -2,6 +2,8 @@
 
 ClientSide::ClientSide()
 {
+	memset(_entityIDsBuf, 0, BUF_LEN);
+	_entityIDsBuf[PCK_TYPE_POS] = EmptyMsg;
 }
 
 bool ClientSide::initNetwork(const char* ip)
@@ -226,86 +228,59 @@ void ClientSide::queryConnectAttempt(int& id, ConnectionStatus& status)
 
 PacketTypes ClientSide::queryEntityRequest()
 {
-	// Ask server if it wants the starting entity list or just the client's required list.
-	char buf[BUF_LEN];
-	memset(buf, 0, BUF_LEN);
-
-	buf[PCK_TYPE_POS] = PacketTypes::EntitiesQuery;
-	buf[NET_ID_POS] = _networkID;
-
-	if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	if (_entityQueryBuf == PacketTypes::EmptyMsg)
 	{
-		cout << "Unable to query server for which entity list to provide!" << endl;
-		return PacketTypes::ErrorMsg;
-	}
+		// Ask server if it wants the starting entity list or just the client's required list.
+		char buf[BUF_LEN];
+		memset(buf, 0, BUF_LEN);
 
+		buf[PCK_TYPE_POS] = PacketTypes::EntitiesQuery;
+		buf[NET_ID_POS] = _networkID;
 
-	// Recieve server's reply.
-	int bytesReceived = -1;
-	int wsaError = -1;
-	memset(buf, 0, BUF_LEN);
-
-	bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
-
-	wsaError = WSAGetLastError();
-
-	if (bytesReceived > 0)
-	{
-		cout << "Server is requesting the " << static_cast<int>(buf[PCK_TYPE_POS]) << " entity list." << endl;
-		return static_cast<PacketTypes>(buf[PCK_TYPE_POS]);
+		if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			cout << "Unable to query server for which entity list to provide!" << endl;
+			return PacketTypes::ErrorMsg;
+		}
 	}
 	else
 	{
-		return PacketTypes::EmptyMsg;
+		// Recieve server's reply.
+		//cout << "Server is requesting the " << static_cast<int>(buf[PCK_TYPE_POS]) << " entity list." << endl;
+		return _entityQueryBuf;
 	}
 }
 
 bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 {
-	//buf[PCK_TYPE_POS] = MessageTypes::EntitiesStart;
-	//buf[NET_ID_POS] = _networkID;
-	//buf[DATA_START_POS] = numEntities;
-	//memcpy(&buf[DATA_START_POS + 1], entities, sizeof(EntityData) * numEntities);
-
-	EntityPacket packet = EntityPacket(PacketTypes::EntitiesStart, _networkID, numEntities);
-	packet.serialize(entities);
-
-	if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+	if (_entityIDsBuf[PCK_TYPE_POS] == EmptyMsg)
 	{
-		cout << "Failed to send starter entities to the server!" << endl;
-		return false;
+		EntityPacket packet = EntityPacket(PacketTypes::EntitiesStart, _networkID, numEntities);
+		packet.serialize(entities);
+
+		if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			cout << "Failed to send starter entities to the server!" << endl;
+			return false;
+		}
+		else
+		{
+			cout << "Sent starter entities to the server." << endl;
+			return true;
+		}
 	}
 	else
 	{
-		//cout << "Number of entities: " << numEntities << endl;
-		//cout << "Entity[0]: " << int(entities[0]._entityPrefabType) << endl;
-		cout << "Sent starter entities to the server." << endl;
-	}
-
-
-	// Receive server assigned entity ids.
-	char buf[BUF_LEN];
-	memset(buf, 0, BUF_LEN);
-	int bytesReceived = -1;
-
-	bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
-
-
-	if (bytesReceived > 0)
-	{
-		PacketTypes pckType = static_cast<PacketTypes>(buf[PCK_TYPE_POS]);
-
-		if (pckType != PacketTypes::EntityIDs)
-		{
-			cout << "Was expecting to receive server assigned entity ids!" << endl;
-			return false;
-		}
-
-		uint8_t numEntitesReturned = buf[DATA_START_POS];
+		// Receive server assigned entity ids.
+		uint8_t numEntitesReturned = _entityIDsBuf[DATA_START_POS];
 
 		if (numEntitesReturned != numEntities)
 		{
-			cout << "Was expecting to receive, " << int(numEntities) << " server assigned entity ids, but received " << int(numEntitesReturned)<<  " instead!" << endl;
+			cout << "Was expecting to receive, " << int(numEntities) << " server assigned entity ids, but received " << int(numEntitesReturned) << " instead!" << endl;
+
+			memset(_entityIDsBuf, 0, BUF_LEN);
+			_entityIDsBuf[PCK_TYPE_POS] = EmptyMsg;
+
 			return false;
 		}
 
@@ -314,7 +289,7 @@ bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 		if (numEntities > 0)
 		{
 			uint8_t* entityIDs = new uint8_t[numEntities];
-			memcpy(entityIDs, &buf[DATA_START_POS + 1], numEntities);
+			memcpy(entityIDs, &_entityIDsBuf[DATA_START_POS + 1], numEntities);
 			for (int i = 0; i < numEntities; ++i)
 			{
 				entities[i]._entityID = entityIDs[i];
@@ -323,15 +298,12 @@ bool ClientSide::sendStarterEntities(EntityData* entities, int numEntities)
 			delete[] entityIDs;
 			entityIDs = nullptr;
 		}
-	}
-	else
-	{
-		cout << "Failed to receive server assigned entity ids! " << WSAGetLastError() << endl;
-		return false;
-	}
 
+		memset(_entityIDsBuf, 0, BUF_LEN);
+		_entityIDsBuf[PCK_TYPE_POS] = EmptyMsg;
 
-	return true;
+		return true;
+	}
 }
 
 bool ClientSide::sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities)
@@ -615,14 +587,6 @@ void ClientSide::receiveTCPData()
 
 		switch (pckType)
 		{
-		case ConnectionAttempt:
-			break;
-		case ConnectionAccepted:
-			break;
-		case ConnectionFailed:
-			break;
-		case ServerFull:
-			break;
 		case Anim:
 		{
 			// Deserialize and store anim data.
@@ -636,14 +600,6 @@ void ClientSide::receiveTCPData()
 			_animDataBuf.emplace_back(animData);
 			return;
 		}
-		case EntitiesQuery:
-			break;
-		case EntitiesStart:
-			break;
-		case EntitiesNoStart:
-			break;
-		case EntitiesRequired:
-			break;
 		case EntitiesUpdate:
 		{
 			// Deserialize and store entity data.
@@ -663,11 +619,11 @@ void ClientSide::receiveTCPData()
 			}
 			return;
 		}
-		case EntityIDs:
-			break;
 		case EmptyMsg:
+			cout << "Empty message received." << endl;
 			break;
 		case ErrorMsg:
+			cout << "Error message received: " << wsaError << endl;
 			break;
 		default:
 			break;
@@ -863,12 +819,20 @@ void ClientSide::receiveLobbyData()
 			processConnectAttempt(pckType, buf);
 			break;
 		case EntitiesQuery:
+			cout << "Server is requesting the " << static_cast<int>(buf[PCK_TYPE_POS]) << " entity list." << endl;
+			_entityQueryBuf = pckType;
 			break;
 		case EntitiesStart:
 			break;
 		case EntitiesNoStart:
 			break;
 		case EntitiesRequired:
+			break;
+		case EntityIDs:
+			memset(_entityIDsBuf, 0, BUF_LEN);
+			_entityIDsBuf[PCK_TYPE_POS] = EmptyMsg;
+
+			memcpy(_entityIDsBuf, buf, BUF_LEN);
 			break;
 		case EntitiesUpdate:
 		{
@@ -967,6 +931,22 @@ void ClientSide::receiveLobbyData()
 			cout << "Received character choice from " << static_cast<int>(networkID) << ": " << static_cast<int>(_charChoiceBuf->_charChoice) << endl;
 			break;
 		}
+		case LobbyPlayer:
+		{
+			// Retrieve network ID of incomming message.
+			uint8_t networkID = buf[NET_ID_POS];
+
+			if (networkID == _networkID)
+			{
+				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
+				return;
+			}
+
+			_lobbyPlayersBuf.emplace_back(networkID);
+
+			cout << "Received lobby player from " << static_cast<int>(networkID) << endl;
+			break;
+		}
 		case EmptyMsg:
 			cout << "Empty message received." << endl;
 			break;
@@ -983,7 +963,7 @@ void ClientSide::receiveLobbyData()
 	}
 }
 
-void ClientSide::getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice)
+void ClientSide::getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers)
 {
 	numMsgs = _chatDataBuf.size();
 
@@ -992,6 +972,8 @@ void ClientSide::getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newC
 
 	if (_charChoiceBuf)
 		newCharChoice = 1;
+
+	numNewPlayers = _lobbyPlayersBuf.size();
 }
 
 void ClientSide::getLobbyPacketHandles(void* dataHandle)
@@ -1024,9 +1006,13 @@ void ClientSide::getLobbyPacketHandles(void* dataHandle)
 		_charChoiceBuf = nullptr;
 	}
 
+	memcpy(byteDatahandle, _lobbyPlayersBuf.data(), sizeof(uint8_t) * _lobbyPlayersBuf.size());
+	offset += sizeof(uint8_t) * _lobbyPlayersBuf.size();
+
 
 	// Clean up.
 	_chatDataBuf.clear();
+	_lobbyPlayersBuf.clear();
 }
 
 void ClientSide::setFuncs(const CS_to_Plugin_Functions& funcs)

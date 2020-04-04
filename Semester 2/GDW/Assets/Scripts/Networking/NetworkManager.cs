@@ -121,8 +121,8 @@ public struct CharChoiceData
 
 struct ConnectJob : IJob
 {
-    [NativeDisableUnsafePtrRestriction]
-    public IntPtr _ip;
+    //[NativeDisableUnsafePtrRestriction]
+    //public IntPtr _ip;
 
 
 
@@ -130,7 +130,7 @@ struct ConnectJob : IJob
     {
         // Attempt to establish a connection to the server.
         NetworkManager.Connecting = true;
-        NetworkManager.connectToServer(Marshal.PtrToStringAnsi(_ip));
+        NetworkManager.connectToServer(NetworkManager.IP);
 
         Debug.Log("ConnectJob Stopped");
     }
@@ -257,7 +257,7 @@ public class NetworkManager : MonoBehaviour
     public delegate void receiveLobbyDataDelegate();
     public static receiveLobbyDataDelegate receiveLobbyData;
 
-    public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref int newTeamNameMsg, ref int newCharChoice);
+    public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref int newTeamNameMsg, ref int newCharChoice, ref int numNewPlayers);
     public getNumLobbyPacketsDelegate getNumLobbyPackets;
 
     public delegate void getLobbyPacketHandlesDelegate(IntPtr dataHandle);
@@ -274,8 +274,7 @@ public class NetworkManager : MonoBehaviour
 
     static bool _connecting = false;
 
-    [SerializeField]
-    string _ip = "127.0.0.1";
+    static string _ip = "127.0.0.1";
 
     [SerializeField]
     int _id = 0;
@@ -352,6 +351,18 @@ public class NetworkManager : MonoBehaviour
         set
         {
             _connecting = value;
+        }
+    }
+
+    public static string IP
+    {
+        get
+        {
+            return _ip;
+        }
+        set
+        {
+            _ip = value;
         }
     }
 
@@ -605,7 +616,7 @@ public class NetworkManager : MonoBehaviour
             _ip = ip;
 
             ConnectJob job = new ConnectJob();
-            job._ip = Marshal.StringToHGlobalAnsi(_ip);
+            //job._ip = Marshal.StringToHGlobalAnsi(_ip);
             connectJobHandle = job.Schedule();
 
             //_connecting = true;
@@ -1027,7 +1038,7 @@ public class NetworkManagerEditor : Editor
     SerializedProperty _intialized;
     SerializedProperty _connected;
     SerializedProperty _status;
-    SerializedProperty _ip;
+    //SerializedProperty _ip;
     SerializedProperty _id;
 
     string _entListName = "Enter Save Name Here";
@@ -1037,7 +1048,7 @@ public class NetworkManagerEditor : Editor
         _intialized = serializedObject.FindProperty("_initialized");
         _connected = serializedObject.FindProperty("_connected");
         _status = serializedObject.FindProperty("_status");
-        _ip = serializedObject.FindProperty("_ip");
+        //_ip = serializedObject.FindProperty("_ip");
         _id = serializedObject.FindProperty("_id");
     }
 
@@ -1061,8 +1072,9 @@ public class NetworkManagerEditor : Editor
         EditorGUILayout.PropertyField(_status, label);
         EditorGUI.EndDisabledGroup();
 
-        label.text = "IP Address";
-        EditorGUILayout.PropertyField(_ip, label);
+        label.text = "IP Address " + NetworkManager.IP;
+        //EditorGUILayout.PropertyField(_ip, label);
+        EditorGUILayout.LabelField(label);
 
         label.text = "Network ID";
         EditorGUILayout.PropertyField(_id, label);
