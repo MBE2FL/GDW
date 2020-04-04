@@ -463,7 +463,7 @@ public class NetworkManager : MonoBehaviour
         }
 
 
-        //DontDestroyOnLoad(this.gameObject);
+        //DontDestroyOnLoad(gameObject);
     }
 
     // Start is called before the first frame update

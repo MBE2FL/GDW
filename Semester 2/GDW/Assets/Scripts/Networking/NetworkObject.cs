@@ -179,6 +179,9 @@ public class NetworkObject : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        if (!_networkManager)
+            return;
+
         //_networkManager.onServerConnect -= onServerConnect;
         NetworkManager.onServerConnect -= onServerConnect;
 
@@ -199,6 +202,9 @@ public class NetworkObject : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (!_networkManager)
+            return;
+
         NetworkManager.onServerConnect -= onServerConnect;
 
         switch (_ownership)

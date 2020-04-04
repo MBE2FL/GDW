@@ -13,6 +13,7 @@ public class toggleMenu : MonoBehaviour
     void Start()
     {
         animator = GetComponent<Animator>();
+        _camera = Camera.main;
     }
 
     void enableMovement(bool active)
