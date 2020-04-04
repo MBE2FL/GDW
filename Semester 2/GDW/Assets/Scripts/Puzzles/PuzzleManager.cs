@@ -105,7 +105,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
             playerTime.playTime.min = minutes;
             playerTime.playTime.sec = seconds;
             gameManager[0].gameObject.GetComponent<Leaderboard>().playerTimes.Add(playerTime);
-            SceneManager.LoadScene("Leaderboard");
+            //SceneManager.LoadScene("Leaderboard");
         }
     }
 }
