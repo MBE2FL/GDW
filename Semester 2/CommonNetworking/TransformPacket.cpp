@@ -1,12 +1,12 @@
 #include "TransformPacket.h"
 
-//TransformPacket::TransformPacket(int8_t networkID, int8_t objID)
+//TransformPacket::TransformPacket(uint8_t networkID, uint8_t objID)
 //	: Packet(networkID, objID)
 //{
 //	_data[PCK_TYPE_POS] = MessageTypes::TransformMsg;
 //}
 
-TransformPacket::TransformPacket(int8_t networkID)
+TransformPacket::TransformPacket(uint8_t networkID)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = PacketTypes::TransformMsg;
@@ -27,9 +27,9 @@ void TransformPacket::deserialize(void* data)
 	memcpy(data, &_data[DATA_START_POS], sizeof(TransformData));
 }
 
-//void TransformPacket::deserialize(int8_t& objID, void* data)
+//void TransformPacket::deserialize(uint8_t& objID, void* data)
 //{
-//	//int8_t networkID = _data[NET_ID_POS];
+//	//uint8_t networkID = _data[NET_ID_POS];
 //	//objID = _data[OBJ_ID_POS];
 //
 //

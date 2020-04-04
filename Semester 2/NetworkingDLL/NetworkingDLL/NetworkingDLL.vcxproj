@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\CommonNetworking\AnimPacket.h" />
+    <ClInclude Include="..\..\CommonNetworking\CharChoicePacket.h" />
     <ClInclude Include="..\..\CommonNetworking\ChatPacket.h" />
     <ClInclude Include="..\..\CommonNetworking\EntityPacket.h" />
     <ClInclude Include="..\..\CommonNetworking\Packet.h" />
@@ -162,6 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\CommonNetworking\AnimPacket.cpp" />
+    <ClCompile Include="..\..\CommonNetworking\CharChoicePacket.cpp" />
     <ClCompile Include="..\..\CommonNetworking\ChatPacket.cpp" />
     <ClCompile Include="..\..\CommonNetworking\EntityPacket.cpp" />
     <ClCompile Include="..\..\CommonNetworking\Packet.cpp" />

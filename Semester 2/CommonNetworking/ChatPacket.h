@@ -3,7 +3,7 @@
 
 struct ChatData : PacketData
 {
-	int8_t _msgSize;
+	uint8_t _msgSize;
 	//const char* _msg;
 	char* _msg;
 	//char _msg[256];
@@ -12,8 +12,8 @@ struct ChatData : PacketData
 class ChatPacket : public Packet
 {
 public:
-	ChatPacket(int8_t networkID);
-	ChatPacket(PacketTypes pckType, int8_t networkID);
+	ChatPacket(uint8_t networkID);
+	ChatPacket(PacketTypes pckType, uint8_t networkID);
 	ChatPacket(char data[BUF_LEN]);
 	virtual void serialize(void* data) override;
 	virtual void deserialize(void* data) override;

@@ -18,6 +18,7 @@
 #include "EntityPacket.h"
 #include "ScorePacket.h"
 #include "ChatPacket.h"
+#include "CharChoicePacket.h"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -46,7 +47,7 @@ using std::copy;
 using std::clock;
 
 
-enum ConnectionStatus : int8_t
+enum ConnectionStatus : uint8_t
 {
 	Connected,
 	Connecting,
@@ -82,7 +83,7 @@ public:
 
 	void connectToServer(const char* ip);
 	void processConnectAttempt(PacketTypes pckType, char buf[BUF_LEN]);
-	ConnectionStatus queryConnectAttempt(int& id);
+	void queryConnectAttempt(int& id, ConnectionStatus& status);
 
 	PacketTypes queryEntityRequest();
 	bool sendStarterEntities(EntityData* entities, int numEntities);
@@ -105,7 +106,7 @@ public:
 
 
 	void receiveLobbyData();
-	void getNumLobbyPackets(int& numMsgs, bool& newTeamNameMsg);
+	void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice);
 	void getLobbyPacketHandles(void* dataHandle);
 
 
@@ -120,16 +121,16 @@ private:
 	SOCKET _clientTCPsocket;
 	addrinfo* _ptr = nullptr;
 	string _serverIP = "";
-	int8_t _networkID = NULL;
+	uint8_t _networkID = NULL;
 	int totalConnectAttemptTime;
 	ConnectionStatus _status = Disconected;
 
 
-	unordered_map<PacketTypes, unordered_map<int8_t, Packet*>> _udpPacketBuf = unordered_map<PacketTypes, unordered_map<int8_t, Packet*>>();
-	unordered_map<PacketTypes, unordered_map<int8_t, vector<PacketData>>> _tcpPacketBuf = unordered_map<PacketTypes, unordered_map<int8_t, vector<PacketData>>>();
+	unordered_map<PacketTypes, unordered_map<uint8_t, Packet*>> _udpPacketBuf = unordered_map<PacketTypes, unordered_map<uint8_t, Packet*>>();
+	unordered_map<PacketTypes, unordered_map<uint8_t, vector<PacketData>>> _tcpPacketBuf = unordered_map<PacketTypes, unordered_map<uint8_t, vector<PacketData>>>();
 
 	EntityData* _receivedEntitiesBuf = nullptr;
-	int8_t _numEntitiesReceived = 0;
+	uint8_t _numEntitiesReceived = 0;
 
 
 	vector<TransformData> _transDataBuf;
@@ -138,8 +139,9 @@ private:
 
 
 	int _numScores = 0;
-	ScoreData* _scoresBuf;
+	ScoreData* _scoresBuf = nullptr;
 
 	vector<ChatData> _chatDataBuf;
-	ChatData* _teamNameBuf;
+	ChatData* _teamNameBuf = nullptr;
+	CharChoiceData* _charChoiceBuf = nullptr;
 };

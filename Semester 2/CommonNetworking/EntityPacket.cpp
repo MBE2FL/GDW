@@ -1,18 +1,18 @@
 #include "EntityPacket.h"
 
-//EntityPacket::EntityPacket(int8_t networkID, int8_t objID)
+//EntityPacket::EntityPacket(uint8_t networkID, uint8_t objID)
 //	: Packet(networkID, objID)
 //{
 //	_data[PCK_TYPE_POS] = MessageTypes::EntitiesStart;
 //}
 
-EntityPacket::EntityPacket(int8_t networkID)
+EntityPacket::EntityPacket(uint8_t networkID)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = PacketTypes::EntitiesStart;
 }
 
-EntityPacket::EntityPacket(PacketTypes pckType, int8_t networkID, int8_t numEntities)
+EntityPacket::EntityPacket(PacketTypes pckType, uint8_t networkID, uint8_t numEntities)
 	: Packet(networkID)
 {
 	_data[PCK_TYPE_POS] = pckType;
@@ -29,7 +29,7 @@ void EntityPacket::serialize(void* data)
 	memcpy(&_data[DATA_START_POS + 1], data, sizeof(EntityData) * _data[DATA_START_POS]);
 }
 
-//void EntityPacket::deserialize(int8_t& numEntities, void* data)
+//void EntityPacket::deserialize(uint8_t& numEntities, void* data)
 //{
 //	memcpy(data, &_data[DATA_START_POS + 1], sizeof(EntityData) * numEntities);
 //}
@@ -39,7 +39,7 @@ void EntityPacket::deserialize(void* data)
 	memcpy(data, &_data[DATA_START_POS + 1], sizeof(EntityData) * _data[DATA_START_POS]);
 }
 
-int8_t EntityPacket::getNumEntities() const
+uint8_t EntityPacket::getNumEntities() const
 {
 	return _data[DATA_START_POS];
 }

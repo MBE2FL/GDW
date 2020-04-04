@@ -1,22 +1,57 @@
 #include "Server.h"
 
-int8_t Server::_clientIDs = 0;
+uint8_t Server::_clientIDs = 0;
 
 
 Server::Server()
 {
+	// Reserve space for clients.
 	_clients.reserve(MAX_CLIENTS);
-	//_clientTCPSockets.reserve(MAX_CLIENTS);
 	_softConnectClients.reserve(MAX_CLIENTS);
 
+	// Read in all saved scores.
 	_scoreboard = Scoreboard();
 	_scoreboard.Read();
+}
+
+Server::~Server()
+{
+	// Stop all threads and wait for them all stop.
+	_stopThreads = true;
+	_listenForConnections.join();
+	_udpThread.join();
+	_tcpSoftThread.join();
+	_tcpThread.join();
+
+	// Clean up all clients.
+	for (Client* client : _softConnectClients)
+	{
+		delete client;
+	}
+	_softConnectClients.clear();
+
+	for (Client* client : _clients)
+	{
+		delete client;
+	}
+	_clients.clear();
 
 
+	// Clean up UDP connection info buffer.
+	delete _udpListenInfoBuf;
+	_udpListenInfoBuf = nullptr;
 
-	_cc = CustomConsole::getInstance();
-	//_cc->clearColour();
-	//_cc->writeToStatus(_clients.size() + _softConnectClients.size());
+	// Clean up team name buffer.
+	if (_teamNameBuf)
+	{
+		delete[] _teamNameBuf;
+		_teamNameBuf = nullptr;
+	}
+
+	// Network cleanup
+	closesocket(_serverTCP_socket);
+	freeaddrinfo(_ptr);
+	WSACleanup();
 }
 
 bool Server::initNetwork() {
@@ -142,7 +177,7 @@ bool Server::initTCP()
 void Server::listenForConnections()
 {
 	// Only listen for connections while the server is not full.
-	while (_clients.size() != MAX_CLIENTS)
+	while ((_clients.size() != MAX_CLIENTS) && !_stopThreads)
 	{
 		cout << "Listening for clients..." << endl;
 
@@ -273,6 +308,57 @@ void Server::listenForConnections()
 
 		delete _udpListenInfoBuf;
 		_udpListenInfoBuf = nullptr;
+
+		// Iff there is a buffered team name, then send it to the new client.
+		if (_teamNameBuf)
+		{
+			ChatPacket packet = ChatPacket(PacketTypes::LobbyTeamName, SERVER_ID);
+			ChatData chatData = ChatData();
+			chatData._entityID = SERVER_ID;
+			chatData._msg = _teamNameBuf;
+			chatData._msgSize = strlen(_teamNameBuf);
+			packet.serialize(&chatData);
+
+			if (send(clientSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+			{
+				printf("Failed to send team name to client %d\n", WSAGetLastError());
+				closesocket(clientSocket);
+				freeaddrinfo(_ptr);
+				WSACleanup();
+				system("pause");
+				return;
+			}
+		}
+
+		// Iff there is a buffered team name, then send it to the new client.
+		CharacterChoices charChoice;
+		Client* otherClient;
+		for (int i = 0; i < _softConnectClients.size(); ++i)
+		{
+			otherClient = _softConnectClients[i];
+			charChoice = otherClient->_charChoice;
+
+			// Don't send back to the same client who sent the data, or if their choice was nothing.
+			if ((client->_id == otherClient->_id) || (charChoice == CharacterChoices::NoChoice))
+			{
+				continue;
+			}
+
+			CharChoiceData charChoiceData = CharChoiceData();
+			charChoiceData._charChoice = otherClient->_charChoice;
+			CharChoicePacket packet = CharChoicePacket(otherClient->_id);
+			packet.serialize(&charChoiceData);
+
+			if (send(otherClient->_tcpSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+			{
+				printf("Failed to send character choice to client %d\n", WSAGetLastError());
+				closesocket(otherClient->_tcpSocket);
+				freeaddrinfo(_ptr);
+				WSACleanup();
+				system("pause");
+				return;
+			}
+		}
 	}
 }
 
@@ -305,7 +391,7 @@ void Server::processStarterEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 {
 	// Requested Entities received.
 	EntityPacket packet = EntityPacket(buf);
-	int8_t numEntities = packet.getNumEntities();
+	uint8_t numEntities = packet.getNumEntities();
 	EntityData* entityData = new EntityData[numEntities];
 
 	packet.deserialize(entityData);
@@ -313,8 +399,8 @@ void Server::processStarterEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 
 	if (numEntities > 0)
 	{
-		int8_t* entityIDs = new int8_t[numEntities];
-		int8_t currEID = _entities.size();
+		uint8_t* entityIDs = new uint8_t[numEntities];
+		uint8_t currEID = _entities.size();
 
 		// Generate IDs for the number entities requested. 
 		for (int i = 0; i < numEntities; ++i)
@@ -376,7 +462,7 @@ void Server::processRequiredEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 {
 	// Required Entities received.
 	EntityPacket packet = EntityPacket(buf);
-	int8_t numEntities = packet.getNumEntities();
+	uint8_t numEntities = packet.getNumEntities();
 	EntityData* entityData = new EntityData[numEntities];
 
 	packet.deserialize(entityData);
@@ -384,8 +470,8 @@ void Server::processRequiredEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 
 	if (numEntities > 0)
 	{
-		int8_t* entityIDs = new int8_t[numEntities];
-		int8_t currEID = _entities.size();
+		uint8_t* entityIDs = new uint8_t[numEntities];
+		uint8_t currEID = _entities.size();
 
 		// Generate IDs for the number entities requested. 
 		for (int i = 0; i < numEntities; ++i)
@@ -484,7 +570,7 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 
 	// Reveive transform updates from players.
 	// Retrieve network id of incomming message.
-	int8_t networkID = buf[NET_ID_POS];
+	uint8_t networkID = buf[NET_ID_POS];
 
 	cout << "Trans Packet: " << "ID: " << static_cast<int>(networkID) << endl;
 
@@ -514,7 +600,7 @@ void Server::processAnim(char buf[BUF_LEN], SOCKET* socket)
 
 	// Reveive anim updates from players.
 	// Retrieve network id of incomming message.
-	int8_t networkID = buf[NET_ID_POS];
+	uint8_t networkID = buf[NET_ID_POS];
 
 
 	// Extract data (FOR DEBUG ONLY).
@@ -548,7 +634,7 @@ void Server::processAnim(char buf[BUF_LEN], SOCKET* socket)
 void Server::processScore(char buf[BUF_LEN])
 {
 	ScorePacket packet = ScorePacket(buf);
-	int8_t numScores = packet.getNumScores();
+	uint8_t numScores = packet.getNumScores();
 	ScoreData scoreData;
 
 	packet.deserialize(&scoreData);
@@ -561,7 +647,7 @@ void Server::processScore(char buf[BUF_LEN])
 void Server::processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket)
 {
 	vector<PlayerTime> times = _scoreboard.getTimes();
-	int8_t netID = buf[NET_ID_POS];
+	uint8_t netID = buf[NET_ID_POS];
 	ScorePacket packet = ScorePacket(netID, times.size());
 
 	vector<ScoreData> dataBuf = vector<ScoreData>(times.size());
@@ -582,7 +668,7 @@ void Server::processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket)
 void Server::processChat(char buf[BUF_LEN])
 {
 	// Retrieve network id of incomming message.
-	int8_t networkID = buf[NET_ID_POS];
+	uint8_t networkID = buf[NET_ID_POS];
 
 
 	// Extract data (FOR DEBUG ONLY).
@@ -617,15 +703,22 @@ void Server::processChat(char buf[BUF_LEN])
 void Server::processTeamName(char buf[BUF_LEN])
 {
 	// Retrieve network id of incomming message.
-	int8_t networkID = buf[NET_ID_POS];
+	uint8_t networkID = buf[NET_ID_POS];
 
 
-	// Extract data (FOR DEBUG ONLY).
+	// Extract data.
 	ChatData chatData;
 	ChatPacket packet = ChatPacket(buf);
 	packet.deserialize(&chatData);
 	cout << "Received team name msg from " << static_cast<int>(networkID) << ": " << chatData._msg << endl;
-	delete[] chatData._msg;
+
+	// Save team name and send to new clients, upon connection.
+	if (_teamNameBuf)
+	{
+		delete[] _teamNameBuf;
+		_teamNameBuf = nullptr;
+	}
+	_teamNameBuf = chatData._msg;
 
 
 	// Send data to all other clients.
@@ -649,6 +742,42 @@ void Server::processTeamName(char buf[BUF_LEN])
 	}
 }
 
+void Server::processCharChoice(char buf[BUF_LEN])
+{
+	// Retrieve network id of incomming message.
+	uint8_t networkID = buf[NET_ID_POS];
+
+
+	// Extract data (FOR DEBUG ONLY).
+	CharChoicePacket packet = CharChoicePacket(buf);
+	CharChoiceData charChoiceData = CharChoiceData();
+	packet.deserialize(&charChoiceData);
+	cout << "Received character choice from " << static_cast<int>(networkID) << ": " << static_cast<int>(charChoiceData._charChoice) << endl;
+
+
+	// Send data to all other clients.
+	Client* client;
+	vector<Client*>::const_iterator it;
+	for (it = _softConnectClients.cbegin(); it != _softConnectClients.cend(); ++it)
+	{
+		client = *it;
+
+		// Don't send back to the same client who sent the data.
+		if (client->_id == networkID)
+		{
+			// Save the client's character choice.
+			client->_charChoice = charChoiceData._charChoice;
+			continue;
+		}
+
+		// Send data to other clients.
+		if (send(client->_tcpSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			printf("Failed to send chat data. %d\n", WSAGetLastError());
+		}
+	}
+}
+
 void Server::update()
 {
 	////////////////////
@@ -664,8 +793,9 @@ void Server::update()
 	//cout << "Update thread done" << endl;
 }
 
-void Server::initUpdateThreads()
+void Server::initThreads()
 {
+	_listenForConnections = thread(&Server::listenForConnections, this);
 	_udpThread = thread(&Server::udpUpdate, this);
 	_tcpSoftThread = thread(&Server::tcpSoftUpdate, this);
 	_tcpThread = thread(&Server::tcpUpdate, this);
@@ -675,7 +805,7 @@ void Server::udpUpdate()
 {
 	cout << "UDP Update Listening" << endl;
 
-	while (true)
+	while (!_stopThreads)
 	{
 		char buf[BUF_LEN];
 		//char* buf = new char[BUF_LEN];
@@ -734,7 +864,7 @@ void Server::tcpSoftUpdate()
 	timeout.tv_sec = 1;
 	timeout.tv_usec = 0;
 
-	while (_clients.size() != MAX_CLIENTS)
+	while ((_clients.size() != MAX_CLIENTS) && !_stopThreads)
 	{
 		// Skip handling new connections if no new clients are connecting.
 		if (_softConnectClients.empty())
@@ -810,6 +940,9 @@ void Server::tcpSoftUpdate()
 				case LobbyTeamName:
 					processTeamName(buf);
 					break;
+				case LobbyCharChoice:
+					processCharChoice(buf);
+					break;
 				default:
 					break;
 				}
@@ -843,7 +976,7 @@ void Server::tcpUpdate()
 	timeout.tv_sec = 1;
 	timeout.tv_usec = 0;
 
-	while (true)
+	while (!_stopThreads)
 	{
 		// Skip handling connected clients, if none are connected.
 		if (_clients.empty())

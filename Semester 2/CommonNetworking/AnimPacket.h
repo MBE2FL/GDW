@@ -11,11 +11,11 @@ struct AnimData : PacketData
 class AnimPacket : public Packet
 {
 public:
-	//AnimPacket(int8_t networkID, int8_t objID);
-	AnimPacket(int8_t networkID);
+	//AnimPacket(uint8_t networkID, uint8_t objID);
+	AnimPacket(uint8_t networkID);
 	AnimPacket(char data[BUF_LEN]);
 	virtual void serialize(void* data) override;
-	//virtual void deserialize(int8_t& objID, void* data) override;
+	//virtual void deserialize(uint8_t& objID, void* data) override;
 	virtual void deserialize(void* data) override;
 
 private:

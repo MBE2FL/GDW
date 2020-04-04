@@ -18,12 +18,12 @@ struct ScoreData : PacketData
 class ScorePacket : public Packet
 {
 public:
-	ScorePacket(int8_t networkID);
-	ScorePacket(int8_t networkID, int8_t numScores);
+	ScorePacket(uint8_t networkID);
+	ScorePacket(uint8_t networkID, uint8_t numScores);
 	ScorePacket(char data[BUF_LEN]);
 	virtual void serialize(void* data) override;
 	virtual void deserialize(void* data) override;
-	int8_t getNumScores() const;
+	uint8_t getNumScores() const;
 
 private:
 	ScorePacket() {};

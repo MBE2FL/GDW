@@ -19,9 +19,9 @@
 #include "TransformPacket.h"
 #include "EntityPacket.h"
 #include "AnimPacket.h"
-#include "CustomConsole.h"
 #include "ScorePacket.h"
 #include "ChatPacket.h"
+#include "CharChoicePacket.h"
 #include <ctime>
 
 //#include <algorithm>
@@ -42,7 +42,6 @@ using std::clock;
 #define PORT "5000"
 #define BUF_LEN 512
 #define MAX_CLIENTS 2
-#define MAX_TIMEOUTS 4
 #define MAX_CONNECT_ATTEMPT_TIME 3.0f
 
 
@@ -50,10 +49,11 @@ struct Client
 {
 	string _ip = "";
 	bool _connected = false;
-	int8_t _id = NULL;
+	uint8_t _id = NULL;
 	sockaddr_in _udpSockAddr;
 	int _udpSockAddrLen = -1;
 	SOCKET _tcpSocket = NULL;
+	CharacterChoices _charChoice = NoChoice;
 };
 
 
@@ -62,6 +62,7 @@ class Server
 {
 public:
 	Server();
+	~Server();
 
 	bool initNetwork();
 	bool initUDP();
@@ -80,21 +81,24 @@ public:
 	void processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket);
 	void processChat(char buf[BUF_LEN]);
 	void processTeamName(char buf[BUF_LEN]);
+	void processCharChoice(char buf[BUF_LEN]);
 
 	void update();
-	void initUpdateThreads();
+	void initThreads();
 	void udpUpdate();
 	void tcpSoftUpdate();
 	void tcpUpdate();
 
 
 private:
-	static int8_t _clientIDs;
+	static uint8_t _clientIDs;
 	vector<Client*> _clients;
 	vector<Client*> _softConnectClients;
+	thread _listenForConnections;
 	thread _udpThread;
 	thread _tcpSoftThread;
 	thread _tcpThread;
+	bool _stopThreads = false;
 	vector<EntityData> _entities;
 
 	bool _gameStarted = false;
@@ -102,13 +106,9 @@ private:
 	SOCKET _serverUDP_socket = NULL;
 	SOCKET _serverTCP_socket = NULL;
 	addrinfo* _ptr = nullptr;
-	//vector<SOCKET*> _clientTCPSockets;
 
 	sockaddr_in* _udpListenInfoBuf;
-
+	char* _teamNameBuf = nullptr;
 
 	Scoreboard _scoreboard;
-
-
-	CustomConsole* _cc;
 };

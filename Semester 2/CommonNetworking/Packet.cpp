@@ -3,7 +3,7 @@
 #include "AnimPacket.h"
 
 
-//Packet::Packet(int8_t networkID, int8_t objID)
+//Packet::Packet(uint8_t networkID, uint8_t objID)
 //{
 //	memset(_data, 0, BUF_LEN);
 //
@@ -11,7 +11,7 @@
 //	_data[EID_POS] = objID;
 //}
 
-Packet::Packet(int8_t networkID)
+Packet::Packet(uint8_t networkID)
 {
 	memset(_data, 0, BUF_LEN);
 
@@ -22,7 +22,7 @@ Packet::~Packet()
 {
 }
 
-int8_t Packet::getEID() const
+uint8_t Packet::getEID() const
 {
 	return _data[DATA_START_POS];
 }
