@@ -88,12 +88,12 @@ public class minigame: MonoBehaviour
                     {
                         Debug.Log("ye did it");
                         stage++;
-                        hitBar.transform.localScale = new Vector3(hitBar.transform.localScale.x - 0.25f, 1,1);
+                        hitBar.transform.localScale = new Vector3(hitBar.transform.localScale.x - 0.25f, 0.84f,1);
                     }
                     else if(stage != 1)//if only 1 player or both dont get it in the bar goes bar to previous size(unless 1st stage)
                     {
                         stage--;
-                        hitBar.transform.localScale = new Vector3(hitBar.transform.localScale.x + 0.25f, 1, 1);
+                        hitBar.transform.localScale = new Vector3(hitBar.transform.localScale.x + 0.25f, 0.84f, 1);
                     }
 
                     //checks if players have beat minigame

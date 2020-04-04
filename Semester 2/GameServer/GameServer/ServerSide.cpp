@@ -10,7 +10,6 @@ Server::Server()
 	_softConnectClients.reserve(MAX_CLIENTS);
 
 	// Read in all saved scores.
-	_scoreboard = Scoreboard();
 	_scoreboard.Read();
 }
 

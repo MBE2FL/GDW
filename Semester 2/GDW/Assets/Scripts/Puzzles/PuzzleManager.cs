@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PuzzleManager : MonoBehaviour, IObserver
 {
@@ -51,7 +52,7 @@ public class PuzzleManager : MonoBehaviour, IObserver
         
         seconds = sec % 60;
         //Debug.Log("Seconds: " + seconds + " Minutes: " + minutes);
-        GetComponent<PortalManager>().activatePortals();
+        //GetComponent<PortalManager>().activatePortals();
         if (_currPuzzles == _puzzles.Count)
         {
             // Activate portal;
@@ -99,10 +100,12 @@ public class PuzzleManager : MonoBehaviour, IObserver
             GetComponent<PortalManager>().activatePortals();
             var gameManager = GameObject.FindObjectsOfType<GameManager>();
             PlayerTime playerTime;
-            playerTime.name = "";
+            
+            playerTime.name = gameManager[0].gameObject.GetComponent<Lobby>().getTeamName();
             playerTime.playTime.min = minutes;
             playerTime.playTime.sec = seconds;
-            gameManager[0].GetComponent<Leaderboard>().playerTimes.Add(playerTime);
+            gameManager[0].gameObject.GetComponent<Leaderboard>().playerTimes.Add(playerTime);
+            SceneManager.LoadScene("Leaderboard");
         }
     }
 }

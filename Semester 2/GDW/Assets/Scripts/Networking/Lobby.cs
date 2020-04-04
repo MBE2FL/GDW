@@ -49,6 +49,13 @@ public class Lobby : MonoBehaviour
     bool _inLobby = true;
     CharacterChoices _charChoice = CharacterChoices.NoChoice;
 
+    string teamName = "";
+
+    public string getTeamName()
+    {
+        return teamName;
+    }
+
     public string IPAddr
     {
         get
