@@ -70,15 +70,15 @@ PLUGIN_OUT void queryEntityRequest(PacketTypes& query)
 	return cs.queryEntityRequest(query);
 }
 
-PLUGIN_OUT PacketTypes sendStarterEntities(EntityData* entities, int numEntities)
-{
-	return cs.sendStarterEntities(entities, numEntities);
-}
-
-PLUGIN_OUT PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities)
-{
-	return cs.sendRequiredEntities(entities, numEntities, numServerEntities);
-}
+//PLUGIN_OUT PacketTypes sendStarterEntities(EntityData* entities, int numEntities)
+//{
+//	return cs.sendStarterEntities(entities, numEntities);
+//}
+//
+//PLUGIN_OUT PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities)
+//{
+//	return cs.sendRequiredEntities(entities, numEntities, numServerEntities);
+//}
 
 PLUGIN_OUT PacketTypes sendEntities(EntityData* entities, int& numEntities)
 {

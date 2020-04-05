@@ -87,8 +87,8 @@ public:
 	void queryConnectAttempt(int& id, ConnectionStatus& status);
 
 	void queryEntityRequest(PacketTypes& query);
-	PacketTypes sendStarterEntities(EntityData* entities, int numEntities);
-	PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
+	//PacketTypes sendStarterEntities(EntityData* entities, int numEntities);
+	//PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
 	PacketTypes sendEntities(EntityData* entities, int& numEntities);
 	void getServerEntities(EntityData* serverEntities, int& numServerEntities);
 
@@ -148,7 +148,8 @@ private:
 
 	PacketTypes _entityQueryBuf = PacketTypes::EmptyMsg;
 	char _entityIDsBuf[BUF_LEN];
-	char _entityUpdatesBuf[BUF_LEN];
+	//char _entityUpdatesBuf[BUF_LEN];
+	vector<EntityData> _entityUpdatesBuf;
 	//EntityData* _receivedEntitiesBuf = nullptr;
 	//uint8_t _numEntitiesReceived = 0;
 	bool _inLobby = true;

@@ -25,8 +25,8 @@ extern "C"
 	PLUGIN_OUT void connectToServer(const char* ip);
 	PLUGIN_OUT void queryConnectAttempt(int& id, ConnectionStatus& status);
 	PLUGIN_OUT void queryEntityRequest(PacketTypes& query);
-	PLUGIN_OUT PacketTypes sendStarterEntities(EntityData* entities, int numEntities);
-	PLUGIN_OUT PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
+	//PLUGIN_OUT PacketTypes sendStarterEntities(EntityData* entities, int numEntities);
+	//PLUGIN_OUT PacketTypes sendRequiredEntities(EntityData* entities, int& numEntities, int& numServerEntities);
 	PLUGIN_OUT PacketTypes sendEntities(EntityData* entities, int& numEntities);
 	PLUGIN_OUT void getServerEntities(EntityData* serverEntities, int& numServerEntities);
 

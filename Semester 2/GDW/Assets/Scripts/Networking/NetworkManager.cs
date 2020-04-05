@@ -215,11 +215,11 @@ public class NetworkManager : MonoBehaviour
     public delegate void queryEntityRequestDelegate(ref PacketTypes query);
     public static queryEntityRequestDelegate queryEntityRequest;
 
-    public delegate PacketTypes sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
-    public static sendStarterEntitiesDelegate sendStarterEntities;
+    //public delegate PacketTypes sendStarterEntitiesDelegate(IntPtr entities, int numEntities);
+    //public static sendStarterEntitiesDelegate sendStarterEntities;
 
-    public delegate PacketTypes sendRequiredEntitiesDelegate(IntPtr entities, ref int numEntities, ref int numServerEntities);
-    public static sendRequiredEntitiesDelegate sendRequiredEntities;
+    //public delegate PacketTypes sendRequiredEntitiesDelegate(IntPtr entities, ref int numEntities, ref int numServerEntities);
+    //public static sendRequiredEntitiesDelegate sendRequiredEntities;
 
     public delegate PacketTypes sendEntitiesDelegate(IntPtr entities, ref int numEntities);
     public static sendEntitiesDelegate sendEntities;
@@ -408,8 +408,8 @@ public class NetworkManager : MonoBehaviour
         connectToServer = ManualPluginImporter.GetDelegate<connectToServerDelegate>(_pluginHandle, "connectToServer");
         queryConnectAttempt = ManualPluginImporter.GetDelegate<queryConnectAttemptDelegate>(_pluginHandle, "queryConnectAttempt");
         queryEntityRequest = ManualPluginImporter.GetDelegate<queryEntityRequestDelegate>(_pluginHandle, "queryEntityRequest");
-        sendStarterEntities = ManualPluginImporter.GetDelegate<sendStarterEntitiesDelegate>(_pluginHandle, "sendStarterEntities");
-        sendRequiredEntities = ManualPluginImporter.GetDelegate<sendRequiredEntitiesDelegate>(_pluginHandle, "sendRequiredEntities");
+        //sendStarterEntities = ManualPluginImporter.GetDelegate<sendStarterEntitiesDelegate>(_pluginHandle, "sendStarterEntities");
+        //sendRequiredEntities = ManualPluginImporter.GetDelegate<sendRequiredEntitiesDelegate>(_pluginHandle, "sendRequiredEntities");
         sendEntities = ManualPluginImporter.GetDelegate<sendEntitiesDelegate>(_pluginHandle, "sendEntities");
         getServerEntities = ManualPluginImporter.GetDelegate<getServerEntitiesDelegate>(_pluginHandle, "getServerEntities");
 
