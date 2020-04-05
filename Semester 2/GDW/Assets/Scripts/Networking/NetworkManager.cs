@@ -832,11 +832,11 @@ public class NetworkManager : MonoBehaviour
 
         _lobby.stopLobby();
 
-        //ReceiveTCPJob receiveTCPJob = new ReceiveTCPJob();
-        //receiveTCPJobHandle = receiveTCPJob.Schedule();
+        ReceiveTCPJob receiveTCPJob = new ReceiveTCPJob();
+        receiveTCPJobHandle = receiveTCPJob.Schedule();
 
-        //ReceiveUDPJob receiveUDPJob = new ReceiveUDPJob();
-        //receiveUDPJobHandle = receiveUDPJob.Schedule();
+        ReceiveUDPJob receiveUDPJob = new ReceiveUDPJob();
+        receiveUDPJobHandle = receiveUDPJob.Schedule();
     }
 
     void sendEntitiesToServer(List<EntityData> entityData, int numEntities)
