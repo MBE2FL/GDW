@@ -35,7 +35,7 @@ extern "C"
 
 	PLUGIN_OUT void receiveUDPData();
 	PLUGIN_OUT void receiveTCPData();
-	PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements);
+	PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements, int& ownershipDataElements);
 	PLUGIN_OUT void getPacketHandles(void* dataHandle);
 
 
@@ -49,6 +49,10 @@ extern "C"
 	PLUGIN_OUT void stopLobbyReceive();
 	PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers);
 	PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle);
+	PLUGIN_OUT void clearLobbyBuffers();
+
+
+	PLUGIN_OUT void setOwnership(uint8_t EID, Ownership ownership);
 
 #ifdef __cplusplus
 }

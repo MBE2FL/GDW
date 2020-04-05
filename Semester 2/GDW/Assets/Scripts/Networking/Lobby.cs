@@ -13,6 +13,12 @@ struct ReceiveMsgJob : IJob
         while (!Lobby._stopJob && !NetworkManager.stopJobs)
         {
             NetworkManager.receiveLobbyData();
+
+            if (NetworkManager.ClearBuffers)
+            {
+                NetworkManager.clearLobbyBuffers();
+                NetworkManager.ClearBuffers = false;
+            }
         }
 
         Debug.Log("ReceiveMsgJob Stopped");

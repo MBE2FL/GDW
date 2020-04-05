@@ -4,7 +4,7 @@
 
 struct AnimData : PacketData
 {
-	int _state;
+	float _state;
 };
 
 

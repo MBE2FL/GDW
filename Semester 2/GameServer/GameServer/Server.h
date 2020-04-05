@@ -83,6 +83,7 @@ public:
 	void processChat(char buf[BUF_LEN]);
 	void processTeamName(char buf[BUF_LEN]);
 	void processCharChoice(char buf[BUF_LEN]);
+	void processOwnershipChange(char buf[BUF_LEN]);
 
 	void update();
 	void initThreads();

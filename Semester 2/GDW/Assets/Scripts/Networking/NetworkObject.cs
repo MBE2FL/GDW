@@ -91,7 +91,7 @@ public class NetworkObject : MonoBehaviour
 
     Animator _animator;
     Rigidbody _rigidBody;
-    int _prevAnimState = -1;
+    float _prevAnimState = -1.0f;
     
 
     public byte EID
@@ -233,6 +233,39 @@ public class NetworkObject : MonoBehaviour
         Debug.Log("Network Object Ready: " + _ownership);
     }
 
+    public void setOwnership(Ownership ownership)
+    {
+        switch (_ownership)
+        {
+            case Ownership.ClientOwned:
+                _networkManager.onDataSend -= sendData;
+                break;
+            case Ownership.OtherClientOwned:
+                _networkManager.onDataReceive -= receiveData;
+                break;
+            default:
+                _networkManager.onDataSend -= sendData;
+                _networkManager.onDataReceive -= receiveData;
+                break;
+        }
+
+        _ownership = ownership;
+
+        switch (_ownership)
+        {
+            case Ownership.ClientOwned:
+                _networkManager.onDataSend += sendData;
+                break;
+            case Ownership.OtherClientOwned:
+                _networkManager.onDataReceive += receiveData;
+                break;
+            default:
+                _networkManager.onDataSend += sendData;
+                _networkManager.onDataReceive += receiveData;
+                break;
+        }
+    }
+
     void sendData()
     {
         // Send all packet types.
@@ -255,9 +288,10 @@ public class NetworkObject : MonoBehaviour
             //    _oldRotation = transform.rotation;
             //}
 
-            int state = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+            //int state = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+            float state = _animator.GetFloat("speed");
 
-            if (_prevAnimState != state)
+            if (Mathf.Approximately(_prevAnimState, state))
             {
                 //Debug.Log("EID " + _EID + " Anim State: " + state);
                 _prevAnimState = state;
@@ -295,9 +329,9 @@ public class NetworkObject : MonoBehaviour
             // Send animation packets.
             else if ((_packetOptions & PacketOptions.Anim) == PacketOptions.Anim)
             {
-                int state = _animator.GetCurrentAnimatorStateInfo(0).tagHash;
-                
-                if (_prevAnimState != state)
+                float state = _animator.GetFloat("speed");
+
+                if (Mathf.Approximately(_prevAnimState, state))
                 {
                     Debug.Log("EID " + _EID + " Anim State: " + state);
                     _prevAnimState = state;

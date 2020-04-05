@@ -12,6 +12,13 @@ public class PickUp : MonoBehaviour
 
     private bool holdingObject = false;
 
+    NetworkObject _netObj;
+
+    private void Awake()
+    {
+        _netObj = GetComponent<NetworkObject>();
+    }
+
     bool objectDetection()
     {
         rayPos = new Vector3(transform.position.x, transform.position.y + 0.2f, transform.position.z);
@@ -51,6 +58,13 @@ public class PickUp : MonoBehaviour
             interactingObject = null;
             holdingObject = false;
             Physics.IgnoreLayerCollision(9, 11, false);
+
+
+            if (_netObj)
+            {
+                _netObj.setOwnership(Ownership.ServerOwned);
+                NetworkManager.setOwnership(_netObj.EID, Ownership.ServerOwned);
+            }
         }
         else if (Input.GetKeyDown(KeyCode.E) && objectDetection() /*|| Input.GetButtonDown("Fire3") && objectDetection()*/)
         {
@@ -67,6 +81,13 @@ public class PickUp : MonoBehaviour
             interRB.isKinematic = true;
             holdingObject = true;
             Physics.IgnoreLayerCollision(9, 11, true);
+
+
+            if (_netObj)
+            {
+                _netObj.setOwnership(Ownership.ClientOwned);
+                NetworkManager.setOwnership(_netObj.EID, Ownership.ClientOwned);
+            }
         }
     }
 }

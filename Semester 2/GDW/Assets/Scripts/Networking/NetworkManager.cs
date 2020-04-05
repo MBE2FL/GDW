@@ -58,7 +58,8 @@ public enum PacketTypes : byte
     ClientScoresRequest,
     LobbyChat,
     LobbyTeamName,
-    LobbyCharChoice
+    LobbyCharChoice,
+    OwnershipChange
 }
 
 public enum ConnectionStatus : byte
@@ -91,7 +92,7 @@ public struct TransformData
 public struct AnimData
 {
     public byte _EID;
-    public int _state;
+    public float _state;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -118,6 +119,13 @@ public struct CharChoiceData
     public byte _EID;
     public CharacterChoices _charChoice;
 };
+
+[StructLayout(LayoutKind.Sequential)]
+public struct OwnershipData
+{
+    public byte _EID;
+    public Ownership _ownership;
+}
 
 
 
@@ -239,7 +247,7 @@ public class NetworkManager : MonoBehaviour
     public delegate void receiveTCPDataDelegate();
     public static receiveTCPDataDelegate receiveTCPData;
 
-    public delegate void getPacketHandleSizesDelegate(ref int transDataElements, ref int animDataElements, ref int entityDataElements);
+    public delegate void getPacketHandleSizesDelegate(ref int transDataElements, ref int animDataElements, ref int entityDataElements, ref int ownershipDataElements);
     public getPacketHandleSizesDelegate getPacketHandleSizes;
 
     public delegate void getPacketHandlesDelegate(IntPtr dataHandle);
@@ -270,6 +278,13 @@ public class NetworkManager : MonoBehaviour
 
     public delegate void getLobbyPacketHandlesDelegate(IntPtr dataHandle);
     public getLobbyPacketHandlesDelegate getLobbyPacketHandles;
+
+    public delegate void clearLobbyBuffersDelegate();
+    public static clearLobbyBuffersDelegate clearLobbyBuffers;
+
+
+    public delegate void setOwnershipDelegate(byte EID, Ownership ownership);
+    public static setOwnershipDelegate setOwnership;
     #endregion DLL_VARIABLES
 
 
@@ -308,6 +323,8 @@ public class NetworkManager : MonoBehaviour
     float _updateInterval = 0.066f; // 1s / 15ups = 0.066ms
     //float _updateInterval = 0.167f;
     float _lagTime = 0.0f;
+
+    static bool _clearBuffers = false;
 
 
     [SerializeField]
@@ -375,6 +392,18 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
+    public static bool ClearBuffers
+    {
+        get
+        {
+            return _clearBuffers;
+        }
+        set
+        {
+            _clearBuffers = value;
+        }
+    }
+
 
     JobHandle connectJobHandle;
     JobHandle receiveTCPJobHandle;
@@ -433,6 +462,10 @@ public class NetworkManager : MonoBehaviour
         stopLobbyReceive = ManualPluginImporter.GetDelegate<stopLobbyReceiveDelegate>(_pluginHandle, "stopLobbyReceive");
         getNumLobbyPackets = ManualPluginImporter.GetDelegate<getNumLobbyPacketsDelegate>(_pluginHandle, "getNumLobbyPackets");
         getLobbyPacketHandles = ManualPluginImporter.GetDelegate<getLobbyPacketHandlesDelegate>(_pluginHandle, "getLobbyPacketHandles");
+        clearLobbyBuffers = ManualPluginImporter.GetDelegate<clearLobbyBuffersDelegate>(_pluginHandle, "clearLobbyBuffers");
+
+
+        setOwnership = ManualPluginImporter.GetDelegate<setOwnershipDelegate>(_pluginHandle, "setOwnership");
     }
 
     private void Awake()
@@ -815,9 +848,19 @@ public class NetworkManager : MonoBehaviour
 
             entityData.Add(entity);
 
+            receiveEntitiesFromServer();
+            _clearBuffers = true;
+
+            while (_clearBuffers)
+                continue;
+
             sendEntitiesToServer(entityData, entityData.Count);
 
             receiveEntitiesFromServer();
+            _clearBuffers = true;
+
+            while (_clearBuffers)
+                continue;
         }
         else if (pckType == PacketTypes.EmptyMsg)
         {
@@ -905,7 +948,7 @@ public class NetworkManager : MonoBehaviour
 
 
 
-        _networkObjects.Clear();
+        //_networkObjects.Clear();
         NetworkObject networkObj = null;
         EntityData entity;
         PrefabTypes prefabType;
@@ -953,15 +996,17 @@ public class NetworkManager : MonoBehaviour
         int transDataElements = 0;
         int animDataElements = 0;
         int entityDataElements = 0;
+        int ownershipDataElements = 0;
         IntPtr dataHandle;
         int transDataSize = Marshal.SizeOf<TransformData>();
         int animDataSize = Marshal.SizeOf<AnimData>();
         int entityDataSize = Marshal.SizeOf<EntityData>();
+        int ownershipDataSize = Marshal.SizeOf<OwnershipData>();
 
 
-        getPacketHandleSizes(ref transDataElements, ref animDataElements, ref entityDataElements);
+        getPacketHandleSizes(ref transDataElements, ref animDataElements, ref entityDataElements, ref ownershipDataElements);
 
-        dataHandle = Marshal.AllocHGlobal((transDataSize * transDataElements) + (animDataSize * animDataElements) + (entityDataSize * entityDataElements));
+        dataHandle = Marshal.AllocHGlobal((transDataSize * transDataElements) + (animDataSize * animDataElements) + (entityDataSize * entityDataElements) + (ownershipDataSize * ownershipDataElements));
 
         getPacketHandles(dataHandle);
 
@@ -999,7 +1044,8 @@ public class NetworkManager : MonoBehaviour
             if (_networkObjects.TryGetValue(animData._EID, out netObj))
             {
                 //netObj.GetComponent<Animator>().Play(animData._state, 0);
-                netObj.Animator.Play(animData._state, 0);
+                //netObj.Animator.Play(animData._state, 0);
+                netObj.Animator.SetFloat("speed", animData._state);
                 //if (Animator.StringToHash("Walking") == animData._state)
                 //    netObj.GetComponent<Animator>().Play(animData._state);
                 //else if (Animator.StringToHash("Idle") == animData._state)
@@ -1049,6 +1095,20 @@ public class NetworkManager : MonoBehaviour
 
             // Map network object to it's entity ID.
             _networkObjects.Add(networkObj.EID, networkObj);
+        }
+
+        OwnershipData ownershipData;
+        //byte EID; // -1
+        netObj = null;
+        for (int i = 0; i < transDataElements; ++i)
+        {
+            ownershipData = (OwnershipData)Marshal.PtrToStructure(dataHandle, typeof(OwnershipData));
+            dataHandle += ownershipDataSize;
+
+            if (_networkObjects.TryGetValue(ownershipData._EID, out netObj))
+            {
+                netObj.setOwnership(ownershipData._ownership);
+            }
         }
 
 

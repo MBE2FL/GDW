@@ -70,6 +70,11 @@ struct CS_to_Plugin_Functions
 	bool(*connectedToServer)();
 };
 
+struct OwnershipData : PacketData
+{
+	Ownership _ownership;
+};
+
 
 
 class PLUGIN_OUT ClientSide
@@ -97,7 +102,7 @@ public:
 
 	void receiveUDPData();
 	void receiveTCPData();
-	void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements);
+	void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements, int& ownershipDataElements);
 	void getPacketHandles(void* dataHandle);
 
 	
@@ -111,6 +116,10 @@ public:
 	void stopLobbyReceive();
 	void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers);
 	void getLobbyPacketHandles(void* dataHandle);
+	void clearLobbyBuffers();
+
+
+	void setOwnership(uint8_t EID, Ownership ownership);
 
 
 	void setFuncs(const CS_to_Plugin_Functions& funcs);
@@ -136,6 +145,7 @@ private:
 	vector<TransformData> _transDataBuf;
 	vector<AnimData> _animDataBuf;
 	vector<EntityData> _entityDataBuf;
+	vector<OwnershipData> _ownershipDataBuf;
 
 
 	int _numScores = 0;

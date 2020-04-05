@@ -473,10 +473,13 @@ void ClientSide::getServerEntities(EntityData* serverEntities, int& numServerEnt
 		if (numServerEntities <= 0)
 		{
 			numServerEntities = _entityUpdatesBuf.size();
-			cout << "Received " << numServerEntities << " server entities." << endl;
+			//cout << "Received " << numServerEntities << " server entities." << endl;
 
 			if (numServerEntities > 0)
+			{
+				cout << "Received " << numServerEntities << " server entities." << endl;
 				return;
+			}
 		}
 
 		totalTime = (startClock - clock()) / CLOCKS_PER_SEC;
@@ -688,6 +691,13 @@ void ClientSide::receiveTCPData()
 			}
 			return;
 		}
+		case OwnershipChange:
+			OwnershipData ownershipData = OwnershipData();
+			ownershipData._entityID = buf[DATA_START_POS];
+			ownershipData._ownership = static_cast<Ownership>(buf[DATA_START_POS + 1]);
+
+			_ownershipDataBuf.emplace_back(ownershipData);
+			break;
 		case EmptyMsg:
 			cout << "Empty message received." << endl;
 			break;
@@ -704,7 +714,7 @@ void ClientSide::receiveTCPData()
 	}
 }
 
-void ClientSide::getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements)
+void ClientSide::getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements, int& ownershipDataElements)
 {
 
 
@@ -769,6 +779,7 @@ void ClientSide::getPacketHandleSizes(int& transDataElements, int& animDataEleme
 	transDataElements = _transDataBuf.size();
 	animDataElements = _animDataBuf.size();
 	entityDataElements = _entityDataBuf.size();
+	ownershipDataElements = _ownershipDataBuf.size();
 }
 
 void ClientSide::getPacketHandles(void* dataHandle)
@@ -784,44 +795,16 @@ void ClientSide::getPacketHandles(void* dataHandle)
 	offset += sizeof(AnimData) * _animDataBuf.size();
 
 	memcpy(&byteDatahandle[offset], _entityDataBuf.data(), sizeof(EntityData) * _entityDataBuf.size());
+	offset += sizeof(EntityData) * _entityDataBuf.size();
 
-
-	//for (const auto& pckKV : _tcpPacketBuf)
-	//{
-	//	switch (pckKV.first)
-	//	{
-	//	case Anim:
-	//		for (const auto& objKV : pckKV.second)
-	//		{
-	//			objIDsBuf.emplace_back(objKV.first);
-
-
-	//			vector<Packet*> animPackets = objKV.second;
-	//			AnimData animData;
-	//			uint8_t objID;
-
-	//			for (Packet* animPck : animPackets)
-	//			{
-	//				animPck->deserialize(objID, &animData);
-
-	//			}
-	//		}
-	//		break;
-	//	case EntitiesUpdate:
-	//		break;
-	//	case EntityIDs:
-	//		break;
-	//	default:
-	//		break;
-	//	}
-	//}
+	memcpy(&byteDatahandle[offset], _ownershipDataBuf.data(), sizeof(EntityData) * _ownershipDataBuf.size());
 
 
 	// Clean up.
 	_transDataBuf.clear();
 	_animDataBuf.clear();
-	//_udpPacketBuf.clear();
 	_entityDataBuf.clear();
+	_ownershipDataBuf.clear();
 }
 
 void ClientSide::requestScores()
@@ -938,6 +921,7 @@ void ClientSide::receiveLobbyData()
 				//_entityUpdatesBuf[PCK_TYPE_POS] = EmptyMsg;
 
 				//memcpy(_entityUpdatesBuf, buf, BUF_LEN);
+
 
 				EntityPacket serverEntityPacket = EntityPacket(buf);
 				uint8_t _numEntitiesReceived = serverEntityPacket.getNumEntities();
@@ -1123,6 +1107,32 @@ void ClientSide::getLobbyPacketHandles(void* dataHandle)
 	// Clean up.
 	_chatDataBuf.clear();
 	_lobbyPlayersBuf.clear();
+}
+
+void ClientSide::clearLobbyBuffers()
+{
+	_entityUpdatesBuf.clear();
+}
+
+void ClientSide::setOwnership(uint8_t EID, Ownership ownership)
+{
+	char buf[BUF_LEN];
+	memset(buf, 0, BUF_LEN);
+
+	buf[PCK_TYPE_POS] = OwnershipChange;
+	buf[NET_ID_POS] = _networkID;
+	buf[DATA_START_POS] = EID;
+	buf[DATA_START_POS + 1] = ownership;
+
+	if (send(_clientTCPsocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+	{
+		cout << "Failed to send ownership change to the server!" << endl;
+		return;
+	}
+	else
+	{
+		cout << "Sent ownership change to the server." << endl;
+	}
 }
 
 void ClientSide::setFuncs(const CS_to_Plugin_Functions& funcs)

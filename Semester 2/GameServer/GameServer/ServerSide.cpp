@@ -706,7 +706,7 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 	// Retrieve network id of incomming message.
 	uint8_t networkID = buf[NET_ID_POS];
 
-	cout << "Trans Packet: " << "ID: " << static_cast<int>(networkID) << endl;
+	//cout << "Trans Packet: " << "ID: " << static_cast<int>(networkID) << endl;
 
 	// Send data too all other clients.
 	Client* client;
@@ -908,6 +908,48 @@ void Server::processCharChoice(char buf[BUF_LEN])
 		if (send(client->_tcpSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
 		{
 			printf("Failed to send chat data. %d\n", WSAGetLastError());
+		}
+	}
+}
+
+void Server::processOwnershipChange(char buf[BUF_LEN])
+{
+	// Retrieve network id of incomming message.
+	uint8_t networkID = buf[NET_ID_POS];
+	uint8_t EID = buf[DATA_START_POS];
+	Ownership ownership = static_cast<Ownership>(buf[DATA_START_POS + 1]);
+
+	// Extract data (FOR DEBUG ONLY).
+	cout << "Received ownership change from " << static_cast<int>(networkID) << ": EID " << static_cast<int>(EID)
+		<< ", Ownership: " << static_cast<int>(ownership) << endl;
+
+
+	for (EntityData entity : _entities)
+	{
+		if (entity._entityID == EID)
+		{
+			entity._ownership = ownership;
+		}
+	}
+
+
+	// Send data to all other clients.
+	Client* client;
+	vector<Client*>::const_iterator it;
+	for (it = _clients.cbegin(); it != _clients.cend(); ++it)
+	{
+		client = *it;
+
+		// Don't send back to the same client who sent the data.
+		if (client->_id == networkID)
+		{
+			continue;
+		}
+
+		// Send data to other clients.
+		if (send(client->_tcpSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
+		{
+			printf("Failed to ownership change. %d\n", WSAGetLastError());
 		}
 	}
 }
@@ -1185,6 +1227,9 @@ void Server::tcpUpdate()
 					break;
 				case Score:
 					processScore(buf);
+					break;
+				case OwnershipChange:
+					processOwnershipChange(buf);
 					break;
 				default:
 					break;

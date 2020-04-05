@@ -105,9 +105,9 @@ PLUGIN_OUT void receiveTCPData()
 	return cs.receiveTCPData();
 }
 
-PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements)
+PLUGIN_OUT void getPacketHandleSizes(int& transDataElements, int& animDataElements, int& entityDataElements, int& ownershipDataElements)
 {
-	return cs.getPacketHandleSizes(transDataElements, animDataElements, entityDataElements);
+	return cs.getPacketHandleSizes(transDataElements, animDataElements, entityDataElements, ownershipDataElements);
 }
 
 PLUGIN_OUT void getPacketHandles(void* dataHandle)
@@ -153,4 +153,14 @@ PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCh
 PLUGIN_OUT void getLobbyPacketHandles(void* dataHandle)
 {
 	return cs.getLobbyPacketHandles(dataHandle);
+}
+
+PLUGIN_OUT void clearLobbyBuffers()
+{
+	return cs.clearLobbyBuffers();
+}
+
+PLUGIN_OUT void setOwnership(uint8_t EID, Ownership ownership)
+{
+	return cs.setOwnership(EID, ownership);
 }
