@@ -1100,7 +1100,7 @@ public class NetworkManager : MonoBehaviour
         OwnershipData ownershipData;
         //byte EID; // -1
         netObj = null;
-        for (int i = 0; i < transDataElements; ++i)
+        for (int i = 0; i < ownershipDataElements; ++i)
         {
             ownershipData = (OwnershipData)Marshal.PtrToStructure(dataHandle, typeof(OwnershipData));
             dataHandle += ownershipDataSize;
