@@ -293,7 +293,7 @@ public class NetworkObject : MonoBehaviour
 
             if (Mathf.Approximately(_prevAnimState, state))
             {
-                //Debug.Log("EID " + _EID + " Anim State: " + state);
+                Debug.Log("EID " + _EID + " Anim State: " + state);
                 _prevAnimState = state;
 
                 AnimData animData = new AnimData() { _EID = _EID, _state = state };
@@ -546,6 +546,21 @@ public class NetworkObject : MonoBehaviour
 
                 _time = 0.0f;
                 _thresholdPassed = false;
+            }
+        }
+        // Server Owned
+        else
+        {
+            if ((_packetOptions == PacketOptions.Transform) || (_packetOptions == PacketOptions.All))
+            {
+                TransformData transData = new TransformData()
+                { _EID = _EID, _pos = transform.position, _rot = transform.rotation, _vel = _rigidBody.velocity };
+                IntPtr dataPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformData>());
+
+                Marshal.StructureToPtr(transData, dataPtr, false);
+                _networkManager.sendData(PacketTypes.TransformMsg, dataPtr);
+
+                Marshal.FreeHGlobal(dataPtr);
             }
         }
     }

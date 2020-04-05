@@ -1126,10 +1126,10 @@ void Server::tcpSoftUpdate()
 					break;
 				}
 			}
-			else if (bytesReceived == 0)
-			{
-				cout << "TCP Soft Update: Empty message received." << endl;
-			}
+			//else if (bytesReceived == 0)
+			//{
+			//	cout << "TCP Soft Update: Empty message received." << endl;
+			//}
 			else
 			{
 				wsaError = WSAGetLastError();
@@ -1257,10 +1257,10 @@ void Server::tcpUpdate()
 					break;
 				}
 			}
-			else if (bytesReceived == 0)
-			{
-				cout << "TCP Update: Empty message received." << endl;
-			}
+			//else if (bytesReceived == 0)
+			//{
+			//	cout << "TCP Update: Empty message received." << endl;
+			//}
 			else
 			{
 				wsaError = WSAGetLastError();

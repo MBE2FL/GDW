@@ -701,12 +701,16 @@ void ClientSide::receiveTCPData()
 			return;
 		}
 		case OwnershipChange:
+		{
 			OwnershipData ownershipData = OwnershipData();
 			ownershipData._entityID = buf[DATA_START_POS];
 			ownershipData._ownership = static_cast<Ownership>(buf[DATA_START_POS + 1]);
 
+			cout << "Received ownership change: EID: " << static_cast<int>(ownershipData._entityID) << " , Ownership: " << static_cast<int>(ownershipData._ownership) << endl;
+
 			_ownershipDataBuf.emplace_back(ownershipData);
 			break;
+		}
 		case EmptyMsg:
 			cout << "Empty message received." << endl;
 			break;
@@ -815,7 +819,7 @@ void ClientSide::getPacketHandles(void* dataHandle)
 	memcpy(&byteDatahandle[offset], _entityDataBuf.data(), sizeof(EntityData) * _entityDataBuf.size());
 	offset += sizeof(EntityData) * _entityDataBuf.size();
 
-	memcpy(&byteDatahandle[offset], _ownershipDataBuf.data(), sizeof(EntityData) * _ownershipDataBuf.size());
+	memcpy(&byteDatahandle[offset], _ownershipDataBuf.data(), sizeof(OwnershipData) * _ownershipDataBuf.size());
 
 
 	// Clean up.
