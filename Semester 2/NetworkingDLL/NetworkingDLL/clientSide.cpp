@@ -465,18 +465,31 @@ void ClientSide::getServerEntities(EntityData* serverEntities, int& numServerEnt
 	//}
 
 	// Receive any pre-existing server entities.
-	if (numServerEntities <= 0)
+	clock_t startClock = clock();
+	int totalTime = 0;
+
+	while ((numServerEntities <= 0) && (totalTime <= 6.0f))
 	{
-		numServerEntities = _entityUpdatesBuf.size();
-		cout << "Received " << numServerEntities << " server entities." << endl;
+		if (numServerEntities <= 0)
+		{
+			numServerEntities = _entityUpdatesBuf.size();
+			cout << "Received " << numServerEntities << " server entities." << endl;
+
+			if (numServerEntities > 0)
+				return;
+		}
+
+		totalTime = (startClock - clock()) / CLOCKS_PER_SEC;
 	}
-	else
+
+
+	if (numServerEntities > 0)
 	{
 		memcpy(serverEntities, _entityUpdatesBuf.data(), sizeof(EntityData) * numServerEntities);
 
 
 		// Reset the entity update buffer.
-		_entityUpdatesBuf.erase(_entityUpdatesBuf.begin() + numServerEntities);
+		//_entityUpdatesBuf.erase(_entityUpdatesBuf.begin() + numServerEntities);
 	}
 }
 

@@ -12,6 +12,7 @@ using Unity.Jobs;
 using UnityEngine.SceneManagement;
 
 
+
 // This struct needs to be in the same order as in C++
 public struct CS_to_Plugin_Functions
 {
@@ -814,8 +815,6 @@ public class NetworkManager : MonoBehaviour
 
             entityData.Add(entity);
 
-            receiveEntitiesFromServer();
-
             sendEntitiesToServer(entityData, entityData.Count);
 
             receiveEntitiesFromServer();
@@ -876,25 +875,28 @@ public class NetworkManager : MonoBehaviour
         int entityDataSize = Marshal.SizeOf<EntityData>();
         getServerEntities(IntPtr.Zero, ref numEntities);
 
-        float timer = 0.0f;
-        while ((numEntities <= 0) && (timer <= 6.0f))
-        {
-            if (timer >= 3.0f)
-            {
-                getServerEntities(IntPtr.Zero, ref numEntities);
+        //float timer = 0.0f;
+        //while ((numEntities <= 0) && (timer <= 4.0f))
+        //{
+        //    if (timer >= 2.0f)
+        //    {
+        //        getServerEntities(IntPtr.Zero, ref numEntities);
 
-                if (numEntities >= 0)
-                    break;
+        //        if (numEntities >= 0)
+        //            break;
 
-                timer = 0.0f;
-            }
+        //        timer = 0.0f;
+        //    }
 
-            timer += Time.deltaTime;
-        }
+        //    timer += 2.0f;
+        //}
 
 
         if (numEntities <= 0)
+        {
+            Debug.Log("No Server Entities Received.");
             return;
+        }
 
 
         IntPtr dataHandle = Marshal.AllocHGlobal(entityDataSize * numEntities);
