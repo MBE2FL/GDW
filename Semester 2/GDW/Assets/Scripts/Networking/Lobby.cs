@@ -467,6 +467,7 @@ public class Lobby : MonoBehaviour
 
     public void stopLobby()
     {
+        NetworkManager.stopLobbyReceive();
         _inLobby = false;
         _stopJob = true;
         _receiveMsgJobHandle.Complete();

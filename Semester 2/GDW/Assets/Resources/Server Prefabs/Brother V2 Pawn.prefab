@@ -1272,7 +1272,7 @@ GameObject:
   - component: {fileID: 6680092017657128874}
   m_Layer: 0
   m_Name: Brother V2 Pawn
-  m_TagString: Untagged
+  m_TagString: Brother
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

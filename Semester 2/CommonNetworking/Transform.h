@@ -14,8 +14,8 @@ struct PLUGIN_OUT Vector3
 	string toString()
 	{
 		return "x: " + to_string(_x) +
-			"\ny: " + to_string(_y) +
-			"\nz: " + to_string(_z) + "\n";
+			"  y: " + to_string(_y) +
+			"  z: " + to_string(_z) + "\n";
 	}
 
 	float _x;
@@ -31,9 +31,9 @@ struct PLUGIN_OUT Quaternion
 	string toString()
 	{
 		return "x: " + to_string(_x) +
-			"\ny: " + to_string(_y) +
-			"\nz: " + to_string(_z) +
-			"\nw: " + to_string(_w) + "\n";
+			"  y: " + to_string(_y) +
+			"  z: " + to_string(_z) +
+			"  w: " + to_string(_w) + "\n";
 	}
 
 	float _x;

@@ -140,6 +140,11 @@ PLUGIN_OUT void receiveLobbyData()
 	return cs.receiveLobbyData();
 }
 
+PLUGIN_OUT void stopLobbyReceive()
+{
+	return cs.stopLobbyReceive();
+}
+
 PLUGIN_OUT void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers)
 {
 	return cs.getNumLobbyPackets(numMsgs, newTeamNameMsg, newCharChoice, numNewPlayers);

@@ -647,10 +647,20 @@ void Server::processEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 		{
 			if (send(client->_tcpSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 			{
-				cout << "Failed to send generated required entity IDs to other clients." << endl;
+				cout << "Failed to send new entities to client, " << static_cast<int>(client->_id) << "." << endl;
 			}
 			else
-				cout << "Sent generated required entity IDs to other client." << endl;
+				cout << "Sent generated new entities to client, " << static_cast<int>(client->_id) << "." << endl;
+		}
+
+		for (Client* client : _clients)
+		{
+			if (send(client->_tcpSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
+			{
+				cout << "Failed to send new entities to client, " << static_cast<int>(client->_id) << "." << endl;
+			}
+			else
+				cout << "Sent generated new entities to client, " << static_cast<int>(client->_id) << "." << endl;
 		}
 	}
 

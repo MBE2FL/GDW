@@ -108,6 +108,7 @@ public:
 
 
 	void receiveLobbyData();
+	void stopLobbyReceive();
 	void getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers);
 	void getLobbyPacketHandles(void* dataHandle);
 
@@ -150,4 +151,5 @@ private:
 	char _entityUpdatesBuf[BUF_LEN];
 	//EntityData* _receivedEntitiesBuf = nullptr;
 	//uint8_t _numEntitiesReceived = 0;
+	bool _inLobby = true;
 };

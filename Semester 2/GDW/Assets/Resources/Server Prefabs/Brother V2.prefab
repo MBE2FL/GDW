@@ -1277,8 +1277,8 @@ GameObject:
   - component: {fileID: 3215697720229888164}
   - component: {fileID: 6680092017657128874}
   m_Layer: 0
-  m_Name: brother 1
-  m_TagString: Untagged
+  m_Name: Brother V2
+  m_TagString: Brother
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1328,7 +1328,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!65 &6245946768105870520
 BoxCollider:

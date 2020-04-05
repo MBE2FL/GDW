@@ -261,6 +261,9 @@ public class NetworkManager : MonoBehaviour
     public delegate void receiveLobbyDataDelegate();
     public static receiveLobbyDataDelegate receiveLobbyData;
 
+    public delegate void stopLobbyReceiveDelegate();
+    public static stopLobbyReceiveDelegate stopLobbyReceive;
+
     public delegate void getNumLobbyPacketsDelegate(ref int numMsgs, ref int newTeamNameMsg, ref int newCharChoice, ref int numNewPlayers);
     public getNumLobbyPacketsDelegate getNumLobbyPackets;
 
@@ -426,6 +429,7 @@ public class NetworkManager : MonoBehaviour
 
 
         receiveLobbyData = ManualPluginImporter.GetDelegate<receiveLobbyDataDelegate>(_pluginHandle, "receiveLobbyData");
+        stopLobbyReceive = ManualPluginImporter.GetDelegate<stopLobbyReceiveDelegate>(_pluginHandle, "stopLobbyReceive");
         getNumLobbyPackets = ManualPluginImporter.GetDelegate<getNumLobbyPacketsDelegate>(_pluginHandle, "getNumLobbyPackets");
         getLobbyPacketHandles = ManualPluginImporter.GetDelegate<getLobbyPacketHandlesDelegate>(_pluginHandle, "getLobbyPacketHandles");
     }
@@ -809,7 +813,8 @@ public class NetworkManager : MonoBehaviour
 
 
             entityData.Add(entity);
-            
+
+            receiveEntitiesFromServer();
 
             sendEntitiesToServer(entityData, entityData.Count);
 
@@ -818,14 +823,17 @@ public class NetworkManager : MonoBehaviour
         else if (pckType == PacketTypes.EmptyMsg)
         {
             Debug.Log("Empty message type received.");
+            return;
         }
         else if (pckType == PacketTypes.ErrorMsg)
         {
             Debug.Log("Error message type received.");
+            return;
         }
         else
         {
             Debug.Log("Wrong message type received: " + pckType);
+            return;
         }
 
 
@@ -841,9 +849,10 @@ public class NetworkManager : MonoBehaviour
 
     void sendEntitiesToServer(List<EntityData> entityData, int numEntities)
     {
+        EntityData[] entityDataArr = entityData.ToArray();
         //unsafe
         //{
-        //    fixed (EntityData* tempPtr = entityData)
+        //    fixed (EntityData* tempPtr = entityDataArr)
         //    {
         //        IntPtr entitiesPtr = new IntPtr(tempPtr);
         //        // Send starting entity list to the server.
@@ -853,28 +862,11 @@ public class NetworkManager : MonoBehaviour
         //}
 
         // Send entities to the server.
-        List<GCHandle> gcHandles = new List<GCHandle>(numEntities);
+        GCHandle gcHandle = GCHandle.Alloc(entityDataArr, GCHandleType.Pinned);
 
-        int entityDataSize = Marshal.SizeOf<EntityData>();
-        IntPtr dataHandle = Marshal.AllocHGlobal(entityDataSize * numEntities);
-        IntPtr tempDataHandle = dataHandle;
+        sendEntities(gcHandle.AddrOfPinnedObject(), ref numEntities);
 
-        foreach (EntityData entity in entityData)
-        {
-            gcHandles.Add(GCHandle.Alloc(entity, GCHandleType.Pinned));
-
-            Marshal.StructureToPtr(entity, dataHandle, false);
-            dataHandle += entityDataSize;
-        }
-
-        sendEntities(dataHandle, ref numEntities);
-        
-        Marshal.FreeHGlobal(tempDataHandle);
-
-        foreach (GCHandle gcHandle in gcHandles)
-        {
-            gcHandle.Free();
-        }
+        gcHandle.Free();
     }
 
     void receiveEntitiesFromServer()
@@ -929,12 +921,12 @@ public class NetworkManager : MonoBehaviour
             ownership = entity._ownership;
 
 
-            if (prefabType == PrefabTypes.SisterV2)
+            if ((prefabType == PrefabTypes.SisterV2) && (_lobby.CharChoice == CharacterChoices.BrotherChoice))
             {
                 prefabType = PrefabTypes.SisterV2Pawn;
                 ownership = Ownership.OtherClientOwned;
             }
-            else if (prefabType == PrefabTypes.BrotherV2)
+            else if ((prefabType == PrefabTypes.BrotherV2) && (_lobby.CharChoice == CharacterChoices.SisterChoice))
             {
                 prefabType = PrefabTypes.BrotherV2Pawn;
                 ownership = Ownership.OtherClientOwned;

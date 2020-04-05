@@ -412,9 +412,9 @@ PacketTypes ClientSide::sendEntities(EntityData* entities, int& numEntities)
 	for (int i = 0; i < numEntities; ++i)
 	{
 		EntityData data = entities[i];
-		cout << "Ent: " << static_cast<uint8_t>(data._entityPrefabType);
+		cout << "Ent prefab: " << static_cast<int>(data._entityPrefabType) << endl;
 		cout << "Ent Pos: " << data._position.toString();
-		cout << "Ent: " << data._rotation.toString();
+		cout << "Ent Rot: " << data._rotation.toString();
 	}
 
 	if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
@@ -446,9 +446,14 @@ void ClientSide::getServerEntities(EntityData* serverEntities, int& numServerEnt
 
 		serverEntityPacket.deserialize(serverEntityData);
 
+		EntityData* data;
 		for (int i = 0; i < _numEntitiesReceived; ++i)
 		{
-			cout << "Server Entity: " << static_cast<int>(serverEntityData[i]._entityID) << endl;
+			data = &serverEntityData[i];
+			cout << "Server Entity: " << static_cast<int>(data->_entityID) << endl;
+			cout << "Server Ent prefab: " << static_cast<int>(data->_entityPrefabType) << endl;
+			cout << "Server Ent Pos: " << data->_position.toString();
+			cout << "Server Ent Rot: " << data->_rotation.toString();
 		}
 
 		memcpy(serverEntities, &serverEntityPacket._data[DATA_START_POS + 1], sizeof(EntityData) * _numEntitiesReceived);
@@ -824,10 +829,8 @@ void ClientSide::cleanupScoresHandle()
 
 void ClientSide::receiveLobbyData()
 {
-	bool inLobby = true;
-
 	// Reveive updates from the server.
-	if (inLobby)
+	if (_inLobby)
 	{
 		char buf[BUF_LEN];
 
@@ -835,6 +838,26 @@ void ClientSide::receiveLobbyData()
 
 		int bytesReceived = -1;
 		int wsaError = -1;
+
+		timeval timeout;
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(_clientTCPsocket, &fds);
+		wsaError = select(NULL, &fds, NULL, NULL, &timeout);
+
+		if (wsaError == SOCKET_ERROR)
+		{
+			cout << "TCP Receive Lobby Data Update: Error " << WSAGetLastError() << endl;
+			return;
+		}
+		// Timeout occured.
+		else if (wsaError == 0)
+		{
+			return;
+		}
+
 
 		bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
 		wsaError = WSAGetLastError();
@@ -887,7 +910,6 @@ void ClientSide::receiveLobbyData()
 				_entityUpdatesBuf[PCK_TYPE_POS] = EmptyMsg;
 
 				memcpy(_entityUpdatesBuf, buf, BUF_LEN);
-				inLobby = false;
 				break;
 			}
 			case Score:
@@ -990,6 +1012,11 @@ void ClientSide::receiveLobbyData()
 			//cout << "TCP Receive Error, " << WSAGetLastError() << endl;
 		}
 	}
+}
+
+void ClientSide::stopLobbyReceive()
+{
+	_inLobby = false;
 }
 
 void ClientSide::getNumLobbyPackets(int& numMsgs, int& newTeamNameMsg, int& newCharChoice, int& numNewPlayers)
