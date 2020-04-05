@@ -706,7 +706,7 @@ void Server::processTransform(char buf[BUF_LEN], const sockaddr_in& fromAddr, co
 	// Retrieve network id of incomming message.
 	uint8_t networkID = buf[NET_ID_POS];
 
-	//cout << "Trans Packet: " << "ID: " << static_cast<int>(networkID) << endl;
+	//cout << "Trans Packet: " << "ID: " << static_cast<int>(networkID) << ", EID: " << static_cast<int>(buf[DATA_START_POS]) << endl;
 
 	// Send data too all other clients.
 	Client* client;
@@ -741,7 +741,7 @@ void Server::processAnim(char buf[BUF_LEN], SOCKET* socket)
 	AnimData animData;
 	AnimPacket packet = AnimPacket(buf);
 	packet.deserialize(&animData);
-	//cout << "Anim Packet: " << "ID: " << static_cast<int>(animData._entityID) << ", state: " << animData._state << endl;
+	cout << "Anim Packet: " << "ID: " << static_cast<int>(animData._entityID) << ", state: " << animData._state << endl;
 
 
 	// Send data to all other clients.
