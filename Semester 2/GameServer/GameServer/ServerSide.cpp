@@ -617,7 +617,6 @@ void Server::processEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 
 	if (numEntities > 0)
 	{
-		uint8_t* entityIDs = new uint8_t[numEntities];
 		uint8_t currEID = _entities.size();
 
 		// Generate IDs for the number entities requested. 
@@ -625,9 +624,6 @@ void Server::processEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 		{
 			// Update the deserialized entity data.
 			entityData[i]._entityID = currEID;
-
-			// Store each entity ID.
-			entityIDs[i] = currEID;
 
 			cout << "Added required entity with ID, " << int(currEID) << endl;
 
@@ -643,15 +639,11 @@ void Server::processEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 		delete[] entityData;
 		entityData = nullptr;
 
-		// Send new entities to all other connected clients.
+		// Send new entities to all connected clients.
 		packet.setPacketType(PacketTypes::EntitiesUpdate);
 
 		for (Client* client : _clients)
 		{
-			//if (socket == clientSocket)
-			if (client->_tcpSocket == *clientSocket)
-				continue;
-
 			if (send(client->_tcpSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 			{
 				cout << "Failed to send generated required entity IDs to other clients." << endl;
@@ -659,22 +651,6 @@ void Server::processEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 			else
 				cout << "Sent generated required entity IDs to other client." << endl;
 		}
-
-
-		// Send newly generated and all pre-existing IDs to the client.
-		memset(buf, 0, BUF_LEN);
-
-		buf[PCK_TYPE_POS] = PacketTypes::EntityIDs;
-		buf[DATA_START_POS] = numEntities;
-		memcpy(&buf[DATA_START_POS + 1], entityIDs, numEntities);
-
-
-		if (send(*clientSocket, buf, BUF_LEN, 0) == SOCKET_ERROR)
-		{
-			cout << "Failed to send generated entity IDs back to client." << endl;
-		}
-		else
-			cout << "Sent generated required entity IDs back to client." << endl;
 	}
 
 

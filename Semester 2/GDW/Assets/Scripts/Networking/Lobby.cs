@@ -464,4 +464,12 @@ public class Lobby : MonoBehaviour
         //    _sisterButtonImage.color = new Color32(255, 255, 255, 255);
         //}
     }
+
+    public void stopLobby()
+    {
+        _inLobby = false;
+        _stopJob = true;
+        _receiveMsgJobHandle.Complete();
+        //gameObject.SetActive(false);
+    }
 }

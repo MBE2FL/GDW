@@ -430,7 +430,7 @@ void ClientSide::getServerEntities(EntityData* serverEntities, int& numServerEnt
 	if (numServerEntities <= 0)
 	{
 		numServerEntities = _numEntitiesReceived;
-		cout << "Received " << static_cast<int>(_numEntitiesReceived) << " pre-existing server entities." << endl;
+		cout << "Received " << static_cast<int>(_numEntitiesReceived) << " server entities." << endl;
 	}
 	else
 	{

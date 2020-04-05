@@ -482,15 +482,6 @@ public class NetworkManager : MonoBehaviour
         SceneManager.sceneLoaded += onSceneLoaded;
     }
 
-    private void onSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
-    {
-        SceneManager.SetActiveScene(scene);
-
-        loadEntities();
-
-        Camera.main.GetComponent<cameraMovement>().setPlayer(_lobby.CharChoice);
-    }
-
     private void OnApplicationQuit()
     {
         networkCleanup();
@@ -667,6 +658,15 @@ public class NetworkManager : MonoBehaviour
         SceneManager.LoadScene("regan's test scene");
     }
 
+    private void onSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+    {
+        SceneManager.SetActiveScene(scene);
+
+        loadEntities();
+
+        Camera.main.GetComponent<cameraMovement>().setPlayer(_lobby.CharChoice);
+    }
+
     public void loadEntities()
     {
         // Receive server's entity request.
@@ -694,8 +694,9 @@ public class NetworkManager : MonoBehaviour
 
         Debug.Log(pckType);
 
-        List<NetworkObject> netObjsList = new List<NetworkObject>();
-        EntityData[] entityData;
+        //List<NetworkObject> netObjsList = new List<NetworkObject>();
+        //EntityData[] entityData;
+        List<EntityData> entityData = new List<EntityData>();
         int numEntities = 0;
 
         // Server is requesting the starting entities list.
@@ -706,39 +707,61 @@ public class NetworkManager : MonoBehaviour
 
             // Retrieve all networked objects in the scene.
             NetworkObject[] netObjs = FindObjectsOfType<NetworkObject>();
-            netObjsList.AddRange(netObjs);
+            //netObjsList.AddRange(netObjs);
+
+            // Add any objects not in the scene.
+            EntityData entity;
+            if (_lobby.CharChoice == CharacterChoices.SisterChoice)
+                entity = new EntityData()
+                {
+                    _EID = 0,
+                    _entityPrefabType = PrefabTypes.SisterV2,
+                    _ownership = Ownership.ClientOwned,
+                    _parent = 0,
+                    _position = new Vector3(37.0f, 0.0f, -21.0f),
+                    _rotation = Quaternion.Euler(0.0f, -52.0f, 0.0f)
+                };
+            else
+                entity = new EntityData()
+                {
+                    _EID = 0,
+                    _entityPrefabType = PrefabTypes.BrotherV2,
+                    _ownership = Ownership.ClientOwned,
+                    _parent = 0,
+                    _position = new Vector3(38.0f, 0.0f, -17.0f),
+                    _rotation = Quaternion.Euler(0.0f, -115.0f, 0.0f)
+                };
+
+            entityData.Add(entity);
+            //numEntities = netObjsList.Count;
+            //entityData = new EntityData[numEntities];
+
+
+            foreach (NetworkObject netObj in netObjs)
+            {
+                entity = new EntityData()
+                {
+                    _EID = netObj.EID,
+                    _entityPrefabType = netObj.PrefabType,
+                    _ownership = netObj.Ownership,
+                    _parent = 0,
+                    _position = netObj.transform.position,
+                    _rotation = netObj.transform.rotation
+                };
+
+                entityData.Add(entity);
+            }
+
+
+            numEntities = entityData.Count;
+
+            sendEntitiesToServer(entityData, numEntities);
 
             // Destroy all placeholder network objects.
             foreach (NetworkObject netObj in netObjs)
             {
                 Destroy(netObj.gameObject);
             }
-
-            // Add any objects not in the scene.
-            if (_lobby.CharChoice == CharacterChoices.SisterChoice)
-                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.SisterV2], Vector3.zero, Quaternion.identity));
-            else
-                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.BrotherV2], Vector3.zero, Quaternion.identity));
-
-
-            numEntities = netObjsList.Count;
-            entityData = new EntityData[numEntities];
-
-
-            int i = 0;
-            foreach (NetworkObject netObj in netObjsList)
-            {
-                entityData[i]._EID = netObj.EID;
-                entityData[i]._entityPrefabType = netObj.PrefabType;
-                entityData[i]._ownership = netObj.Ownership;
-                entityData[i]._position = netObj.transform.position;
-                entityData[i]._rotation = netObj.transform.rotation;
-                entityData[i]._parent = 0;
-
-                ++i;
-            }
-
-            sendEntitiesToServer(entityData, numEntities);
 
             receiveEntitiesFromServer();
         }
@@ -754,30 +777,41 @@ public class NetworkManager : MonoBehaviour
                 Destroy(netObj.gameObject);
             }
 
+
+            //numEntities = netObjsList.Count;
+            //entityData = new EntityData[numEntities];
+            //int numServerEntities = 0;
+
+
+            EntityData entity;
             if (_lobby.CharChoice == CharacterChoices.SisterChoice)
-                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.SisterV2], Vector3.zero, Quaternion.identity));
+                entity = new EntityData()
+                {
+                    _EID = 0,
+                    _entityPrefabType = PrefabTypes.SisterV2,
+                    _ownership = Ownership.ClientOwned,
+                    _parent = 0,
+                    _position = new Vector3(37.0f, 0.0f, -21.0f),
+                    _rotation = Quaternion.Euler(0.0f, -52.0f, 0.0f)
+                };
+                //netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.SisterV2], new Vector3(37.0f, 0.0f, -21.0f), Quaternion.Euler(0.0f, -52.0f, 0.0f)));
             else
-                netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.BrotherV2], Vector3.zero, Quaternion.identity));
+                entity = new EntityData()
+                {
+                    _EID = 0,
+                    _entityPrefabType = PrefabTypes.BrotherV2,
+                    _ownership = Ownership.ClientOwned,
+                    _parent = 0,
+                    _position = new Vector3(38.0f, 0.0f, -17.0f),
+                    _rotation = Quaternion.Euler(0.0f, -115.0f, 0.0f)
+                };
+            //netObjsList.Add(Instantiate(_networkPrefabs[PrefabTypes.BrotherV2], new Vector3(38.0f, 0.0f, -17.0f), Quaternion.Euler(0.0f, -115.0f, 0.0f)));
 
 
-            numEntities = netObjsList.Count;
-            entityData = new EntityData[numEntities];
-            int numServerEntities = 0;
+            entityData.Add(entity);
+            
 
-            int i = 0;
-            foreach (NetworkObject netObj in netObjsList)
-            {
-                entityData[i]._EID = netObj.EID;
-                entityData[i]._entityPrefabType = netObj.PrefabType;
-                entityData[i]._ownership = netObj.Ownership;
-                entityData[i]._position = netObj.transform.position;
-                entityData[i]._rotation = netObj.transform.rotation;
-                entityData[i]._parent = 0;
-
-                ++i;
-            }
-
-            sendEntitiesToServer(entityData, numEntities);
+            sendEntitiesToServer(entityData, entityData.Count);
 
             receiveEntitiesFromServer();
         }
@@ -795,6 +829,9 @@ public class NetworkManager : MonoBehaviour
         }
 
 
+
+        _lobby.stopLobby();
+
         //ReceiveTCPJob receiveTCPJob = new ReceiveTCPJob();
         //receiveTCPJobHandle = receiveTCPJob.Schedule();
 
@@ -802,7 +839,7 @@ public class NetworkManager : MonoBehaviour
         //receiveUDPJobHandle = receiveUDPJob.Schedule();
     }
 
-    void sendEntitiesToServer(EntityData[] entityData, int numEntities)
+    void sendEntitiesToServer(List<EntityData> entityData, int numEntities)
     {
         //unsafe
         //{
