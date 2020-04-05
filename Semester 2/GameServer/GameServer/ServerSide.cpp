@@ -1132,7 +1132,29 @@ void Server::tcpSoftUpdate()
 			}
 			else
 			{
-				cout << "TCP Soft Update: Error " << WSAGetLastError() << endl;
+				wsaError = WSAGetLastError();
+				cout << "TCP Soft Update: Error " << wsaError << endl;
+
+				if ((wsaError == WSAECONNRESET))
+				{
+					Client* client;
+					for (int i = 0; i < _softConnectClients.size(); ++i)
+					{
+						client = _clients[i];
+
+						if (*clientSocket == client->_tcpSocket)
+						{
+							cout << "Disconnected client: " << static_cast<int>(client->_id) << endl;
+							closesocket(*clientSocket);
+
+							delete client;
+							client = nullptr;
+
+							_softConnectClients.erase(_softConnectClients.begin() + i);
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1241,7 +1263,29 @@ void Server::tcpUpdate()
 			}
 			else
 			{
-				cout << "TCP Update: Error " << WSAGetLastError() << endl;
+				wsaError = WSAGetLastError();
+				cout << "TCP Update: Error " << wsaError << endl;
+
+				if ((wsaError == WSAECONNRESET))
+				{
+					Client* client;
+					for (int i = 0; i < _clients.size(); ++i)
+					{
+						client = _clients[i];
+
+						if (*clientSocket == client->_tcpSocket)
+						{
+							cout << "Disconnected client: " << static_cast<int>(client->_id) << endl;
+							closesocket(*clientSocket);
+
+							delete client;
+							client = nullptr;
+
+							_clients.erase(_clients.begin() + i);
+							break;
+						}
+					}
+				}
 			}
 		}
 	}

@@ -572,18 +572,18 @@ void ClientSide::receiveUDPData()
 
 	memset(buf, 0, BUF_LEN);
 
-	int bytes_received = -1;
-	int sError = -1;
+	int bytesReceived = -1;
+	int wsaError = -1;
 
 
 	// Reveive updates from the server.
-	bytes_received = recvfrom(_clientUDPsocket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, &fromLen);
+	bytesReceived = recvfrom(_clientUDPsocket, buf, BUF_LEN, 0, (sockaddr*)&fromAddr, &fromLen);
 
-	sError = WSAGetLastError();
+	wsaError = WSAGetLastError();
 
 
 	// Received data from server.
-	if (sError != SOCKET_ERROR && bytes_received > 0)
+	if (wsaError != SOCKET_ERROR && bytesReceived > 0)
 	{
 		// Retrieve network ID of incomming message.
 		uint8_t networkID = buf[NET_ID_POS];
@@ -622,7 +622,16 @@ void ClientSide::receiveUDPData()
 	}
 	else
 	{
-		//cout << "UDP Receive Error, " << WSAGetLastError() << endl;
+		wsaError = WSAGetLastError();
+		cout << "UDP Receive: Error " << wsaError << endl;
+
+		if ((wsaError == WSAECONNRESET))
+		{
+			cout << "Disconnected From Server." << endl;
+			closesocket(_clientTCPsocket);
+			closesocket(_clientUDPsocket);
+			WSACleanup();
+		}
 	}
 }
 
@@ -710,7 +719,16 @@ void ClientSide::receiveTCPData()
 	}
 	else if (wsaError == SOCKET_ERROR)
 	{
-		//cout << "TCP Receive Error, " << WSAGetLastError() << endl;
+		wsaError = WSAGetLastError();
+		cout << "TCP Receive: Error " << wsaError << endl;
+
+		if ((wsaError == WSAECONNRESET))
+		{
+			cout << "Disconnected From Server." << endl;
+			closesocket(_clientTCPsocket);
+			closesocket(_clientUDPsocket);
+			WSACleanup();
+		}
 	}
 }
 
@@ -1047,7 +1065,16 @@ void ClientSide::receiveLobbyData()
 		}
 		else if (wsaError == SOCKET_ERROR)
 		{
-			//cout << "TCP Receive Error, " << WSAGetLastError() << endl;
+			wsaError = WSAGetLastError();
+			cout << "TCP Lobby Receive: Error " << wsaError << endl;
+
+			if ((wsaError == WSAECONNRESET))
+			{
+				cout << "Disconnected From Server." << endl;
+				closesocket(_clientTCPsocket);
+				closesocket(_clientUDPsocket);
+				WSACleanup();
+			}
 		}
 	}
 }
