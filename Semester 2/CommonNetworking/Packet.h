@@ -62,6 +62,7 @@ public:
 	virtual void deserialize(void* data) = 0;
 	uint8_t getEID() const;
 	void setPacketType(const PacketTypes& packetType);
+	void setNetworkID(const uint8_t networkID);
 
 	static Packet* CreatePacket(char buf[BUF_LEN]);
 	//static Packet* CreatePacket(MessageTypes pckType, uint8_t networkID, uint8_t objID);

@@ -32,6 +32,11 @@ void Packet::setPacketType(const PacketTypes& packetType)
 	_data[PCK_TYPE_POS] = packetType;
 }
 
+void Packet::setNetworkID(const uint8_t networkID)
+{
+	_data[NET_ID_POS] = networkID;
+}
+
 Packet* Packet::CreatePacket(char data[BUF_LEN])
 {
 	PacketTypes pckType = static_cast<PacketTypes>(data[0]);

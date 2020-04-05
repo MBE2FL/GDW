@@ -641,6 +641,7 @@ void Server::processEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 
 		// Send new entities to all connected clients.
 		packet.setPacketType(PacketTypes::EntitiesUpdate);
+		packet.setNetworkID(SERVER_ID);
 
 		for (Client* client : _softConnectClients)
 		{

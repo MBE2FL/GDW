@@ -853,19 +853,28 @@ public class NetworkManager : MonoBehaviour
         //}
 
         // Send entities to the server.
+        List<GCHandle> gcHandles = new List<GCHandle>(numEntities);
+
         int entityDataSize = Marshal.SizeOf<EntityData>();
         IntPtr dataHandle = Marshal.AllocHGlobal(entityDataSize * numEntities);
         IntPtr tempDataHandle = dataHandle;
 
         foreach (EntityData entity in entityData)
         {
+            gcHandles.Add(GCHandle.Alloc(entity, GCHandleType.Pinned));
+
             Marshal.StructureToPtr(entity, dataHandle, false);
             dataHandle += entityDataSize;
         }
 
         sendEntities(dataHandle, ref numEntities);
-
+        
         Marshal.FreeHGlobal(tempDataHandle);
+
+        foreach (GCHandle gcHandle in gcHandles)
+        {
+            gcHandle.Free();
+        }
     }
 
     void receiveEntitiesFromServer()

@@ -409,6 +409,14 @@ PacketTypes ClientSide::sendEntities(EntityData* entities, int& numEntities)
 	EntityPacket packet = EntityPacket(PacketTypes::EntitiesUpdate, _networkID, numEntities);
 	packet.serialize(entities);
 
+	for (int i = 0; i < numEntities; ++i)
+	{
+		EntityData data = entities[i];
+		cout << "Ent: " << static_cast<uint8_t>(data._entityPrefabType);
+		cout << "Ent Pos: " << data._position.toString();
+		cout << "Ent: " << data._rotation.toString();
+	}
+
 	if (send(_clientTCPsocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 	{
 		cout << "Failed to send entities to the server!" << endl;
