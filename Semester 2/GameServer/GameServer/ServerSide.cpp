@@ -642,7 +642,7 @@ void Server::processEntities(SOCKET* clientSocket, char buf[BUF_LEN])
 		// Send new entities to all connected clients.
 		packet.setPacketType(PacketTypes::EntitiesUpdate);
 
-		for (Client* client : _clients)
+		for (Client* client : _softConnectClients)
 		{
 			if (send(client->_tcpSocket, packet._data, BUF_LEN, 0) == SOCKET_ERROR)
 			{

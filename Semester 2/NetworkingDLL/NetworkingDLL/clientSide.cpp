@@ -816,184 +816,171 @@ void ClientSide::cleanupScoresHandle()
 
 void ClientSide::receiveLobbyData()
 {
-	char buf[BUF_LEN];
-
-	memset(buf, 0, BUF_LEN);
-
-	int bytesReceived = -1;
-	int wsaError = -1;
-
+	bool inLobby = true;
 
 	// Reveive updates from the server.
-	bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
-
-	wsaError = WSAGetLastError();
-
-
-	// Received data from server.
-	if (bytesReceived > 0)
+	if (inLobby)
 	{
-		PacketTypes pckType = static_cast<PacketTypes>(buf[PCK_TYPE_POS]);
+		char buf[BUF_LEN];
 
-		switch (pckType)
+		memset(buf, 0, BUF_LEN);
+
+		int bytesReceived = -1;
+		int wsaError = -1;
+
+		bytesReceived = recv(_clientTCPsocket, buf, BUF_LEN, 0);
+		wsaError = WSAGetLastError();
+
+
+		// Received data from server.
+		if (bytesReceived > 0)
 		{
-		case ConnectionAccepted:
-			processConnectAttempt(pckType, buf);
-			break;
-		case ConnectionFailed:
-			processConnectAttempt(pckType, buf);
-			break;
-		case ServerFull:
-			processConnectAttempt(pckType, buf);
-			break;
-		case EntitiesQuery:
-			cout << "Server is requesting the " << static_cast<int>(buf[DATA_START_POS]) << " entity list." << endl;
-			_entityQueryBuf = static_cast<PacketTypes>(buf[DATA_START_POS]);
-			break;
-		case EntitiesStart:
-			break;
-		case EntitiesNoStart:
-			break;
-		case EntitiesRequired:
-			break;
-		case EntityIDs:
-			memset(_entityIDsBuf, 0, BUF_LEN);
-			_entityIDsBuf[PCK_TYPE_POS] = EmptyMsg;
+			PacketTypes pckType = static_cast<PacketTypes>(buf[PCK_TYPE_POS]);
 
-			memcpy(_entityIDsBuf, buf, BUF_LEN);
-			break;
-		case EntitiesUpdate:
-		{
-			// Retrieve network ID of incomming message.
-			uint8_t networkID = buf[NET_ID_POS];
-
-			if (networkID == _networkID)
+			switch (pckType)
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
-				return;
-			}
+			case ConnectionAccepted:
+				processConnectAttempt(pckType, buf);
+				break;
+			case ConnectionFailed:
+				processConnectAttempt(pckType, buf);
+				break;
+			case ServerFull:
+				processConnectAttempt(pckType, buf);
+				break;
+			case EntitiesQuery:
+				cout << "Server is requesting the " << static_cast<int>(buf[DATA_START_POS]) << " entity list." << endl;
+				_entityQueryBuf = static_cast<PacketTypes>(buf[DATA_START_POS]);
+				break;
+			case EntitiesStart:
+				break;
+			case EntitiesNoStart:
+				break;
+			case EntitiesRequired:
+				break;
+			case EntityIDs:
+				memset(_entityIDsBuf, 0, BUF_LEN);
+				_entityIDsBuf[PCK_TYPE_POS] = EmptyMsg;
 
-			//// Deserialize and store entity data.
-			//EntityPacket packet = EntityPacket(buf);
-			//uint8_t numEntities = packet.getNumEntities();
-			//EntityData* entityData = new EntityData[numEntities];
-
-			//packet.deserialize(entityData);
-
-			//cout << "Received " << static_cast<int>(numEntities) << " server entities, from another client." << endl;
-
-			//if (numEntities > 0)
-			//{
-			//	_entityDataBuf.insert(_entityDataBuf.end(), entityData, entityData + numEntities);
-
-			//	delete[] entityData;
-			//}
-
-
-			memset(_entityUpdatesBuf, 0, BUF_LEN);
-			_entityUpdatesBuf[PCK_TYPE_POS] = EmptyMsg;
-
-			memcpy(_entityUpdatesBuf, buf, BUF_LEN);
-			break;
-		}
-		case Score:
-		{
-			ScorePacket packet = ScorePacket(buf);
-			_numScores = packet.getNumScores();
-			_scoresBuf = new ScoreData[_numScores];
-			packet.deserialize(_scoresBuf);
-
-			break;
-		}
-		case LobbyChat:
-		{
-			// Retrieve network ID of incomming message.
-			uint8_t networkID = buf[NET_ID_POS];
-
-			if (networkID == _networkID)
+				memcpy(_entityIDsBuf, buf, BUF_LEN);
+				break;
+			case EntitiesUpdate:
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
-				return;
+				// Retrieve network ID of incomming message.
+				uint8_t networkID = buf[NET_ID_POS];
+
+				if (networkID == _networkID)
+				{
+					cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
+					return;
+				}
+
+				memset(_entityUpdatesBuf, 0, BUF_LEN);
+				_entityUpdatesBuf[PCK_TYPE_POS] = EmptyMsg;
+
+				memcpy(_entityUpdatesBuf, buf, BUF_LEN);
+				inLobby = false;
+				break;
 			}
-
-			ChatPacket packet = ChatPacket(buf);
-			ChatData chatData = ChatData();
-
-			packet.deserialize(&chatData);
-
-			cout << "Received chat msg from " << static_cast<int>(networkID) << ": " << chatData._msg << endl;
-			delete[] chatData._msg;
-
-			_chatDataBuf.emplace_back(chatData);
-			break;
-		}
-		case LobbyTeamName:
-		{
-			// Retrieve network ID of incomming message.
-			uint8_t networkID = buf[NET_ID_POS];
-
-			if (networkID == _networkID)
+			case Score:
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
-				return;
+				ScorePacket packet = ScorePacket(buf);
+				_numScores = packet.getNumScores();
+				_scoresBuf = new ScoreData[_numScores];
+				packet.deserialize(_scoresBuf);
+
+				break;
 			}
-
-			ChatPacket packet = ChatPacket(buf);
-			_teamNameBuf = new ChatData();	// CLEAN UP
-
-			packet.deserialize(_teamNameBuf);	// CLEAN UP
-
-			cout << "Received team name msg from " << static_cast<int>(networkID) << ": " << _teamNameBuf->_msg << endl;
-			break;
-		}
-		case LobbyCharChoice:
-		{
-			// Retrieve network ID of incomming message.
-			uint8_t networkID = buf[NET_ID_POS];
-
-			if (networkID == _networkID)
+			case LobbyChat:
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
-				return;
+				// Retrieve network ID of incomming message.
+				uint8_t networkID = buf[NET_ID_POS];
+
+				if (networkID == _networkID)
+				{
+					cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
+					return;
+				}
+
+				ChatPacket packet = ChatPacket(buf);
+				ChatData chatData = ChatData();
+
+				packet.deserialize(&chatData);
+
+				cout << "Received chat msg from " << static_cast<int>(networkID) << ": " << chatData._msg << endl;
+				delete[] chatData._msg;
+
+				_chatDataBuf.emplace_back(chatData);
+				break;
 			}
-
-			CharChoicePacket packet = CharChoicePacket(buf);
-			_charChoiceBuf = new CharChoiceData();	// CLEAN UP
-
-			packet.deserialize(_charChoiceBuf);
-
-			cout << "Received character choice from " << static_cast<int>(networkID) << ": " << static_cast<int>(_charChoiceBuf->_charChoice) << endl;
-			break;
-		}
-		case LobbyPlayer:
-		{
-			// Retrieve network ID of incomming message.
-			uint8_t networkID = buf[NET_ID_POS];
-
-			if (networkID == _networkID)
+			case LobbyTeamName:
 			{
-				cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
-				return;
+				// Retrieve network ID of incomming message.
+				uint8_t networkID = buf[NET_ID_POS];
+
+				if (networkID == _networkID)
+				{
+					cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
+					return;
+				}
+
+				ChatPacket packet = ChatPacket(buf);
+				_teamNameBuf = new ChatData();	// CLEAN UP
+
+				packet.deserialize(_teamNameBuf);	// CLEAN UP
+
+				cout << "Received team name msg from " << static_cast<int>(networkID) << ": " << _teamNameBuf->_msg << endl;
+				break;
 			}
+			case LobbyCharChoice:
+			{
+				// Retrieve network ID of incomming message.
+				uint8_t networkID = buf[NET_ID_POS];
 
-			_lobbyPlayersBuf.emplace_back(networkID);
+				if (networkID == _networkID)
+				{
+					cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
+					return;
+				}
 
-			cout << "Received lobby player from " << static_cast<int>(networkID) << endl;
-			break;
+				CharChoicePacket packet = CharChoicePacket(buf);
+				_charChoiceBuf = new CharChoiceData();	// CLEAN UP
+
+				packet.deserialize(_charChoiceBuf);
+
+				cout << "Received character choice from " << static_cast<int>(networkID) << ": " << static_cast<int>(_charChoiceBuf->_charChoice) << endl;
+				break;
+			}
+			case LobbyPlayer:
+			{
+				// Retrieve network ID of incomming message.
+				uint8_t networkID = buf[NET_ID_POS];
+
+				if (networkID == _networkID)
+				{
+					cout << "Same Network ID, Lobby TCP, Msg Type: " << int(uint8_t(buf[PCK_TYPE_POS])) << endl;
+					return;
+				}
+
+				_lobbyPlayersBuf.emplace_back(networkID);
+
+				cout << "Received lobby player from " << static_cast<int>(networkID) << endl;
+				break;
+			}
+			case EmptyMsg:
+				cout << "Empty message received." << endl;
+				break;
+			case ErrorMsg:
+				cout << "Error message received: " << wsaError << endl;
+				break;
+			default:
+				break;
+			}
 		}
-		case EmptyMsg:
-			cout << "Empty message received." << endl;
-			break;
-		case ErrorMsg:
-			cout << "Error message received: " << wsaError << endl;
-			break;
-		default:
-			break;
+		else if (wsaError == SOCKET_ERROR)
+		{
+			//cout << "TCP Receive Error, " << WSAGetLastError() << endl;
 		}
-	}
-	else if (wsaError == SOCKET_ERROR)
-	{
-		//cout << "TCP Receive Error, " << WSAGetLastError() << endl;
 	}
 }
 
