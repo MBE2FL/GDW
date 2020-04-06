@@ -8,21 +8,21 @@ using UnityEngine.SceneManagement;
 
 
 
-[StructLayout(LayoutKind.Sequential)]
-[Serializable]
-public struct PlayTime
-{
-    public int min;
-    public float sec;
-}
+//[StructLayout(LayoutKind.Sequential)]
+//[Serializable]
+//public struct PlayTime
+//{
+//    public int min;
+//    public float sec;
+//}
 
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-[Serializable]
-public struct PlayerTime
-{
-    public string name;
-    public PlayTime playTime;
-}
+//[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+//[Serializable]
+//public struct PlayerTime
+//{
+//    public string name;
+//    public PlayTime playTime;
+//}
 
 
 public class Leaderboard : MonoBehaviour
@@ -40,14 +40,14 @@ public class Leaderboard : MonoBehaviour
     public Text time5;
 
 
-    public List<PlayerTime> playerTimes;
+    public List<ScoreData> playerTimes;
 
     NetworkManager _networkManager;
     Lobby _lobby;
 
     private void sort()
     {
-        playerTimes.Sort((t1, t2) => (t1.playTime.min * 60 + t1.playTime.sec).CompareTo(t2.playTime.min * 60 + t2.playTime.sec));
+        playerTimes.Sort((t1, t2) => (t1.min * 60 + t1.sec).CompareTo(t2.min * 60 + t2.sec));
     }
 
     void Start()
@@ -95,27 +95,27 @@ public class Leaderboard : MonoBehaviour
             if (playerTimes.Count > 0)
             {
                 line1.text = "1. " + playerTimes[0].name;
-                time1.text = playerTimes[0].playTime.min.ToString() + ":" + playerTimes[0].playTime.sec.ToString();
+                time1.text = playerTimes[0].min.ToString() + ":" + playerTimes[0].sec.ToString();
             }
             if (playerTimes.Count > 1)
             {
                 line2.text = "2. " + playerTimes[1].name;
-                time2.text = playerTimes[1].playTime.min.ToString() + ":" + playerTimes[1].playTime.sec.ToString();
+                time2.text = playerTimes[1].min.ToString() + ":" + playerTimes[1].sec.ToString();
             }
             if (playerTimes.Count > 2)
             {
                 line3.text = "3. " + playerTimes[2].name;
-                time3.text = playerTimes[2].playTime.min.ToString() + ":" + playerTimes[2].playTime.sec.ToString();
+                time3.text = playerTimes[2].min.ToString() + ":" + playerTimes[2].sec.ToString();
             }
             if (playerTimes.Count > 3)
             {
                 line4.text = "4. " + playerTimes[3].name;
-                time4.text = playerTimes[3].playTime.min.ToString() + ":" + playerTimes[3].playTime.sec.ToString();
+                time4.text = playerTimes[3].min.ToString() + ":" + playerTimes[3].sec.ToString();
             }
             if (playerTimes.Count > 4)
             {
                 line5.text = "5. " + playerTimes[4].name;
-                time5.text = playerTimes[4].playTime.min.ToString() + ":" + playerTimes[4].playTime.sec.ToString();
+                time5.text = playerTimes[4].min.ToString() + ":" + playerTimes[4].sec.ToString();
             }
         }
     }
@@ -142,7 +142,7 @@ public class Leaderboard : MonoBehaviour
             scoreData = Marshal.PtrToStructure<ScoreData>(scoreHandle);
             scoreHandle += scoreDataSize;
 
-            playerTimes.Add(scoreData._time);
+            playerTimes.Add(scoreData);
         }
 
         _networkManager.cleanupScoresHandle();

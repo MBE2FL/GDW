@@ -111,7 +111,9 @@ public struct ScoreData
 {
     public byte _EID;
     public byte _nameSize;
-    public PlayerTime _time;
+    public string name;
+    public int min;
+    public float sec;
 }
 
 [StructLayout(LayoutKind.Sequential)]
