@@ -514,7 +514,7 @@ void ClientSide::receiveTCPData()
 
 			packet.deserialize(&animData);
 
-			cout << "Received entity " << static_cast<int>(animData._entityID) << " anim packet. EID: " << static_cast<int>(animData._entityID) << ", state: " << animData._state << endl;
+			//cout << "Received entity " << static_cast<int>(animData._entityID) << " anim packet. EID: " << static_cast<int>(animData._entityID) << ", state: " << animData._state << endl;
 
 			_animDataBuf.emplace_back(animData);
 			return;
