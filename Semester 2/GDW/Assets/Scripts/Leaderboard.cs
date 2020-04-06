@@ -130,7 +130,7 @@ public class Leaderboard : MonoBehaviour
     {
         // Record the new score.
         PlayTime playTime = new PlayTime() { min = (int)(Time.time / 60.0f), sec = Time.time % 60 };
-        PlayerTime playerTime = new PlayerTime() { name = "Howdy Doody", playTime = playTime };
+        PlayerTime playerTime = new PlayerTime() { name = _networkManager.TeamName, playTime = playTime };
 
         // Send the new score to the server.
         ScoreData scoreData = new ScoreData() { _nameSize = (byte)playerTime.name.Length, _time = playerTime };

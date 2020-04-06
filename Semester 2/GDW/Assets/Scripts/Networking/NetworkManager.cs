@@ -327,6 +327,8 @@ public class NetworkManager : MonoBehaviour
 
     static bool _clearBuffers = false;
 
+    string _teamName;
+
 
     [SerializeField]
     Dictionary<byte, NetworkObject> _networkObjects = new Dictionary<byte, NetworkObject>();
@@ -402,6 +404,18 @@ public class NetworkManager : MonoBehaviour
         set
         {
             _clearBuffers = value;
+        }
+    }
+
+    public string TeamName
+    {
+        get
+        {
+            return _teamName;
+        }
+        set
+        {
+            _teamName = value;
         }
     }
 
