@@ -773,28 +773,28 @@ void Server::processScore(char buf[BUF_LEN])
 
 	packet.deserialize(&scoreData);
 
-	cout << "Received score: Team name: " << scoreData._time.teamName << ", time: " << scoreData._time.totalTime.minutes
-		<< "min, " << scoreData._time.totalTime.minutes << "sec" << endl;
+	cout << "Received score: Team name: " << scoreData.teamName << ", time: " << scoreData.minutes
+		<< "min, " << scoreData.minutes << "sec" << endl;
 
-	_scoreboard.getTimes().emplace_back(scoreData._time);
+	_scoreboard.getTimes().emplace_back(scoreData);
 	_scoreboard.Sort();
 	_scoreboard.Write();
 
-	if (scoreData._time.teamName)
+	if (scoreData.teamName)
 	{
-		delete[] scoreData._time.teamName;
-		scoreData._time.teamName = nullptr;
+		delete[] scoreData.teamName;
+		scoreData.teamName = nullptr;
 	}
 }
 
 void Server::processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket)
 {
-	vector<PlayerTime> times = _scoreboard.getTimes();
+	vector<ScoreData> times = _scoreboard.getTimes();
 	uint8_t netID = buf[NET_ID_POS];
 	ScorePacket packet = ScorePacket(netID, times.size());
 
 	vector<ScoreData> dataBuf = vector<ScoreData>(times.size());
-	for (PlayerTime time : times)
+	for (ScoreData time : times)
 	{
 		dataBuf.emplace_back(time);
 	}

@@ -82,7 +82,7 @@ void Scoreboard::Read()
 		playerTimes.clear();
 		while (!in.eof())
 		{
-			PlayerTime temp;
+			ScoreData temp;
 			std::getline(in, buffer);
 			if (buffer != "")
 			{
@@ -95,13 +95,13 @@ void Scoreboard::Read()
 				std::getline(in, buffer);
 				//std::cout << "minutes: " << buffer << "\n";
 				
-				temp.totalTime.minutes = std::stoi(buffer);
+				temp.minutes = std::stoi(buffer);
 				//std::cout << "minutes: " << temp.totalTime.minutes << "\n";
 				
 
 				std::getline(in, buffer);
 				//std::cout << "seconds: " << buffer << "\n";
-				temp.totalTime.seconds = std::stof(buffer);
+				temp.seconds = std::stof(buffer);
 				//std::cout << "seconds: " << temp.totalTime.seconds << "\n";
 				playerTimes.push_back(temp);
 			}
@@ -123,9 +123,9 @@ void Scoreboard::Write()
 		{
 			output += playerTimes[i].teamName;
 			output += "\n";
-			output += to_string(playerTimes[i].totalTime.minutes);
+			output += to_string(playerTimes[i].minutes);
 			output += "\n";
-			output += to_string(playerTimes[i].totalTime.seconds);
+			output += to_string(playerTimes[i].seconds);
 			output += "\n";
 		}
 		out << output;
@@ -133,10 +133,10 @@ void Scoreboard::Write()
 	}
 }
 
-bool CompareTime(PlayerTime& t1, PlayerTime& t2)
+bool CompareTime(ScoreData& t1, ScoreData& t2)
 {
-	float sec1 = (float)t1.totalTime.minutes * 60 + t1.totalTime.seconds;
-	float sec2 = (float)t2.totalTime.minutes * 60 + t2.totalTime.seconds;
+	float sec1 = (float)t1.minutes * 60 + t1.seconds;
+	float sec2 = (float)t2.minutes * 60 + t2.seconds;
 	
 	return (sec1 < sec2);
 }
@@ -146,7 +146,7 @@ void Scoreboard::Sort()
 	std::sort(playerTimes.begin(), playerTimes.end(), CompareTime);
 }
 
-std::vector<PlayerTime>& Scoreboard::getTimes()
+std::vector<ScoreData>& Scoreboard::getTimes()
 {
 	return playerTimes;
 }

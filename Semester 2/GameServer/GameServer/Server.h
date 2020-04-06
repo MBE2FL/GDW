@@ -22,6 +22,7 @@
 #include "ScorePacket.h"
 #include "ChatPacket.h"
 #include "CharChoicePacket.h"
+#include "Scoreboard.h"
 #include <ctime>
 
 //#include <algorithm>

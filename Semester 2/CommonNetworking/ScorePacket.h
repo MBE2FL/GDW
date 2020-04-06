@@ -1,6 +1,6 @@
 #pragma once
 #include "Packet.h"
-#include "Scoreboard.h"
+//#include "Scoreboard.h"
 
 
 struct ScoreData : PacketData

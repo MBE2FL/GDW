@@ -45,16 +45,16 @@
     <ClCompile Include="..\..\CommonNetworking\CustomConsole.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\CommonNetworking\ScorePacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\CommonNetworking\Scoreboard.cpp">
-      <Filter>Source Files\Packets</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\CommonNetworking\ChatPacket.cpp">
       <Filter>Source Files\Packets</Filter>
     </ClCompile>
     <ClCompile Include="..\..\CommonNetworking\CharChoicePacket.cpp">
+      <Filter>Source Files\Packets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonNetworking\Scoreboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\CommonNetworking\ScorePacket.cpp">
       <Filter>Source Files\Packets</Filter>
     </ClCompile>
   </ItemGroup>
