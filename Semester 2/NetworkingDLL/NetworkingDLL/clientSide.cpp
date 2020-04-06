@@ -699,10 +699,10 @@ void ClientSide::cleanupScoresHandle()
 	{
 		scoreData = _scoresBuf[i];
 
-		if (scoreData._time.teamName)
+		if (scoreData.teamName)
 		{
-			delete[] scoreData._time.teamName;
-			scoreData._time.teamName = nullptr;
+			delete[] scoreData.teamName;
+			scoreData.teamName = nullptr;
 		}
 	}
 

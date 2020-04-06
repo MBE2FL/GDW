@@ -23,16 +23,26 @@ void ScorePacket::serialize(void* data)
 	//memcpy(&_data[DATA_START_POS + 1], data, sizeof(ScoreData) * _data[DATA_START_POS]);
 
 	ScoreData* scoreData = reinterpret_cast<ScoreData*>(data);
+	int offset = 0;
 
 	memcpy(&_data[DATA_START_POS], &scoreData->_entityID, 1);
-	memcpy(&_data[DATA_START_POS + 1], &scoreData->_nameSize, 1);
-	memcpy(&_data[DATA_START_POS + 2], &scoreData->_time.teamName, scoreData->_nameSize);
-	memcpy(&_data[DATA_START_POS + 2 + scoreData->_nameSize + 1], &scoreData->_time.totalTime, sizeof(Time));
+	offset += 1;
+
+	memcpy(&_data[DATA_START_POS + offset], &scoreData->_nameSize, 1);
+	offset += 1;
+
+	memcpy(&_data[DATA_START_POS + offset], scoreData->teamName, scoreData->_nameSize);
+	offset += scoreData->_nameSize + 1;
+
+	memcpy(&_data[DATA_START_POS + offset], &scoreData->minutes, sizeof(int));
+	offset += sizeof(int);
+
+	memcpy(&_data[DATA_START_POS + offset], &scoreData->seconds, sizeof(float));
 
 	std::cout << "Score: EID: " << static_cast<int>(scoreData->_entityID) << 
 		", name size: " << static_cast<int>(scoreData->_nameSize) <<
-		", " << scoreData->_time.teamName << 
-		" time: " << scoreData->_time.totalTime.minutes << "min, " << scoreData->_time.totalTime.minutes << "sec" << std::endl;
+		", " << scoreData->teamName << 
+		" time: " << scoreData->minutes << "min, " << scoreData->minutes << "sec" << std::endl;
 }
 
 void ScorePacket::deserialize(void* data)
@@ -40,16 +50,22 @@ void ScorePacket::deserialize(void* data)
 	//memcpy(data, &_data[DATA_START_POS + 1], sizeof(ScoreData) * _data[DATA_START_POS]);
 
 	ScoreData* scoreData = reinterpret_cast<ScoreData*>(data);
-	scoreData->_time = PlayerTime();
-	scoreData->_time.totalTime = Time();
+	int offset = 0;
 
 	memcpy(&scoreData->_entityID, &_data[DATA_START_POS], 1);
-	memcpy(&scoreData->_nameSize, &_data[DATA_START_POS + 1], 1);
+	offset += 1;
 
-	scoreData->_time.teamName = new char[scoreData->_nameSize + 1];
-	memcpy(scoreData->_time.teamName, &_data[DATA_START_POS + 2], scoreData->_nameSize + 1);
+	memcpy(&scoreData->_nameSize, &_data[DATA_START_POS + offset], 1);
+	offset += 1;
 
-	memcpy(&scoreData->_time.totalTime, &_data[DATA_START_POS + 2 + scoreData->_nameSize + 1], sizeof(Time));
+	scoreData->teamName = new char[scoreData->_nameSize + 1];
+	memcpy(scoreData->teamName, &_data[DATA_START_POS + offset], scoreData->_nameSize + 1);
+	offset += scoreData->_nameSize + 1;
+
+	memcpy(&scoreData->minutes, &_data[DATA_START_POS + offset], sizeof(int));
+	offset += sizeof(int);
+
+	memcpy(&scoreData->seconds, &_data[DATA_START_POS + offset], sizeof(float));
 }
 
 uint8_t ScorePacket::getNumScores() const

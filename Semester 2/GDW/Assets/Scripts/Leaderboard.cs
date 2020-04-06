@@ -8,23 +8,6 @@ using UnityEngine.SceneManagement;
 
 
 
-[StructLayout(LayoutKind.Sequential)]
-[Serializable]
-public struct PlayTime
-{
-    public int min;
-    public float sec;
-}
-
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-[Serializable]
-public struct PlayerTime
-{
-    public string name;
-    public PlayTime playTime;
-}
-
-
 public class Leaderboard : MonoBehaviour
 {
     public Text line1;
@@ -142,7 +125,7 @@ public class Leaderboard : MonoBehaviour
             scoreData = Marshal.PtrToStructure<ScoreData>(scoreHandle);
             scoreHandle += scoreDataSize;
 
-            playerTimes.Add(scoreData._time);
+            playerTimes.Add(scoreData);
         }
 
         _networkManager.cleanupScoresHandle();
@@ -151,17 +134,14 @@ public class Leaderboard : MonoBehaviour
     void sendScore()
     {
         // Record the new score.
-        PlayTime playTime = new PlayTime() { min = (int)(Time.time / 60.0f), sec = Time.time % 60 };
-        PlayerTime playerTime = new PlayerTime() { name = _networkManager.TeamName, playTime = playTime };
-
         // Send the new score to the server.
-        ScoreData scoreData = new ScoreData() { _nameSize = (byte)playerTime.name.Length, _time = playerTime };
+        ScoreData scoreData = new ScoreData() { _nameSize = (byte)playerTime.name.Length, name = _networkManager.TeamName, min = (int)(Time.time / 60.0f), sec = Time.time % 60 };
         IntPtr dataHandle = Marshal.AllocHGlobal(Marshal.SizeOf<ScoreData>());
         Marshal.StructureToPtr(scoreData, dataHandle, false);
         _networkManager.sendData(PacketTypes.Score, dataHandle);
 
         // Add and sort the new score into our current leaderboard.
-        playerTimes.Add(playerTime);
+        playerTimes.Add(scoreData);
         sort();
     }
 }

@@ -106,12 +106,15 @@ public struct EntityData
     public byte _parent;
 }
 
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+[Serializable]
 public struct ScoreData
 {
     public byte _EID;
     public byte _nameSize;
-    public PlayerTime _time;
+    public string name;
+    public int min;
+    public float sec;
 }
 
 [StructLayout(LayoutKind.Sequential)]
