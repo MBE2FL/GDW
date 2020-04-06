@@ -29,7 +29,7 @@ public:
 
 	void Sort();
 
-	std::vector<PlayerTime>& getTimes();
+	std::vector<ScoreData>& getTimes();
 
 
 private:
@@ -47,6 +47,6 @@ private:
 	
 	//bool CompareTime(playerTime& t1, playerTime& t2);
 	
-	std::vector<PlayerTime> playerTimes;
+	std::vector<ScoreData> playerTimes;
 };
 
