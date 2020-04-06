@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Runtime.InteropServices;
 using System;
+using UnityEngine.SceneManagement;
 
 
 
@@ -42,6 +43,7 @@ public class Leaderboard : MonoBehaviour
     public List<PlayerTime> playerTimes;
 
     NetworkManager _networkManager;
+    Lobby _lobby;
 
     private void sort()
     {
@@ -52,16 +54,36 @@ public class Leaderboard : MonoBehaviour
     {
         _networkManager = GetComponent<NetworkManager>();
         NetworkManager.onServerConnect += onServerConnect;
+
+        SceneManager.sceneLoaded += onSceneLoaded;
+
+        _lobby = GetComponent<Lobby>();
     }
 
     private void OnApplicationQuit()
     {
         NetworkManager.onServerConnect -= onServerConnect;
+
+        SceneManager.sceneLoaded -= onSceneLoaded;
     }
 
     private void OnDestroy()
     {
         NetworkManager.onServerConnect -= onServerConnect;
+
+        SceneManager.sceneLoaded -= onSceneLoaded;
+    }
+
+    private void onSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+    {
+        if ((scene.name == "Leaderboard") && (_lobby.CharChoice == CharacterChoices.SisterChoice))
+        {
+            SceneManager.SetActiveScene(scene);
+
+            sendScore();
+
+            SceneManager.sceneLoaded -= onSceneLoaded;
+        }
     }
 
     // Update is called once per frame

@@ -6,14 +6,9 @@
 struct ScoreData : PacketData
 {
 	uint8_t _nameSize;
-	PlayerTime _time;
-
-	ScoreData() {}
-
-	ScoreData(const PlayerTime& time)
-	{
-		_time = time;
-	}
+	char* teamName;
+	int minutes;
+	float seconds;
 };
 
 class ScorePacket : public Packet

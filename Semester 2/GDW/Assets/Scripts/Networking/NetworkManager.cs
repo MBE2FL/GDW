@@ -327,7 +327,7 @@ public class NetworkManager : MonoBehaviour
 
     static bool _clearBuffers = false;
 
-    string _teamName;
+    string _teamName = "No Team Name";
 
 
     [SerializeField]

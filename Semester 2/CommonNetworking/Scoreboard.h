@@ -4,18 +4,19 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include "ScorePacket.h"
 
-struct Time
-{
-	int minutes;
-	float seconds;
-};
-
-struct PlayerTime
-{
-	char* teamName;
-	Time totalTime;
-};
+//struct Time
+//{
+//	int minutes;
+//	float seconds;
+//};
+//
+//struct PlayerTime
+//{
+//	char* teamName;
+//	Time totalTime;
+//};
 
 class Scoreboard
 {
