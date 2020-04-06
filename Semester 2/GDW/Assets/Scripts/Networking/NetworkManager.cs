@@ -110,6 +110,7 @@ public struct EntityData
 public struct ScoreData
 {
     public byte _EID;
+    public byte _nameSize;
     public PlayerTime _time;
 }
 
@@ -1107,6 +1108,9 @@ public class NetworkManager : MonoBehaviour
 
             if (_networkObjects.TryGetValue(ownershipData._EID, out netObj))
             {
+                if (ownershipData._ownership == Ownership.ClientOwned)
+                    ownershipData._ownership = Ownership.OtherClientOwned;
+
                 netObj.setOwnership(ownershipData._ownership);
             }
         }

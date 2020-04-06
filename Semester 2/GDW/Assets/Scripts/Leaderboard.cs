@@ -133,7 +133,7 @@ public class Leaderboard : MonoBehaviour
         PlayerTime playerTime = new PlayerTime() { name = "Howdy Doody", playTime = playTime };
 
         // Send the new score to the server.
-        ScoreData scoreData = new ScoreData() { _time = playerTime };
+        ScoreData scoreData = new ScoreData() { _nameSize = (byte)playerTime.name.Length, _time = playerTime };
         IntPtr dataHandle = Marshal.AllocHGlobal(Marshal.SizeOf<ScoreData>());
         Marshal.StructureToPtr(scoreData, dataHandle, false);
         _networkManager.sendData(PacketTypes.Score, dataHandle);

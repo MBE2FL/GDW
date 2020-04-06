@@ -741,7 +741,7 @@ void Server::processAnim(char buf[BUF_LEN], SOCKET* socket)
 	AnimData animData;
 	AnimPacket packet = AnimPacket(buf);
 	packet.deserialize(&animData);
-	cout << "Anim Packet: " << "ID: " << static_cast<int>(animData._entityID) << ", state: " << animData._state << endl;
+	//cout << "Anim Packet: " << "ID: " << static_cast<int>(animData._entityID) << ", state: " << animData._state << endl;
 
 
 	// Send data to all other clients.
@@ -773,9 +773,18 @@ void Server::processScore(char buf[BUF_LEN])
 
 	packet.deserialize(&scoreData);
 
+	cout << "Received score: Team name: " << scoreData._time.teamName << ", time: " << scoreData._time.totalTime.minutes
+		<< "min, " << scoreData._time.totalTime.minutes << "sec" << endl;
+
 	_scoreboard.getTimes().emplace_back(scoreData._time);
 	_scoreboard.Sort();
 	_scoreboard.Write();
+
+	if (scoreData._time.teamName)
+	{
+		delete[] scoreData._time.teamName;
+		scoreData._time.teamName = nullptr;
+	}
 }
 
 void Server::processClientScoresRequest(char buf[BUF_LEN], SOCKET* socket)
@@ -1067,7 +1076,36 @@ void Server::tcpSoftUpdate()
 
 		if (wsaError == SOCKET_ERROR)
 		{
-			cout << "TCP Soft Update: Error " << WSAGetLastError() << endl;
+			wsaError = WSAGetLastError();
+			cout << "TCP Soft Update: Error " << wsaError << endl;
+
+			if ((wsaError == WSAECONNRESET))
+			{
+				clientSocket = nullptr;
+				for (int i = 0; i < fds.fd_count; ++i)
+				{
+					clientSocket = &fds.fd_array[i];
+
+					Client* client;
+					for (int i = 0; i < _softConnectClients.size(); ++i)
+					{
+						client = _clients[i];
+
+						if (*clientSocket == client->_tcpSocket)
+						{
+							cout << "Disconnected client: " << static_cast<int>(client->_id) << endl;
+							closesocket(*clientSocket);
+
+							delete client;
+							client = nullptr;
+
+							_softConnectClients.erase(_softConnectClients.begin() + i);
+							break;
+						}
+					}
+				}
+			}
+
 			continue;
 		}
 		// Timeout occured.
@@ -1208,7 +1246,36 @@ void Server::tcpUpdate()
 
 		if (wsaError == SOCKET_ERROR)
 		{
-			cout << "TCP Update: Error " << WSAGetLastError() << endl;
+			wsaError = WSAGetLastError();
+			cout << "TCP Update: Error " << wsaError << endl;
+
+			if ((wsaError == WSAECONNRESET))
+			{
+				clientSocket = nullptr;
+				for (int i = 0; i < fds.fd_count; ++i)
+				{
+					clientSocket = &fds.fd_array[i];
+
+					Client* client;
+					for (int i = 0; i < _clients.size(); ++i)
+					{
+						client = _clients[i];
+
+						if (*clientSocket == client->_tcpSocket)
+						{
+							cout << "Disconnected client: " << static_cast<int>(client->_id) << endl;
+							closesocket(*clientSocket);
+
+							delete client;
+							client = nullptr;
+
+							_clients.erase(_clients.begin() + i);
+							break;
+						}
+					}
+				}
+			}
+
 			continue;
 		}
 		// Timeout occured.

@@ -291,7 +291,7 @@ public class NetworkObject : MonoBehaviour
             //int state = _animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
             float state = _animator.GetFloat("speed");
 
-            if (Mathf.Approximately(_prevAnimState, state))
+            if (!Mathf.Approximately(_prevAnimState, state))
             {
                 Debug.Log("EID " + _EID + " Anim State: " + state);
                 _prevAnimState = state;
@@ -331,7 +331,7 @@ public class NetworkObject : MonoBehaviour
             {
                 float state = _animator.GetFloat("speed");
 
-                if (Mathf.Approximately(_prevAnimState, state))
+                if (!Mathf.Approximately(_prevAnimState, state))
                 {
                     Debug.Log("EID " + _EID + " Anim State: " + state);
                     _prevAnimState = state;

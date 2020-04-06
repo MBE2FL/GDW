@@ -408,7 +408,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _initialized: 0
   _connected: 0
-  _ip: 127.0.0.1
   _id: 2
   _status: 2
   _timeSinceLastUpdate: 0
@@ -644,7 +643,7 @@ VideoPlayer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1171651915}
-  m_Enabled: 1
+  m_Enabled: 0
   m_VideoClip: {fileID: 32900000, guid: 371af0b8bf9ba7e46a73ed269566730d, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0

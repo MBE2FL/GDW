@@ -5,6 +5,7 @@
 
 struct ScoreData : PacketData
 {
+	uint8_t _nameSize;
 	PlayerTime _time;
 
 	ScoreData() {}
