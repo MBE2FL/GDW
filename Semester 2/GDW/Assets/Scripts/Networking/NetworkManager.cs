@@ -704,6 +704,8 @@ public class NetworkManager : MonoBehaviour
         loadEntities();
 
         Camera.main.GetComponent<cameraMovement>().setPlayer(_lobby.CharChoice);
+
+        SceneManager.sceneLoaded -= onSceneLoaded;
     }
 
     public void loadEntities()

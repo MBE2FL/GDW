@@ -293,7 +293,7 @@ public class NetworkObject : MonoBehaviour
 
             if (!Mathf.Approximately(_prevAnimState, state))
             {
-                Debug.Log("EID " + _EID + " Anim State: " + state);
+                //Debug.Log("EID " + _EID + " Anim State: " + state);
                 _prevAnimState = state;
 
                 AnimData animData = new AnimData() { _EID = _EID, _state = state };
@@ -333,7 +333,7 @@ public class NetworkObject : MonoBehaviour
 
                 if (!Mathf.Approximately(_prevAnimState, state))
                 {
-                    Debug.Log("EID " + _EID + " Anim State: " + state);
+                    //Debug.Log("EID " + _EID + " Anim State: " + state);
                     _prevAnimState = state;
 
                     AnimData animData = new AnimData() { _EID = _EID, _state = state };
