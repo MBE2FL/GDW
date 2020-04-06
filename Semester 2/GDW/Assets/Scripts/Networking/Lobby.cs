@@ -262,6 +262,8 @@ public class Lobby : MonoBehaviour
 
         // Change colour of the text to indicate the team name is up to date.
         _teamNameImage.color = new Color32(25, 255, 108, 255);
+
+        _networkManager.TeamName = _teamNameInput.text;
     }
 
     void receiveMsgs()
@@ -310,6 +312,8 @@ public class Lobby : MonoBehaviour
 
             // Change colour of the text to indicate the team name is up to date.
             _teamNameImage.color = new Color32(25, 255, 108, 255);
+
+            _networkManager.TeamName = _teamNameInput.text;
         }
 
         // Receive character choice.
@@ -375,6 +379,8 @@ public class Lobby : MonoBehaviour
     {
         // Change colour of the text to indicate the team name is not up to date.
         _teamNameImage.color = new Color32(255, 71, 78, 255);
+
+        _networkManager.TeamName = _teamNameInput.text;
     }
 
     public void pickSister()
