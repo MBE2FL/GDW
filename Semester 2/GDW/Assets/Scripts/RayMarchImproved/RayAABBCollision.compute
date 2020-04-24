@@ -1,0 +1,452 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "../RayMarch/Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+
+struct Ray
+{
+    float3 _origin;
+    float3 _dir;
+    float3 _invDir;
+};
+
+struct Bounds
+{
+    float3 _min;
+    float3 _max;
+};
+
+struct NodePoint
+{
+    float _dist;
+    float3 _pos;
+    float3 _colour;
+    float3 _normal;
+};
+
+struct Node
+{
+    NodePoint _botFrontLeft;
+    NodePoint _topFrontLeft;
+    NodePoint _topFrontRight;
+    NodePoint _botFrontRight;
+    NodePoint _botBackLeft;
+    NodePoint _topBackLeft;
+    NodePoint _topBackRight;
+    NodePoint _botBackRight;
+    uint _mortonCode;
+};
+
+struct RenderDebugInfo
+{
+    Node _node;
+    uint _posCode;
+    float3 _rayIntStart;
+    float3 _rayIntEnd;
+    float _startDist;
+    float _maxDist;
+};
+
+
+float3 _CameraPos;
+float4x4 _cameraToWorldMatrix;
+float4x4 _cameraInvProj;
+StructuredBuffer<Bounds> _octreeBounds;
+StructuredBuffer<Node> _octree;
+int _octreeTotalNodes;
+static const float _minDist = 0.001;
+RWTexture2D<float4> _sceneCol;
+float3 _lightDir;
+float3 _lightPos;
+
+
+
+float _specularExp;
+float _attenuationConstant;
+float _attenuationLinear;
+float _attenuationQuadratic;
+
+float3 _ambientColour;
+float3 _diffuseColour;
+float3 _specularColour;
+float3 _lightConstants; // .x: ambient, .y: diffuse, .z: specular
+
+
+
+Ray generateCameraRay(float2 uv);
+bool intersect(const Ray ray, const Bounds bounds, out float rayIntStart, out float rayIntEnd);
+uint morton3D(float x, float y, float z);
+Node findNode(float3 pos, Bounds bounds, inout float4 colour);
+Node findNode(float3 pos);
+float adf(Node node, float3 pos);
+void trilinearInterpolate(Node node, float3 pos, out float dist);
+float3 calcNormal(Node node, float3 pos);
+void cheapLighting(float3 p, float3 normal, inout float4 colour);
+void adfMat(Node node, float3 pos, out float3 normal, inout float4 colour);
+void trilinearMatInterpolate(Node node, float3 pos, out float3 normal, inout float3 colour);
+
+
+[numthreads(26,26,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    // Generate a ray for this pixel.
+    uint width, height;
+    _sceneCol.GetDimensions(width, height);
+    float2 uv = (id.xy / float2(width, height) * 2.0) - 1.0;
+    Ray ray = generateCameraRay(uv);
+    
+    float rayIntStart;
+    float rayIntEnd;
+    float4 colour = _sceneCol[id.xy];
+    Bounds bounds = _octreeBounds[0];
+    bounds._min += 0.1;
+    bounds._max -= 0.1;
+    
+    // Check if this ray intersects with the octree's bounding box.
+    if (intersect(ray, bounds, rayIntStart, rayIntEnd))
+    {
+        // Start the marcher at the intersection point, and with the distance to the first intersection point.
+        float totalDist = rayIntStart;
+        float distToEnd = rayIntEnd;
+        float3 pos = ray._origin + totalDist * ray._dir;
+        float dist = 0.0;
+        Node node;
+
+
+        //dist = adf(node, pos);
+        //colour = float4(dist.rrr / distToEnd, 1.0);
+        ////colour = float4(-1000, 0.0, 0.0, 1.0);
+        
+        //totalDist += dist;
+        //pos = ray._origin + totalDist * ray._dir;
+       
+
+        // Sample the octree until we either hit an isosurface, or the end intersection point.
+        while (totalDist < distToEnd)
+        {
+            // Find the smallest node containing the current point.
+            node = findNode(pos);
+            
+            // Compute the distance to the nearest surface.
+            dist = adf(node, pos);
+            
+            // Hit an isosurface.
+            if (dist < _minDist)
+            {
+                // Colour in red for testing purposes.
+                colour = float4(0.5, 0.0, 0.5, 1.0);
+                //float3 normal = calcNormal(node, pos);
+                
+                float3 normal;
+                float4 throwAway;
+                adfMat(node, pos, normal, colour);
+                
+                //normal = calcNormal(node, pos);
+                
+                cheapLighting(pos, normal, colour);
+                
+                //colour.rgb = normal.rgb;
+                break;
+            }
+            
+            // March the ray further.
+            totalDist += dist;
+            pos = ray._origin + totalDist * ray._dir;
+        }
+    }
+    
+
+    
+    _sceneCol[id.xy] = colour;
+    //WavePrefixSum()
+}
+
+Ray generateCameraRay(float2 uv)
+{
+    //float3 origin = mul(_cameraToWorldMatrix, float4(0.0, 0.0, 0.0, 1.0)).xyz;
+    Ray ray;
+    ray._origin = _CameraPos;
+    ray._dir = mul(_cameraInvProj, float4(uv, 0.0, 1.0)).xyz;
+    
+    ray._dir = mul(_cameraToWorldMatrix, float4(ray._dir, 0.0)).xyz;
+    ray._dir = normalize(ray._dir);
+    
+    //ray._invDir = 1.0 / ray._dir;
+    ray._invDir = rcp(ray._dir);
+    
+    return ray;
+}
+
+bool intersect(const Ray ray, const Bounds bounds, out float rayIntStart, out float rayIntEnd)
+{
+    float tmin = -999999.0, tmax = 999999.0;
+    
+    //float3 t0 = (bounds._min - ray._origin) * ray._invDir;
+    //float3 t1 = (bounds._max - ray._origin) * ray._invDir;
+    
+    float3 t0 = ((float3(-6.0, 5.0, 2.0) + 0.1) - ray._origin) * ray._invDir;
+    float3 t1 = ((float3(14.0, 25.0, 22.0) - 0.1) - ray._origin) * ray._invDir;
+    
+
+    float3 tSmaller = min(t0, t1);
+    float3 tBigger = max(t0, t1);
+    
+    rayIntStart = tmin = max(tmin, max(tSmaller[0], max(tSmaller[1], tSmaller[2])));
+    rayIntEnd = tmax = min(tmax, min(tBigger[0], min(tBigger[1], tBigger[2])));
+
+    return tmin < tmax;
+}
+
+
+
+Node findNode(float3 pos, Bounds bounds, inout float4 colour)
+{
+    Node node;
+    
+    // Normalize the position according the bounds of the octree. Encode the normalized position as a morton code.
+    //float3 normPos = (pos - bounds._min) / (bounds._max - bounds._min);
+    float3 size = float3(20.0, 20.0, 20.0);
+    //float3 halfSizePerNode = size / _octreeTotalNodes * 0.5;
+    float3 normPos = (pos - float3(-6.0, 5.0, 2.0)) / size;
+    uint posCode = morton3D(normPos.x, normPos.y, normPos.z);
+    
+    int totalNodes = _octreeTotalNodes - 1;
+    
+    uint firstCode;
+    uint secondCode;
+    
+    
+    
+    // Look for the node, which encompasses the desired position.
+    for (int i = 0; i < totalNodes; ++i)
+    {
+        firstCode = _octree[i]._mortonCode;
+        secondCode = _octree[i + 1]._mortonCode;
+        
+        // Check if the morton code of the position is between two nodes' morton codes.
+        if ((firstCode <= posCode) && (secondCode >= posCode))
+        {
+            // Node with the smaller morton code encompasses the position.
+            if ((posCode - firstCode) <= (secondCode - posCode))
+            {
+                colour = float4(0.0, 1.0, 0.0, 1.0);
+                return _octree[i];
+            }
+            // Node with the bigger morton code encompasses the position.
+            else
+            {
+                colour = float4(0.0, 1.0, 0.0, 1.0);
+                return _octree[i + 1];
+            }
+        }
+    }
+    
+    colour = float4(1.0, 0.0, 0.0, 1.0);
+    return node;
+}
+
+bool boxContainsPoint(float3 pos, float3 min, float3 max)
+{
+    float3 minContains = when_ge_float(float4(pos.xyz, 0.0), float4(min, 0.0)).xyz;
+    float3 maxContains = when_le_float(float4(pos.xyz, 0.0), float4(max, 0.0)).xyz;
+    
+    float contains = minContains.x + minContains.y + minContains.z + maxContains.x + maxContains.y + maxContains.z;
+    
+    return contains == 6;
+}
+
+Node findNode(float3 pos)
+{
+    Node node;
+    Bounds bounds;
+    
+    // Look for the node, which encompasses the desired position.
+    for (int i = 0; i < _octreeTotalNodes; ++i)
+    {
+        node = _octree[i];
+        
+        bounds._max = node._topBackRight._pos;
+        bounds._min = node._botFrontLeft._pos;
+        
+        if (boxContainsPoint(pos, bounds._min, bounds._max))
+        {
+            //colour = float4(0.0, 1.0, 0.0, 1.0);
+            return node;
+        }
+    }
+    
+    //colour = float4(1.0, 0.0, 0.0, 1.0);
+    return node;
+}
+
+
+float adf(Node node, float3 pos)
+{
+    float dist;
+    
+    trilinearInterpolate(node, pos, dist);
+    
+    return dist;
+}
+
+void bilinearInterpolate(float2 botLeft, float2 botRight, float2 topLeft, float2 topRight, float2 pos, float4 sampledDist, out float dist)
+{
+    float xInterValue = (pos.x - botLeft.x) / (botRight.x - botLeft.x);
+    float yInterValue = (pos.y - botLeft.y) / (topRight.y - botRight.y);
+    
+    float distA = lerp(sampledDist.x, sampledDist.y, xInterValue);
+    float distB = lerp(sampledDist.z, sampledDist.w, xInterValue);
+    dist = lerp(distA, distB, yInterValue);
+}
+
+void trilinearInterpolate(Node node, float3 pos, out float dist)
+{
+    float4 sampledDist = float4(node._botFrontLeft._dist, node._botFrontRight._dist, node._topFrontLeft._dist, node._topFrontRight._dist);
+    float distA;
+    bilinearInterpolate(node._botFrontLeft._pos.xy, node._botFrontRight._pos.xy, node._topFrontLeft._pos.xy,
+                        node._topFrontRight._pos.xy, pos.xy, sampledDist, distA);
+    
+    sampledDist = float4(node._botBackLeft._dist, node._botBackRight._dist, node._topBackLeft._dist, node._topBackRight._dist);
+    float distB;
+    bilinearInterpolate(node._botBackLeft._pos.xy, node._botBackRight._pos.xy, node._topBackLeft._pos.xy,
+                        node._topBackRight._pos.xy, pos.xy, sampledDist, distB);
+
+    float zInterValue = (pos.z - node._botFrontLeft._pos.z) / (node._botBackLeft._pos.z - node._botFrontLeft._pos.z);
+    dist = lerp(distA, distB, zInterValue);
+}
+
+
+// MATERIAL VERSIONS
+void adfMat(Node node, float3 pos, out float3 normal, inout float4 colour)
+{
+    float3 interColour = colour.rgb;
+    trilinearMatInterpolate(node, pos, normal, interColour);
+
+    colour = float4(interColour, 1.0);
+}
+
+void bilinearMatInterpolate(NodePoint botLeft, NodePoint botRight, NodePoint topLeft, NodePoint topRight, float2 pos,
+                            out float3 normal, out float3 colour)
+{
+    float2 botLeftPos = botLeft._pos.xy;
+    float2 botRightPos = botRight._pos.xy;
+    float2 topLeftPos = topLeft._pos.xy;
+    float2 topRightPos = topRight._pos.xy;
+    
+    float3 botLeftNormal = botLeft._normal;
+    float3 botRightNormal = botRight._normal;
+    float3 topLeftNormal = topLeft._normal;
+    float3 topRightNormal = topRight._normal;
+    
+    float3 botLeftColour = botLeft._colour;
+    float3 botRightColour = botRight._colour;
+    float3 topLeftColour = topLeft._colour;
+    float3 topRightColour = topRight._colour;
+    
+    
+    
+    float xInterValue = (pos.x - botLeftPos.x) / (botRightPos.x - botLeftPos.x);
+    float yInterValue = (pos.y - botLeftPos.y) / (topRightPos.y - botLeftPos.y);
+    
+    float3 valueA = lerp(botLeftNormal, botRightNormal, xInterValue);
+    float3 valueB = lerp(topLeftNormal, topRightNormal, xInterValue);
+    normal = lerp(valueA, valueB, yInterValue);
+    
+    valueA = lerp(botLeftColour, botRightColour, xInterValue);
+    valueB = lerp(topLeftColour, topRightColour, xInterValue);
+    colour = lerp(valueA, valueB, yInterValue);
+}
+
+void trilinearMatInterpolate(Node node, float3 pos, out float3 normal, inout float3 colour)
+{
+    float3 normalA;
+    float3 colourA;
+    bilinearMatInterpolate(node._botFrontLeft, node._botFrontRight, node._topFrontLeft,
+                        node._topFrontRight, pos.xy, normalA, colourA);
+    
+    float3 normalB;
+    float3 colourB;
+    bilinearMatInterpolate(node._botBackLeft, node._botBackRight, node._topBackLeft,
+                        node._topBackRight, pos.xy, normalB, colourB);
+
+    float zInterValue = (pos.z - node._botFrontLeft._pos.z) / (node._botBackLeft._pos.z - node._botFrontLeft._pos.z);
+    normal = lerp(normalA, normalB, zInterValue);
+    colour = lerp(colourA, colourB, zInterValue);
+    
+    normal = normalize(normal);
+}
+
+
+// Expands a 10-bit integer into 30 bits
+// by inserting 2 zeros after each bit.
+uint expandBits(uint v)
+{
+    v = (v * 0x00010001u) & 0xFF0000FFu;
+    v = (v * 0x00000101u) & 0x0F00F00Fu;
+    v = (v * 0x00000011u) & 0xC30C30C3u;
+    v = (v * 0x00000005u) & 0x49249249u;
+    return v;
+}
+
+// Calculates a 30-bit Morton code for the
+// given 3D point located within the unit cube [0,1].
+uint morton3D(float x, float y, float z)
+{
+    x = min(max(x * 1024.0f, 0.0f), 1023.0f);
+    y = min(max(y * 1024.0f, 0.0f), 1023.0f);
+    z = min(max(z * 1024.0f, 0.0f), 1023.0f);
+    uint xx = expandBits((uint) x);
+    uint yy = expandBits((uint) y);
+    uint zz = expandBits((uint) z);
+    return xx * 4 + yy * 2 + zz;
+}
+
+
+float3 calcNormal(Node node, float3 pos)
+{
+    // Epsilon - used to approximate dx when taking the derivative.
+    const float2 EPS = float2(0.001, 0.0);
+
+    // Find the "gradient" of the distance field at pos.
+    // Remember, the distance field is not boolean - even if you are inside an object
+    // the number is negative, so this calculation still works.
+    // Essentially you are approximating the derivative of the distance field at this point.
+    float3 normal = float3(
+                            adf(node, pos + EPS.xyy) - adf(node, pos - EPS.xyy),
+                            adf(node, pos + EPS.yxy) - adf(node, pos - EPS.yxy),
+                            adf(node, pos + EPS.yyx) - adf(node, pos - EPS.yyx));
+
+    return normalize(normal);
+}
+
+void cheapLighting(float3 p, float3 normal, inout float4 colour)
+{
+    // Ambient contribution
+    float3 lightColour = _lightConstants.x * _ambientColour;
+
+    //colour += float4(dot(-_LightDir, normal).rrr, 1.0);
+    float NdotL = saturate(dot(-_lightDir, normal));
+
+    // Light contributes diffuse and specular lighting.
+    float NdotL_gt_0 = when_gt_float(NdotL, 0.0);
+    //if (NdotL > 0.0)
+    //{
+    float dist = length(_lightPos - p);
+
+        // Calculate light's attenuation
+    float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
+
+        // Diffuse Contribution
+    lightColour += _diffuseColour * (_lightConstants.y * NdotL * attenuation * NdotL_gt_0);
+
+        // Calculate the Half-Angle vector
+    float3 H = normalize(-_lightDir + normalize(-p));
+    float NdotH = saturate(dot(normal, H));
+            
+        // Specular Contribution
+    lightColour += _specularColour * (_lightConstants.z * pow(NdotH, _specularExp) * attenuation * NdotL_gt_0);
+    
+    colour.rgb = lightColour + (colour.rgb * max(NdotL, 0.2));
+}

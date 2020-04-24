@@ -59,7 +59,7 @@ class RayMarchPass : CustomPass
             shader = _shaders[i];
 
             // Skip all non-ready and non-rendering shaders.
-            if (!shader.Ready || (shader.ShaderType != ShaderType.Rendering))
+            if (!shader.Ready || (shader.ShaderType != ShaderType.FragRendering))
                 continue;
 
             _rayMarchMaterial.shader = shader.EffectShader;
@@ -67,7 +67,7 @@ class RayMarchPass : CustomPass
             _rayMarchMaterial.SetMatrix("_cameraInvMatrix", cameraInvMatrix);
             _rayMarchMaterial.SetMatrix("_cameraMatrix", cameraMatrix);
 
-            (shader as RMRenderShader).render(_rayMarchMaterial, cameraInvViewMatrix, camPos, _rayMarcher.SunLight);
+            (shader as RMRenderShader).render(_rayMarchMaterial, cameraInvViewMatrix, camPos, _rayMarcher.Sunlight);
 
             //CustomGraphicsBlit(source, destination, EffectMaterial, 0, i == (_shaders.Count - 1), ref _distTex);
             CoreUtils.DrawFullScreen(cmd, _rayMarchMaterial, customMaterialProperties, 0);

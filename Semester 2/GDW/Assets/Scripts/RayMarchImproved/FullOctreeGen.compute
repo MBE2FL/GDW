@@ -1,0 +1,384 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "../RayMarch/Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+#include "../RayMarch/Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+#include "../RayMarch/Graphics Pipeline/Shaders/RayMarchEssentialFunctions.hlsl"
+
+
+
+struct NodePoint
+{
+    float _dist;
+    float3 _pos;
+    float3 _colour;
+    float3 _normal;
+};
+
+struct Node
+{
+    NodePoint _botFrontLeft;
+    NodePoint _topFrontLeft;
+    NodePoint _topFrontRight;
+    NodePoint _botFrontRight;
+    NodePoint _botBackLeft;
+    NodePoint _topBackLeft;
+    NodePoint _topBackRight;
+    NodePoint _botBackRight;
+    uint _mortonCode;
+};
+
+struct GPUDebugNodeInfo
+{
+    float3 _centre;
+    float3 _min;
+    float3 _max;
+    uint3 _id;
+    uint _linearID;
+    float3 _size;
+    uint _nodesPerAxis;
+    uint _maxDepth;
+    int _anyNegatives;
+    float _minDist;
+    float _maxDist;
+};
+
+struct Bounds
+{
+    float3 _centre;
+    float3 _extends;
+    float3 _max;
+    float3 _min;
+    float3 _size;
+};
+
+void createBounds(out Bounds bounds, float3 centre, float3 size)
+{
+    bounds._centre = centre;
+    bounds._extends = size * 0.5;
+    bounds._max = centre + bounds._extends;
+    bounds._min = centre - bounds._extends;
+    bounds._size = size;
+}
+
+RWStructuredBuffer<Node> _octree;
+RWStructuredBuffer<GPUDebugNodeInfo> _octreeDebugInfo;
+uint _maxDepth;
+//Bounds _rootBounds;
+//StructuredBuffer<Bounds> _rootBoundsBuf;
+float3 _rootBoundsMin;
+float3 _rootBoundsSize;
+
+/// ######### RM OBJS Information #########
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+float4x4 _invModelMats[MAX_RM_OBJS];
+float4 _rm_colours[MAX_RM_OBJS];
+//int _primitiveTypes[MAX_RM_OBJS];
+float2 _combineOps[MAX_RM_OBJS];
+float4 _primitiveGeoInfo[MAX_RM_OBJS];
+float4 _altInfo[MAX_RM_OBJS];
+
+float4 _bufferedCSGs[MAX_CSG_CHILDREN];
+float4 _combineOpsCSGs[MAX_CSG_CHILDREN];
+
+//float4 _boundGeoInfo[MAX_RM_OBJS];
+/// ######### RM OBJS Information #########
+float distBuffer[MAX_RM_OBJS];
+
+uint findDepth(uint nodeID);
+void createNode(out Node node, inout Bounds bounds, inout float3 botFrontLeft, inout float3 topFrontLeft, inout float3 topFrontRight, inout float3 botFrontRight,
+                    inout float3 botBackLeft, inout float3 topBackLeft, inout float3 topBackRight, inout float3 botBackRight);
+uint morton3D(float x, float y, float z);
+//float map(float3 p);
+float3 calcNormal(float3 pos);
+
+
+[numthreads(2,2,2)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    
+    Node node;
+    uint nodesPerAxis = pow(2.0, _maxDepth);
+    uint linearID = id.x + (id.y * nodesPerAxis) + (id.z * nodesPerAxis * nodesPerAxis);
+    node = _octree[linearID];
+    
+    // Find this nodes depth.
+    //uint depth = findDepth(id.x);   // TO-DO Replace this, since it uses a while loop.
+    
+    // Compute the bounds of this node.
+    float3 size = _rootBoundsSize / nodesPerAxis;
+    //uint normID = fmod(id.x, 8.0);  // Map node id to 1, 2, 3, 4, 5, 6, 7, 0 id.
+    //float3 halfSizeDepth = size * 0.5 * depth;
+    float3 halfSize = size * 0.5;
+    float3 centre;
+    //centre.x = _rootBounds._min.x + (size.x * (1.0 + id.x)) - halfSize.x;
+    centre = _rootBoundsMin + (size * (1.0 + id.xyz)) - halfSize;
+    //float4 isLeftTest = when_eq_float4(float4(normID, normID, normID, normID), float4(1.0, 2.0, 5.0, 6.0));
+    //float isLeft = isLeftTest.x + isLeftTest.y + isLeftTest.z + isLeftTest.w;
+    //float4 isBotTest = when_eq_float4(float4(normID, normID, normID, normID), float4(1.0, 4.0, 5.0, 0.0));
+    //float isBot = isBotTest.x + isBotTest.y + isBotTest.z + isBotTest.w;
+    //float4 isBackTest = when_eq_float4(float4(normID, normID, normID, normID), float4(5.0, 6.0, 7.0, 0.0));
+    //float isBack = isBackTest.x + isBackTest.y + isBackTest.z + isBackTest.w;
+    //centre.x = _rootBounds._centre.x - (halfSizeDepth * isLeft) + (halfSizeDepth * (1.0 - isLeft));
+    //centre.y = _rootBounds._centre.y - (halfSizeDepth * isBot) + (halfSizeDepth * (1.0 - isBot));
+    //centre.z = _rootBounds._centre.z - (halfSizeDepth * isBack) + (halfSizeDepth * (1.0 - isBack));
+    
+    // Create a new node.
+    Bounds bounds;
+    createBounds(bounds, centre, size);
+    //float3 botBackLeft = bounds._min;
+    //float3 topFrontRight = bounds._max;
+    //float3 botFrontLeft = float3(botBackLeft.x, botBackLeft.y, topFrontRight.z);
+    //float3 topFrontLeft = float3(botBackLeft.x, topFrontRight.y, topFrontRight.z);
+    //float3 botFrontRight = float3(topFrontRight.x, botBackLeft.y, topFrontRight.z);
+    //float3 topBackLeft = float3(botBackLeft.x, topFrontRight.y, botBackLeft.z);
+    //float3 topBackRight = float3(topFrontRight.x, topFrontRight.y, botBackLeft.z);
+    //float3 botBackRight = float3(topFrontRight.x, botBackLeft.y, botBackLeft.z);
+    
+    float3 botFrontLeft = bounds._min;
+    float3 topBackRight = bounds._max;
+    float3 botBackLeft = float3(botFrontLeft.x, botFrontLeft.y, topBackRight.z);
+    float3 topFrontLeft = float3(botFrontLeft.x, topBackRight.y, botFrontLeft.z);
+    float3 botFrontRight = float3(topBackRight.x, botFrontLeft.y, botFrontLeft.z);
+    float3 topBackLeft = float3(botFrontLeft.x, topBackRight.y, topBackRight.z);
+    float3 topFrontRight = float3(topBackRight.x, topBackRight.y, botFrontLeft.z);
+    float3 botBackRight = float3(topBackRight.x, botFrontLeft.y, topBackRight.z);
+    
+    // Encode this node's centre in a morton code.
+    float3 normCentre = (centre - _rootBoundsMin) / _rootBoundsSize;
+    node._mortonCode = morton3D(normCentre.x, normCentre.y, normCentre.z);
+    
+    // Sample the distance field with the corner points of this node's boundary.
+    node._botFrontLeft._dist = map(botFrontLeft);
+    node._botFrontLeft._colour = mapMat().colour.rgb;
+    
+    node._topFrontLeft._dist = map(topFrontLeft);
+    node._topFrontLeft._colour = mapMat().colour.rgb;
+    
+    node._topFrontRight._dist = map(topFrontRight);
+    node._topFrontRight._colour = mapMat().colour.rgb;
+    
+    node._botFrontRight._dist = map(botFrontRight);
+    node._botFrontRight._colour = mapMat().colour.rgb;
+    
+    node._botBackLeft._dist = map(botBackLeft);
+    node._botBackLeft._colour = mapMat().colour.rgb;
+    
+    node._topBackLeft._dist = map(topBackLeft);
+    node._topBackLeft._colour = mapMat().colour.rgb;
+    
+    node._topBackRight._dist = map(topBackRight);
+    node._topBackRight._colour = mapMat().colour.rgb;
+    
+    node._botBackRight._dist = map(botBackRight);
+    node._botBackRight._colour = mapMat().colour.rgb;
+    
+    
+    node._botFrontLeft._pos = botFrontLeft;
+    node._topFrontLeft._pos = topFrontLeft;
+    node._topFrontRight._pos = topFrontRight;
+    node._botFrontRight._pos = botFrontRight;
+    node._botBackLeft._pos = botBackLeft;
+    node._topBackLeft._pos = topBackLeft;
+    node._topBackRight._pos = topBackRight;
+    node._botBackRight._pos = botBackRight;
+    
+    node._botFrontLeft._normal = calcNormal(botFrontLeft);
+    node._topFrontLeft._normal = calcNormal(topFrontLeft);
+    node._topFrontRight._normal = calcNormal(topFrontRight);
+    node._botFrontRight._normal = calcNormal(botFrontRight);
+    node._botBackLeft._normal = calcNormal(botBackLeft);
+    node._topBackLeft._normal = calcNormal(topBackLeft);
+    node._topBackRight._normal = calcNormal(topBackRight);
+    node._botBackRight._normal = calcNormal(botBackRight);
+    
+   
+    
+    
+    
+    // ********* DEBUG ONLY *********
+    GPUDebugNodeInfo debugNode = _octreeDebugInfo[linearID];
+    debugNode._id = id;
+    debugNode._centre = centre;
+    debugNode._min = bounds._min;
+    debugNode._max = bounds._max;
+    debugNode._linearID = linearID;
+    debugNode._size = size;
+    debugNode._nodesPerAxis = nodesPerAxis;
+    debugNode._maxDepth = _maxDepth;
+    
+    float minDist = node._botFrontLeft._dist;
+    minDist = min(minDist, node._topFrontLeft._dist);
+    minDist = min(minDist, node._topFrontRight._dist);
+    minDist = min(minDist, node._botFrontRight._dist);
+    minDist = min(minDist, node._botBackLeft._dist);
+    minDist = min(minDist, node._botBackLeft._dist);
+    minDist = min(minDist, node._topBackRight._dist);
+    minDist = min(minDist, node._botBackRight._dist);
+    
+    debugNode._minDist = minDist;
+    debugNode._anyNegatives = when_lt_float(minDist, 0.0);
+    
+    float maxDist = node._botFrontLeft._dist;
+    maxDist = max(maxDist, node._topFrontLeft._dist);
+    maxDist = max(maxDist, node._topFrontRight._dist);
+    maxDist = max(maxDist, node._botFrontRight._dist);
+    maxDist = max(maxDist, node._botBackLeft._dist);
+    maxDist = max(maxDist, node._botBackLeft._dist);
+    maxDist = max(maxDist, node._topBackRight._dist);
+    maxDist = max(maxDist, node._botBackRight._dist);
+    
+    debugNode._maxDist = maxDist;
+    
+    _octreeDebugInfo[linearID] = debugNode;
+    // ********* DEBUG ONLY *********
+
+
+
+    // Store node into octree array.
+    _octree[linearID] = node;
+}
+
+//uint findDepth(uint nodeID)
+//{
+//    bool breakLoop = 0;
+//    uint depth = -1;
+//    uint totalNodes;
+    
+//    while(!breakLoop)
+//    {
+//        ++depth;
+//        totalNodes += pow(8.0, depth);
+//        breakLoop = when_lt_float(nodeID, totalNodes);
+//    }
+    
+//    return depth;
+//}
+
+
+// Expands a 10-bit integer into 30 bits
+// by inserting 2 zeros after each bit.
+uint expandBits(uint v)
+{
+    v = (v * 0x00010001u) & 0xFF0000FFu;
+    v = (v * 0x00000101u) & 0x0F00F00Fu;
+    v = (v * 0x00000011u) & 0xC30C30C3u;
+    v = (v * 0x00000005u) & 0x49249249u;
+    return v;
+}
+
+// Calculates a 30-bit Morton code for the
+// given 3D point located within the unit cube [0,1].
+uint morton3D(float x, float y, float z)
+{
+    x = min(max(x * 1024.0f, 0.0f), 1023.0f);
+    y = min(max(y * 1024.0f, 0.0f), 1023.0f);
+    z = min(max(z * 1024.0f, 0.0f), 1023.0f);
+    uint xx = expandBits((uint) x);
+    uint yy = expandBits((uint) y);
+    uint zz = expandBits((uint) z);
+    return xx * 4 + yy * 2 + zz;
+}
+
+float map(float3 p)
+{
+    float scene = _maxDrawDist;
+    scene = 600.0;
+
+    float4 pos = float4(0.0, 0.0, 0.0, 0.0);
+    float4 geoInfo = float4(0.0, 0.0, 0.0, 0.0);
+
+    float obj;
+    float obj2;
+
+    float csg;
+    float storedCSGs[MAX_CSG_CHILDREN];
+
+    float3 cell = float3(0.0, 0.0, 0.0);
+
+	// ######### New Game Object #########
+    pos = mul(_invModelMats[0], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[0];
+    obj = sdSphere(pos.xyz, geoInfo.x);
+    distBuffer[0] = obj;
+
+    scene = opSmoothUnion(scene, obj, _combineOps[0].y);
+	// ######### New Game Object #########
+    
+    // ######### New Game Object #########
+    pos = mul(_invModelMats[1], float4(p, 1.0));
+    geoInfo = _primitiveGeoInfo[1];
+    obj = sdBox(pos.xyz, geoInfo.xyz);
+    distBuffer[1] = obj;
+
+    scene = opSmoothUnion(scene, obj, _combineOps[1].y);
+	// ######### New Game Object #########
+
+    return scene;
+}
+
+rmPixel mapMat()
+{
+    rmPixel scene;
+    scene.dist = 600.0;;
+    scene.colour = float4(0.0, 0.0, 0.0, 0.0);
+    scene.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    scene.refractInfo = float2(0.0, 1.0);
+    scene.texID = 0;
+
+    rmPixel obj;
+    obj.colour = float4(0.0, 0.0, 0.0, 0.0);
+    obj.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    obj.refractInfo = float2(0.0, 1.0);
+    obj.texID = 0;
+
+    rmPixel obj2;
+    obj2.colour = float4(0.0, 0.0, 0.0, 0.0);
+    obj2.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    obj2.refractInfo = float2(0.0, 1.0);
+    obj2.texID = 0;
+
+    rmPixel csg;
+    csg.colour = float4(0.0, 0.0, 0.0, 0.0);
+    csg.reflInfo = float4(0.0, 0.0, 0.0, 0.0);
+    csg.refractInfo = float2(0.0, 1.0);
+    csg.texID = 0;
+    rmPixel storedCSGs[MAX_CSG_CHILDREN];
+
+    float reflWeight;
+	// ######### New Game Object #########
+    obj.dist = distBuffer[0];
+    obj.colour = _rm_colours[0];
+    scene = opSmoothUnionMat(scene, obj, _combineOps[0].y);
+	// ######### New Game Object #########
+    
+    // ######### New Game Object #########
+    obj.dist = distBuffer[1];
+    obj.colour = _rm_colours[1];
+    scene = opSmoothUnionMat(scene, obj, _combineOps[1].y);
+	// ######### New Game Object #########
+
+
+    return scene;
+}
+
+
+
+float3 calcNormal(float3 pos)
+{
+    // Epsilon - used to approximate dx when taking the derivative.
+    const float2 EPS = float2(0.001, 0.0);
+
+    // Find the "gradient" of the distance field at pos.
+    // Remember, the distance field is not boolean - even if you are inside an object
+    // the number is negative, so this calculation still works.
+    // Essentially you are approximating the derivative of the distance field at this point.
+    float3 normal = float3(
+                            map(pos + EPS.xyy) - map(pos - EPS.xyy),
+                            map(pos + EPS.yxy) - map(pos - EPS.yxy),
+                            map(pos + EPS.yyx) - map(pos - EPS.yyx));
+
+    return normalize(normal);
+}

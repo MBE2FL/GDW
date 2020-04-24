@@ -83,8 +83,90 @@ public abstract class RMObj : MonoBehaviour
     //protected event System.Action<RayMarchShader, RMObj> test;
     //protected event System.Action _onRemove;
     //protected event System.Action _onDrawOrderChange;
-    
-    
+
+
+    [SerializeField]
+    Bounds _octreeBounds;
+    [SerializeField]
+    Vector3 _octreeCentreOffset;
+    [SerializeField]
+    List<Node> _octree = new List<Node>();
+    [SerializeField]
+    List<DebugNodeInfo> _octreeDebugInfo = new List<DebugNodeInfo>();
+    [SerializeField]
+    List<GPUDebugNodeInfo> _octreeGPUDebugInfo = new List<GPUDebugNodeInfo>();
+    [SerializeField]
+    bool _visualizeOctree = false;
+    [SerializeField]
+    uint _maxDepth;
+
+
+    public Bounds OctreeBounds
+    {
+        get
+        {
+            return _octreeBounds;
+        }
+        set
+        {
+            _octreeBounds = value;
+        }
+    }
+
+    public void SetOctreeBoundsSize(Vector3 size)
+    {
+        _octreeBounds.size = size;
+    }
+
+    public List<Node> Octree
+    {
+        get
+        {
+            return _octree;
+        }
+        set
+        {
+            _octree = value;
+        }
+    }
+
+    public List<DebugNodeInfo> OctreeDebugInfo
+    {
+        get
+        {
+            return _octreeDebugInfo;
+        }
+        set
+        {
+            _octreeDebugInfo = value;
+        }
+    }
+
+    public List<GPUDebugNodeInfo> OctreeGPUDebugInfo
+    {
+        get
+        {
+            return _octreeGPUDebugInfo;
+        }
+        set
+        {
+            _octreeGPUDebugInfo = value;
+        }
+    }
+
+    public uint MaxDepth
+    {
+        get
+        {
+            return _maxDepth;
+        }
+        set
+        {
+            _maxDepth = value;
+        }
+    }
+
+
 
     public bool IsPrim
     {
@@ -255,6 +337,7 @@ public abstract class RMObj : MonoBehaviour
     {
         clearAlts();
         remove();
+        _octreeBounds.center = transform.position;
     }
     public void clearAlts()
     {
@@ -275,6 +358,65 @@ public abstract class RMObj : MonoBehaviour
     private void OnDestroy()
     {
         remove();
+    }
+
+    private void Update()
+    {
+        _octreeBounds.center = transform.position + _octreeCentreOffset;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (_visualizeOctree)
+        {
+            Gizmos.color = new Color(0.0f, 0.0f, 0.0f, 0.7f);
+            Gizmos.DrawWireCube(_octreeBounds.center, _octreeBounds.size);
+
+            //Bounds bounds;
+            //Node node;
+            Color colour;
+            //foreach (DebugNodeInfo debugNodeInfo in _octreeDebugInfo)
+            //{
+            //    bounds = debugNodeInfo._bounds;
+
+            //    //if (bounds.center.z < _octreeBounds.center.z)
+            //    //    continue;
+
+            //    node = debugNodeInfo._node;
+
+            //    if (debugNodeInfo._anyNegatives)
+            //        colour = Color.Lerp(Color.white, Color.red, debugNodeInfo._minDist / -7.0f);
+            //    else
+            //        colour = Color.Lerp(Color.green, Color.white, debugNodeInfo._maxDist / 3.0f);
+
+
+            //    Gizmos.color = colour;
+            //    Gizmos.DrawWireCube(bounds.center, bounds.size);
+            //}
+
+            foreach (GPUDebugNodeInfo debugNodeInfo in _octreeGPUDebugInfo)
+            {
+                //if (debugNodeInfo._centre.z < _octreeBounds.center.z)
+                //    continue;
+
+                if (debugNodeInfo._anyNegatives > 0)
+                    colour = Color.red;
+                //colour = Color.Lerp(Color.green, Color.red, debugNodeInfo._minDist / -7.0f);
+                else
+                    colour = Color.Lerp(Color.white, Color.green, debugNodeInfo._maxDist / 3.0f);
+
+                //Gizmos.color = Color.green;
+                Gizmos.color = colour;
+                Gizmos.DrawWireCube(debugNodeInfo._centre, debugNodeInfo._size);
+            }
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.clear;
+        //Gizmos.color = new Color(0.0f, 0.0f, 0.0f, 0.7f);
+        Gizmos.DrawCube(transform.position, _octreeBounds.size);
     }
 
 }
@@ -307,6 +449,11 @@ public class RMObjEditor : Editor
 
     AnimBool _showShaderList;
 
+    SerializedProperty _octreeBounds;
+    SerializedProperty _octreeCentreOffset;
+    SerializedProperty _visualizeOctree;
+    SerializedProperty _maxDepth;
+
     protected virtual void OnEnable()
     {
         _drawOrder = serializedObject.FindProperty("_drawOrder");
@@ -331,6 +478,11 @@ public class RMObjEditor : Editor
 
         _showShaderList = new AnimBool(true);
         _showShaderList.valueChanged.AddListener(Repaint);
+
+        _octreeBounds = serializedObject.FindProperty("_octreeBounds");
+        _octreeCentreOffset = serializedObject.FindProperty("_octreeCentreOffset");
+        _visualizeOctree = serializedObject.FindProperty("_visualizeOctree");
+        _maxDepth = serializedObject.FindProperty("_maxDepth");
     }
 
     public override void OnInspectorGUI()
@@ -433,6 +585,49 @@ public class RMObjEditor : Editor
         label.text = "Draw Order";
         label.tooltip = "The order in which this object will be placed in the shader.";
         EditorGUILayout.PropertyField(_drawOrder, label);
+
+        EditorGUILayout.Space(4.0f);
+        if (rmObj.IsPrim)
+        {
+            EditorGUI.BeginDisabledGroup((rmObj as RMPrimitive).CSGNode);
+
+            label.text = "Octree Bounds";
+            label.tooltip = "The AABB for octree generation.";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Octree Centre";
+            label.tooltip = "";
+            EditorGUILayout.PropertyField(_octreeCentreOffset, label);
+            EditorGUI.BeginChangeCheck();
+            rmObj.SetOctreeBoundsSize(EditorGUILayout.Vector3Field("Octree Volume", _octreeBounds.boundsValue.size));
+            if (EditorGUI.EndChangeCheck())
+                SceneView.RepaintAll();
+
+            label.text = "Max Depth";
+            EditorGUILayout.PropertyField(_maxDepth, label);
+
+            EditorGUILayout.LabelField("Total Nodes: " + rmObj.Octree.Count);
+
+            label.text = "Visualize Octree";
+            EditorGUILayout.PropertyField(_visualizeOctree, label);
+
+            EditorGUI.EndDisabledGroup();
+        }
+        else
+        {
+            label.text = "Octree Bounds";
+            label.tooltip = "The AABB for octree generation.";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Octree Centre";
+            label.tooltip = "";
+            EditorGUILayout.PropertyField(_octreeCentreOffset, label);
+            EditorGUI.BeginChangeCheck();
+            rmObj.SetOctreeBoundsSize(EditorGUILayout.Vector3Field("Octree Volume", _octreeBounds.boundsValue.size));
+            if (EditorGUI.EndChangeCheck())
+                SceneView.RepaintAll();
+        }
+        EditorGUILayout.Space(4.0f);
 
         label.text = "Static";
         label.tooltip = "Will hard code all info into the shader.";

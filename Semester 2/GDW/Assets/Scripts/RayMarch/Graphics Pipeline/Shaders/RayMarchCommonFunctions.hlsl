@@ -139,7 +139,7 @@ float4 calcLighting(float3 p, float3 normal, rmPixel distField, float useShadow 
     float attenuation = 1.0 / (_attenuationConstant + (_attenuationLinear * dist) + (_attenuationQuadratic * dist * dist));
 
     // Apply shadow
-    shadowFactor = shadow(p, -_LightDir, _shadowMinDist, 64.0 * useShadow * NdotL_gt_0, _penumbraFactor) * 0.5 + 0.5; // * 3;
+    shadowFactor = shadow(p, -_LightDir, _shadowMinDist + 0.9, 64.0 * useShadow * NdotL_gt_0, _penumbraFactor) * 0.5 + 0.5; // * 3;
     shadowFactor = max(0.0, pow(shadowFactor, _shadowIntensity)); // Note: In shaders 0^0 is undefined i.e. 0.
 
     // Diffuse Contribution

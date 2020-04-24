@@ -4,9 +4,10 @@ using UnityEngine;
 
 public enum ShaderType
 {
-    Rendering,
+    FragRendering,
     MarchingCube,
-    Collision
+    Collision,
+    Rendering
 }
 
 [System.Serializable]
@@ -20,20 +21,20 @@ public abstract class RayMarchShader : MonoBehaviour
     [SerializeField]
     protected RayMarchShaderSettings _settings;
     [SerializeField]
-    protected ShaderType _shaderType = ShaderType.Rendering;
+    protected ShaderType _shaderType = ShaderType.FragRendering;
     [SerializeField]
     protected List<RMObj> _renderList = new List<RMObj>();
     //private RMObj[] objects;                                // The array of objects to render.
 
 
-    protected Matrix4x4[] _invModelMats = new Matrix4x4[32];   // The inverse transformation matrices of every object.
-    protected float[] _scaleBuffer = new float[32];             // The scaling info for every object.
-    protected Vector4[] _combineOps = new Vector4[32];         // The object to scene combine operations, for every object.
-    protected Vector4[] _primitiveGeoInfo = new Vector4[32];   // The geometric info for every primitive object.
-    protected Vector4[] _altInfo = new Vector4[32];           // The alteration info for every object.
-    protected Vector4[] _bufferedCSGs = new Vector4[16];       // The list of node indices for a each CSG.
-    protected Vector4[] _combineOpsCSGs = new Vector4[16];     // The node to node combine operations for each CSG.
-    protected Vector4[] _boundGeoInfo = new Vector4[32];      // The geometric info for every object's bounding volume.
+    public Matrix4x4[] _invModelMats = new Matrix4x4[32];   // The inverse transformation matrices of every object.
+    public float[] _scaleBuffer = new float[32];             // The scaling info for every object.
+    public Vector4[] _combineOps = new Vector4[32];         // The object to scene combine operations, for every object.
+    public Vector4[] _primitiveGeoInfo = new Vector4[32];   // The geometric info for every primitive object.
+    public Vector4[] _altInfo = new Vector4[32];           // The alteration info for every object.
+    public Vector4[] _bufferedCSGs = new Vector4[16];       // The list of node indices for a each CSG.
+    public Vector4[] _combineOpsCSGs = new Vector4[16];     // The node to node combine operations for each CSG.
+    public Vector4[] _boundGeoInfo = new Vector4[32];      // The geometric info for every object's bounding volume.
 
 
 
@@ -95,7 +96,7 @@ public abstract class RayMarchShader : MonoBehaviour
         }
     }
 
-    public void AddToRenderList(RMObj rmObj)
+    public virtual void AddToRenderList(RMObj rmObj)
     {
         // Check if the object is not already in the render list.
         if (!_renderList.Contains(rmObj))
@@ -209,7 +210,7 @@ public abstract class RayMarchShader : MonoBehaviour
        ++primIndex;
     }
 
-    protected void renderCSG(CSG csg, ref int primIndex, ref int csgIndex, ref int altIndex)
+    protected virtual void renderCSG(CSG csg, ref int primIndex, ref int csgIndex, ref int altIndex)
     {
        // TO-DO Don't let incomplete CSG children nodes be added to other CSGs.
        // Base case: Both nodes are primitives.

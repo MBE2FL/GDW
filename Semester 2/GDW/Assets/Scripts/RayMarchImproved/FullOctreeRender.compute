@@ -1,0 +1,176 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "../../../Library/PackageCache/com.unity.render-pipelines.core@7.3.1/ShaderLibrary/Common.hlsl"
+#include "../RayMarch/Graphics Pipeline/Shaders/PrimitiveFunctions.hlsl"
+#include "../RayMarch/Graphics Pipeline/Shaders/ConditionalFunctions.hlsl"
+#include "../RayMarch/Graphics Pipeline/Shaders/RayMarchCommonFunctions.hlsl"
+
+
+
+sampler2D _performanceRamp;
+RWTexture2D<float4> _sceneCol;
+Texture2D<float4> _depthTex;
+RWTexture2D<float4> _distTex;
+    
+/// ######### RM OBJS Information #########
+static const uint MAX_RM_OBJS = 32;
+static const uint MAX_CSG_CHILDREN = 16;
+
+/// ######### RM OBJS Information #########
+
+float4x4 _cameraInvMatrix;
+float4x4 _camLocalToWorldMatrix;
+float4x4 _cameraToWorldMatrix;
+float4x4 _cameraToWorldInvMatrix;
+float4x4 _cameraInvProj;
+
+float _totalTime;
+
+struct NodePoint
+{
+    float dist;
+};
+
+struct Node
+{
+    NodePoint _botFrontLeft;
+    NodePoint _topFrontLeft;
+    NodePoint _topFrontRight;
+    NodePoint _botFrontRight;
+    NodePoint _botBackLeft;
+    NodePoint _topBackLeft;
+    NodePoint _topBackRight;
+    NodePoint _botBackRight;
+    uint _mortonCode;
+};
+
+Node _adf[512];
+
+
+float3 generateCameraRay(float2 uv);
+
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+    
+    
+    
+    uint width, height;
+    _sceneCol.GetDimensions(width, height);
+    float2 uv = (id.xy / float2(width, height) * 2.0) - 1.0;
+   
+    
+    
+    //float3 rayDir = -viewDirection;
+    float3 rayDir = generateCameraRay(uv);
+    // WHY NEW UNITY (View ray faces towards the camera)
+
+    // Ray origin
+    float3 rayOrigin = _CameraPos.xyz;
+
+    // #if UNITY_UV_STARTS_AT_TOP
+    // if (_MainTex_TexelSize.y < 0)
+    //     uv.y = 1 - uv.y;
+    // #endif
+
+        
+    // Convert from depth buffer (eye space) to true distance from camera.
+    // This is done by multiplying the eyespace depth by the length of the "z-normalized" ray.
+    // Think of similar triangles:
+    // The view-space z-distance between a point and the camera is proportional to the absolute distance.
+    float linearEyeDepth = _depthTex[id.xy].r;
+    
+    // Convert ray direction from world space to eyespace(camera).
+    float3 zNormRayDir = mul(_cameraToWorldInvMatrix, float4(rayDir, 0.0)).xyz;
+    
+    // "Normalize" ray direction in the z-axis.
+    // Dividing by z "normalizes" it in the z axis.
+    // Therefore multiplying the ray by some number i gives the viewspace position
+    // of the point on the ray with [viewspace z] = i.
+    zNormRayDir /= abs(zNormRayDir.z);
+    
+    // Convert new ray direction from eyespace(camera) to world space.
+    zNormRayDir = mul(_cameraToWorldMatrix, float4(zNormRayDir, 0.0)).xyz;
+    
+    // Multiply the eyespace depth by the length of "z-nomralized" ray direction.
+    linearEyeDepth *= length(zNormRayDir);
+    
+    
+    //rayDir = zNormRayDir;
+    
+    //rayDir = normalize(rayDir);
+    
+
+    // Colour of the scene before this shader was run
+    float4 col = _sceneCol[id.xy];
+
+    // March a ray for each pixel, and check whether anything was hit.
+    float3 p = float3(0.0, 0.0, 0.0);
+    rmPixel distField;
+    float4 add = float4(0.0, 0.0, 0.0, 0.0);
+    float3 normal = float3(0.0, 0.0, 0.0);
+    int rayHit = cheapRaymarch(rayOrigin, rayDir, linearEyeDepth, _maxSteps, _maxDrawDist, p, distField);
+    rayHit = raymarch(rayOrigin, rayDir, linearEyeDepth, _maxSteps, _maxDrawDist, p, distField, rayHit);
+
+    // Perform shading/lighting.
+    if (rayHit)
+    {
+        normal = calcNormal(p);
+        add = calcLighting(p, normal, distField);
+        //add = float4(1.0, 0.0, 0.0, 1.0);
+
+        // float2 ratio = fresnel(distField.refractInfo.y, rayDir, normal);
+        // ratio.x = (distField.refractInfo.x > 0.0) ? ratio.x : 1.0;
+
+        // // Perform refraction
+        // //performRefraction(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        // //ReflectAndRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        // //cheapRefract(add, rayOrigin, rayDir, p, normal, distField, ratio);
+
+        // // Perform reflection
+        // reflection(add, rayOrigin, rayDir, p, normal, distField, ratio);
+        
+        col = float4(add.rgb, 1.0);
+    }
+    //else
+    //{
+    //    //col = float4(abs(cos(_totalTime)), abs(sin(_totalTime)), 0.0, 1.0);
+    //    //col = float4(rayDir.xyz, 1.0);
+    //    col = float4(rayHit.xxx, 0.0);
+    //    //col = float4(rayDir.xyz, 1.0);
+    //}
+        
+
+    //add = float4(tex2D(_performanceRamp, float2(distField.dist, 0.0)).xyz, 1.0);
+    //add = float4(tex2D(_performanceRamp, float2(distField.totalDist / _maxDrawDist, 0.0)).xyz, 1.0);
+
+    // Returns final colour using alpha blending.
+    //col = float4(lerp(col.rgb, add.rgb, add.a), 1.0);
+    _sceneCol[id.xy] = col;
+    //_sceneCol[id.xy] = float4(linearEyeDepth.xxx / 10, 1.0);
+    //_sceneCol[id.xy] = float4(rayDir.xyz, 1.0);
+    //_sceneCol[id.xy] = float4(zNormRayDir.xyz, 1.0);
+}
+
+
+float3 generateCameraRay(float2 uv)
+{
+    //float3 origin = mul(_cameraToWorldMatrix, float4(0.0, 0.0, 0.0, 1.0)).xyz;
+    float3 dir = mul(_cameraInvProj, float4(uv, 0.0, 1.0)).xyz;
+    
+    dir = mul(_cameraToWorldMatrix, float4(dir, 0.0)).xyz;
+    dir = normalize(dir);
+    
+    return dir;
+}
+
+float adf(uint rayCode)
+{
+    float midCode = _adf[255]._mortonCode;
+
+}

@@ -68,4 +68,9 @@ float when_le_float(float x, float y)
 {
     return 1.0 - when_gt_float(x, y);
 }
+
+float4 when_le_float(float4 x, float4 y)
+{
+    return 1.0 - when_gt_float4(x, y);
+}
 /// ######### Conditional Functions #########

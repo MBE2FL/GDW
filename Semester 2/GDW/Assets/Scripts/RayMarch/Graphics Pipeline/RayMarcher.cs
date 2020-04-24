@@ -7,6 +7,80 @@ using UnityEditor.AnimatedValues;
 #endif
 using System;
 using UnityEngine.Events;
+using System.Linq;
+
+
+[Serializable]
+public struct NodePoint
+{
+    public float _dist;
+    public Vector3 _pos;
+    public Vector3 _colour;
+    public Vector3 _normal;
+}
+
+[Serializable]
+public struct Node
+{
+    public NodePoint _botFrontLeft;
+    public NodePoint _topFrontLeft;
+    public NodePoint _topFrontRight;
+    public NodePoint _botFrontRight;
+    public NodePoint _botBackLeft;
+    public NodePoint _topBackLeft;
+    public NodePoint _topBackRight;
+    public NodePoint _botBackRight;
+    public uint _mortonCode;
+
+    public string toString()
+    {
+        string info = "BFL: " + _botFrontLeft._pos.ToString() + "\n";
+        info += "TFL: " + _topFrontLeft._pos.ToString() + "\n";
+        info += "TFR: " + _topFrontRight._pos.ToString() + "\n";
+        info += "BFR: " + _botFrontRight._pos.ToString() + "\n";
+        info += "BBL: " + _botBackLeft._pos.ToString() + "\n";
+        info += "TBL: " + _topBackLeft._pos.ToString() + "\n";
+        info += "BBR: " + _botBackRight._pos.ToString() + "\n";
+        info += "Code: " + _mortonCode;
+
+        return info;
+    }
+}
+
+[Serializable]
+public struct DebugNodeInfo
+{
+    public Bounds _bounds;
+    public int _depth;
+    public Node _node;
+    public bool _anyNegatives;
+    public float _minDist;
+    public float _maxDist;
+}
+
+[Serializable]
+public struct GPUDebugNodeInfo
+{
+    public Vector3 _centre;
+    public Vector3 _min;
+    public Vector3 _max;
+    public Vector3Int _id;
+    public uint _linearID;
+    public Vector3 _size;
+    public uint _nodesPerAxis;
+    public uint _maxDepth;
+    public int _anyNegatives;
+    public float _minDist;
+    public float _maxDist;
+}
+
+public enum OctreeMethod
+{
+    CPU,
+    GPU_Full_Octree,
+    GPU_Big_Brain
+}
+
 
 [ExecuteInEditMode]
 [AddComponentMenu("Ray Marching/RayMarcher")]
@@ -16,26 +90,26 @@ public class RayMarcher : MonoBehaviour
     [SerializeField]
     private List<RayMarchShader> _shaders = new List<RayMarchShader>();
 
-    [SerializeField]
-    private Transform _sunLight;
-
     private static RayMarcher _instance;
 
     [SerializeField]
-    private RenderTexture _distTex;
+    Transform _sunlight;
 
 
     [SerializeField]
-    ComputeShader _collisionCompute;
+    RenderTexture _renderTex;
     [SerializeField]
-    RenderTexture _computeTex;
+    RenderTexture _renderDepthTex;
 
-    struct ColliderInfo
-    {
-        public Vector3 pos;
-        public Vector4 geoInfo;
-        public int colliding;
-    }
+    //[SerializeField]
+    //RMComputeRender _mortonTestShader;
+
+    //[SerializeField]
+    //public Bounds _testBounds;
+    //public List<DebugNodeInfo> _interiorBounds;
+    //public float _totalNodes;
+
+
 
     public static RayMarcher Instance
     {
@@ -51,48 +125,43 @@ public class RayMarcher : MonoBehaviour
         }
     }
 
-    //public Material EffectMaterial
-    //{
-    //    get
-    //    {
-    //        if (!_effectMaterial)
-    //        {
-    //            _effectMaterial = new Material(Shader.Find("Standard"));
-    //            _effectMaterial.hideFlags = HideFlags.HideAndDontSave;
-    //        }
-
-    //        return _effectMaterial;
-    //    }
-    //    set
-    //    {
-    //        _effectMaterial = value;
-    //    }
-    //}
-
-    public Transform SunLight
+    public Transform Sunlight
     {
         get
         {
-            return _sunLight;
+            return _sunlight;
+        }
+        set
+        {
+            _sunlight = value;
+        }
+    }
+
+    public RenderTexture RenderTex
+    {
+        get
+        {
+            return _renderTex;
+        }
+        set
+        {
+            _renderTex = value;
+        }
+    }
+
+    public RenderTexture RenderDepthTex
+    {
+        get
+        {
+            return _renderDepthTex;
+        }
+        set
+        {
+            _renderDepthTex = value;
         }
     }
 
 
-
-
-    
-
-
-    RMObj[] objects;
-    List<RMObj> objs = new List<RMObj>();
-
-    public List<RMObj> RenderList
-    {
-        get
-        {
-            return objs;
-        }
-    }
 
     public List<RayMarchShader> Shaders
     {
@@ -105,89 +174,453 @@ public class RayMarcher : MonoBehaviour
     private void Start()
     {
         _shaders = new List<RayMarchShader>(GetComponents<RayMarchShader>());
-        _distTex = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
     }
 
-    private void Update()
+
+    private void OnDrawGizmos()
     {
-        if (Input.GetKeyDown(KeyCode.C))
+        //Gizmos.color = new Color(0.0f, 0.0f, 0.0f, 0.7f);
+        //Gizmos.DrawWireCube(_testBounds.center, _testBounds.size);
+
+        //Bounds bounds;
+        //Node node;
+        //Color colour;
+        //foreach (DebugNodeInfo debugNodeInfo in _interiorBounds)
+        //{
+        //    bounds = debugNodeInfo._bounds;
+
+        //    if (bounds.center.z < _testBounds.center.z)
+        //        continue;
+
+        //    node = debugNodeInfo._node;
+
+        //    if (debugNodeInfo._anyNegatives)
+        //        colour = Color.Lerp(Color.white, Color.red, debugNodeInfo._minDist / -7.0f);
+        //    else
+        //        colour = Color.Lerp(Color.green, Color.white, debugNodeInfo._maxDist / 3.0f);
+
+
+        //    //colour = Color.Lerp(Color.white, Color.red, debugNodeInfo._depth / 5.0f);
+        //    //colour.a = debugNodeInfo._depth / 5.0f;
+        //    //Vector3 colour = new Vector3(debugNodeInfo._depth / 5.0f, debugNodeInfo._depth / 5.0f, debugNodeInfo._depth / 5.0f);
+        //    //Gizmos.color = new Color(colour.x, colour.y, colour.z, debugNodeInfo._depth / 5.0f);
+        //    Gizmos.color = colour;
+        //    Gizmos.DrawWireCube(bounds.center, bounds.size);
+        //    //Gizmos.DrawCube(bounds.center, bounds.size);
+        //}
+    }
+
+    public void generateOctrees(RMComputeRender shader)
+    {
+        List<RMObj> validObjs = shader.RenderList.FindAll(obj =>
         {
-            //RenderTexture tex = new RenderTexture(256, 256, 24);
-            //tex.enableRandomWrite = true;
-            //tex.Create();
-
-
-            // Get all ray march colliders.
-            RMCollider[] _colliders = (RMCollider[])FindObjectsOfType(typeof(RMCollider));
-
-
-
-            // Extract all collider info, and pack into float array.
-            ColliderInfo[] colliderInfos = new ColliderInfo[_colliders.Length];
-            Matrix4x4[] invModelMats = new Matrix4x4[_colliders.Length];
-            int[] primitiveTypes = new int[_colliders.Length];
-            Vector4[] combineOps = new Vector4[_colliders.Length];
-            Vector4[] primitiveGeoInfo = new Vector4[_colliders.Length];
-
-            ColliderInfo colInfo;
-            GameObject obj;
-            for (int i = 0; i < _colliders.Length; ++i)
+            // Primitive: Valid iff it is not a CSG node.
+            if (obj.IsPrim)
             {
-                obj = _colliders[i].gameObject;
-
-                colInfo.pos = obj.transform.position;
-                colInfo.geoInfo = obj.GetComponent<RMPrimitive>().GeoInfo;
-                colInfo.colliding = -1;
-
-                colliderInfos[i] = colInfo;
-
-
-                invModelMats[i] = obj.transform.localToWorldMatrix.inverse;
-                primitiveTypes[i] = (int)obj.GetComponent<RMPrimitive>().PrimitiveType;
-                combineOps[i] = obj.GetComponent<RMPrimitive>().CombineOp;
-                primitiveGeoInfo[i] = obj.GetComponent<RMPrimitive>().GeoInfo;
-
-
+                return !(obj as RMPrimitive).CSGNode;
             }
-
-
-            int kernel = _collisionCompute.FindKernel("CSMain");
-
-
-            // Create a compute buffer.
-            ComputeBuffer buffer = new ComputeBuffer(colliderInfos.Length, (sizeof(float) * 7) + sizeof(int));
-            buffer.SetData(colliderInfos);
-            _collisionCompute.SetBuffer(kernel, "_colliderInfo", buffer);
-            //_collisionCompute.SetTexture(0, "Result", tex);
-
-            _collisionCompute.SetMatrixArray("_invModelMats", invModelMats);
-            _collisionCompute.SetInts("_primitiveTypes", primitiveTypes);
-            _collisionCompute.SetVectorArray("_combineOps", combineOps);
-            _collisionCompute.SetVectorArray("_primitiveGeoInfo", primitiveGeoInfo);
-
-            int numThreadGroups = _colliders.Length;
-            _collisionCompute.Dispatch(kernel, 1, 1, 1);
-            //_collisionCompute.Dispatch(0, 256/8, 256/8, 1);
-
-
-            buffer.GetData(colliderInfos);
-
-            Debug.Log("Dist: " + colliderInfos[0].geoInfo.w);
-
-            if (colliderInfos[0].colliding == 1)
+            // CSG: Valid iff it is a root CSG.
+            else
             {
-                Debug.Log("Colliding");
-
-                _colliders[0].gameObject.transform.position = colliderInfos[0].pos;
+                return (obj as CSG).IsRoot;
             }
+        });
 
 
+        switch (shader.OctreeMethod)
+        {
+            case OctreeMethod.CPU:
+                Bounds bounds;
+                List<Node> octree;
+                List<DebugNodeInfo> octreeDebugInfo;
+                foreach (RMObj obj in validObjs)
+                {
+                    bounds = obj.OctreeBounds;
+                    octree = obj.Octree;
+                    octreeDebugInfo = obj.OctreeDebugInfo;
 
-            //Graphics.CopyTexture(tex, _computeTex);
+                    octree.Clear();
+                    octreeDebugInfo.Clear();
 
-            buffer.Release();
-            //tex.Release();
+                    createOctreeCPU(ref bounds, 0, obj.MaxDepth, ref octree, ref octreeDebugInfo, ref shader);
+                }
+                break;
+            case OctreeMethod.GPU_Full_Octree:
+                Node[] octreeArr;
+                GPUDebugNodeInfo[] octreeDebugInfoArr;
+                foreach (RMObj obj in validObjs)
+                {
+                    bounds = obj.OctreeBounds;
+                    //octree = obj.Octree;
+                    //octreeDebugInfo = obj.OctreeGPUDebugInfo;
+
+                    //octree.Clear();
+                    //octreeDebugInfo.Clear();
+
+                    createOctreeGPUFullOctree(ref bounds, obj.MaxDepth, out octreeArr, out octreeDebugInfoArr, ref shader);
+
+                    octree = new List<Node>(octreeArr);
+                    //obj.Octree = new List<Node>(octreeArr);
+                    radixSort(ref octree, 10);
+                    obj.Octree = octree;
+                    obj.OctreeGPUDebugInfo = new List<GPUDebugNodeInfo>(octreeDebugInfoArr);
+                }
+                break;
+            case OctreeMethod.GPU_Big_Brain:
+                Debug.LogWarning("GPU Big Brain Method Not Implemented Yet!");
+                break;
+            default:
+                Debug.LogError("Unkown Octree Method Selected!");
+                break;
         }
+    }
+
+    public void createOctreeCPU(ref Bounds bounds, int depth, uint maxDepth, ref List<Node> octree, ref List<DebugNodeInfo> octreeDebugInfo, ref RMComputeRender shader)
+    {
+        // Create a new node.
+        Vector3 botBackLeft = bounds.min;
+        Vector3 topFrontRight = bounds.max;
+        Vector3 botFrontLeft = new Vector3(botBackLeft.x, botBackLeft.y, topFrontRight.z);
+        Vector3 topFrontLeft = new Vector3(botBackLeft.x, topFrontRight.y, topFrontRight.z);
+        Vector3 botFrontRight = new Vector3(topFrontRight.x, botBackLeft.y, topFrontRight.z);
+        Vector3 topBackLeft = new Vector3(botBackLeft.x, topFrontRight.y, botBackLeft.z);
+        Vector3 topBackRight = new Vector3(topFrontRight.x, topFrontRight.y, botBackLeft.z);
+        Vector3 botBackRight = new Vector3(topFrontRight.x, botBackLeft.y, botBackLeft.z);
+        createNode(out Node node, ref bounds, ref botFrontLeft, ref topFrontLeft, ref topFrontRight, ref botFrontRight, ref botBackLeft, 
+                    ref topBackLeft, ref topBackRight, ref botBackRight);
+
+
+        // Sample the distance field for every points position.
+        node._botFrontLeft._dist = map(ref botFrontLeft, ref shader);
+        node._topFrontLeft._dist = map(ref topFrontLeft, ref shader);
+        node._topFrontRight._dist = map(ref topFrontRight, ref shader);
+        node._botFrontRight._dist = map(ref botFrontRight, ref shader);
+        node._botBackLeft._dist = map(ref botBackLeft, ref shader);
+        node._topBackLeft._dist = map(ref topBackLeft, ref shader);
+        node._topBackRight._dist = map(ref topBackRight, ref shader);
+        node._botBackRight._dist = map(ref botBackRight, ref shader);
+
+        float[] distValues = new float[8];
+        distValues[0] = node._botFrontLeft._dist;
+        distValues[1] = node._topFrontLeft._dist;
+        distValues[2] = node._topFrontRight._dist;
+        distValues[3] = node._botFrontRight._dist;
+        distValues[4] = node._botBackLeft._dist;
+        distValues[5] = node._topBackLeft._dist;
+        distValues[6] = node._topBackRight._dist;
+        distValues[7] = node._botBackRight._dist;
+        bool subdividePredicate = distValues.Any(dist => dist < 0.0f) && distValues.Any(dist => dist > 0.0f);
+
+        // DEBUG ONLY
+        DebugNodeInfo debugNodeInfo = new DebugNodeInfo()
+        {
+            _bounds = bounds,
+            _depth = depth,
+            _node = node,
+            _anyNegatives = distValues.Any(dist => dist < 0.0f),
+            _minDist = distValues.Min(),
+            _maxDist = distValues.Max()
+        };
+        //_interiorBounds.Add(debugNodeInfo);
+        octreeDebugInfo.Add(debugNodeInfo);
+        octree.Add(node);
+
+        //++_totalNodes;
+
+
+        // Root depth: subdivide and evaluate all eight new octants.
+        if (depth == 0)
+        {
+            subdivide(ref bounds, out Bounds botFrontLeftBounds, out Bounds topFrontLeftBounds, out Bounds topFrontRightBounds, out Bounds botFrontRightBounds,
+                out Bounds botBackLeftBounds, out Bounds topBackLeftBounds, out Bounds topBackRightBounds, out Bounds botBackRightBounds);
+
+            ++depth;
+
+            createOctreeCPU(ref botFrontLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topFrontLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topFrontRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref botFrontRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref botBackLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topBackLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topBackRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref botBackRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+        }
+        // Greater than Root depth and a mix of positive and negative distances: subdivide and evaluate all eight new octants.  
+        else if ((depth < maxDepth) && subdividePredicate)
+        {
+            subdivide(ref bounds, out Bounds botFrontLeftBounds, out Bounds topFrontLeftBounds, out Bounds topFrontRightBounds, out Bounds botFrontRightBounds,
+                out Bounds botBackLeftBounds, out Bounds topBackLeftBounds, out Bounds topBackRightBounds, out Bounds botBackRightBounds);
+
+            ++depth;
+
+            createOctreeCPU(ref botFrontLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topFrontLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topFrontRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref botFrontRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref botBackLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topBackLeftBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref topBackRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+            createOctreeCPU(ref botBackRightBounds, depth, maxDepth, ref octree, ref octreeDebugInfo, ref shader);
+        }
+
+    }
+
+    void subdivide(ref Bounds bounds, out Bounds botFrontLeft, out Bounds topFrontLeft, out Bounds topFrontRight, out Bounds botFrontRight,
+                    out Bounds botBackLeft, out Bounds topBackLeft, out Bounds topBackRight, out Bounds botBackRight)
+    {
+        Vector3 size = bounds.size * 0.5f;
+        Vector3 centre = bounds.center;
+
+        Vector3 halfSize = size * 0.5f;
+
+        botFrontLeft = new Bounds(new Vector3(centre.x - halfSize.x, centre.y - halfSize.y, centre.z + halfSize.z), size);
+        topFrontLeft = new Bounds(new Vector3(centre.x - halfSize.x, centre.y + halfSize.y, centre.z + halfSize.z), size);
+        topFrontRight = new Bounds(new Vector3(centre.x + halfSize.x, centre.y + halfSize.y, centre.z + halfSize.z), size);
+        botFrontRight = new Bounds(new Vector3(centre.x + halfSize.x, centre.y - halfSize.y, centre.z + halfSize.z), size);
+        botBackLeft = new Bounds(new Vector3(centre.x - halfSize.x, centre.y - halfSize.y, centre.z - halfSize.z), size);
+        topBackLeft = new Bounds(new Vector3(centre.x - halfSize.x, centre.y + halfSize.y, centre.z - halfSize.z), size);
+        topBackRight = new Bounds(new Vector3(centre.x + halfSize.x, centre.y + halfSize.y, centre.z - halfSize.z), size);
+        botBackRight = new Bounds(new Vector3(centre.x + halfSize.x, centre.y - halfSize.y, centre.z - halfSize.z), size);
+    }
+
+    void createNode(out Node node, ref Bounds bounds, ref Vector3 botFrontLeft, ref Vector3 topFrontLeft, ref Vector3 topFrontRight, ref Vector3 botFrontRight,
+                    ref Vector3 botBackLeft, ref Vector3 topBackLeft, ref Vector3 topBackRight, ref Vector3 botBackRight)
+    {
+        // Generate morton codes for each points position.
+        // Cartesian coordinates or node coordinates??????
+
+        // Cartesian method:
+        // Normalize point to range [0, 1], based on bounding box's min and max points.
+        //Vector3 min = bounds.min;
+
+        //Vector3 PMinusMin = botFrontLeft - min;
+        //Vector3 normBFL = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        //PMinusMin = topFrontLeft - min;
+        //Vector3 normTFL = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        //PMinusMin = topFrontRight - min;
+        //Vector3 normTFR = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        //PMinusMin = botFrontRight - min;
+        //Vector3 normBFR = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        //PMinusMin = botBackLeft - min;
+        //Vector3 normBBL = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        //PMinusMin = topBackLeft - min;
+        //Vector3 normTBL = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        //PMinusMin = topBackRight - min;
+        //Vector3 normTBR = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        //PMinusMin = botBackRight - min;
+        //Vector3 normBBR = new Vector3(PMinusMin.x / bounds.size.x, PMinusMin.y / bounds.size.y, PMinusMin.z / bounds.size.z);
+
+        // Create a morton code with the normalized point.
+        Vector3 normCentre = bounds.center - bounds.min;
+        normCentre = new Vector3(normCentre.x / bounds.size.x, normCentre.y / bounds.size.y, normCentre.z / bounds.size.z);
+
+        // Generate a node with all the points.
+        node = new Node() { 
+            _botFrontLeft = new NodePoint(),
+            _topFrontLeft = new NodePoint(),
+            _topFrontRight = new NodePoint(),
+            _botFrontRight = new NodePoint(),
+            _botBackLeft = new NodePoint(),
+            _topBackLeft = new NodePoint(),
+            _topBackRight = new NodePoint(),
+            _botBackRight = new NodePoint(),
+            _mortonCode = createMortonCode(ref normCentre)
+        };
+    }
+
+    uint createMortonCode(ref Vector3 point)
+    {
+       return morton3D(point.x, point.y, point.z);
+    }
+
+    // Expands a 10-bit integer into 30 bits
+    // by inserting 2 zeros after each bit.
+    uint expandBits(uint v)
+    {
+        v = (v * 0x00010001u) & 0xFF0000FFu;
+        v = (v * 0x00000101u) & 0x0F00F00Fu;
+        v = (v * 0x00000011u) & 0xC30C30C3u;
+        v = (v * 0x00000005u) & 0x49249249u;
+        return v;
+    }
+
+    // Calculates a 30-bit Morton code for the
+    // given 3D point located within the unit cube [0,1].
+    uint morton3D(float x, float y, float z)
+    {
+        x = Mathf.Min(Mathf.Max(x * 1024.0f, 0.0f), 1023.0f);
+        y = Mathf.Min(Mathf.Max(y * 1024.0f, 0.0f), 1023.0f);
+        z = Mathf.Min(Mathf.Max(z * 1024.0f, 0.0f), 1023.0f);
+        uint xx = expandBits((uint)x);
+        uint yy = expandBits((uint)y);
+        uint zz = expandBits((uint)z);
+        return xx * 4 + yy * 2 + zz;
+    }
+
+    float map(ref Vector3 p, ref RMComputeRender shader)
+    {
+        float scene = 400.0f;
+
+        Vector4 pos = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+        Vector4 geoInfo = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+
+        float obj;
+        float obj2;
+
+        float csg;
+        float[] storedCSGs = new float[16];
+
+        Vector3 cell = new Vector3(0.0f, 0.0f, 0.0f);
+
+        // ######### New Game Object #########
+        //pos = shader._invModelMats[0] * new Vector4(p.x, p.y, p.z, 1.0f);
+        //geoInfo = shader._primitiveGeoInfo[0];
+        //obj = sdSphere(pos, geoInfo.x);
+
+        //scene = opSmoothUnion(scene, obj, shader._combineOps[0].y);
+        // ######### New Game Object #########
+
+        int primIndex = 0;
+        int csgIndex = 0;
+        int altIndex = 0;
+        foreach (RMObj rmObj in shader.RenderList)
+        {
+            // Primitive object
+            if (rmObj.IsPrim)
+            {
+                pos = shader._invModelMats[primIndex] * new Vector4(p.x, p.y, p.z, 1.0f);
+                geoInfo = shader._primitiveGeoInfo[primIndex];
+                obj = sdSphere(pos, geoInfo.x);
+
+                scene = opSmoothUnion(scene, obj, shader._combineOps[primIndex].y);
+
+                ++primIndex;
+            }
+            // CSG object
+            else
+            {
+
+            }
+        }
+
+        return scene;
+    }
+
+    float sdSphere(Vector3 p, float s)
+    {
+        return p.magnitude - s;
+    }
+
+    float opSmoothUnion(float d1, float d2, float k)
+    {
+        float h = Mathf.Clamp(0.5f + (0.5f * (d2 - d1) / k), 0.0f, 1.0f);
+
+        return Mathf.Lerp(d2, d1, h) - (k * h * (1.0f - h));
+    }
+
+    void countingSort(List<Node> octree, ref List<Node> sortedOctree, uint digit, uint radix)
+    {
+        uint[] _temp = new uint[radix];
+
+
+        // Count the number of occurences of each digit in each node's morton code.
+        uint i = 0;
+        uint digitOfCodeI;
+        foreach (Node node in octree)
+        {
+            digitOfCodeI = (node._mortonCode / (uint)Mathf.Pow(radix, digit)) % radix;
+            //_temp[digitOfCodeI] = _temp[digitOfCodeI] + 1;
+            ++_temp[digitOfCodeI];
+
+            ++i;
+        }
+
+        // _temp is modified to show the cumulative # of digits up to that index of _temp.
+        for (i = 1; i < radix; ++i)
+        {
+            _temp[i] = _temp[i] + _temp[i - 1];
+        }
+
+        /* Go through _octree backwards, add elements to _sortedOctree by checking the value of _octree[i],
+         * going to _temp[_octree[i]], writing the value of the element at _octree[i] to _sortedOctree[_temp[_octree[i]]].
+         * Decrement the value of _temp[_octree[i]] by 1 since that slot in _sortedOctree is now occupied.
+         */
+        for (int j = octree.Count - 1; j > -1; --j)
+        {
+            digitOfCodeI = (octree[j]._mortonCode / (uint)Mathf.Pow(radix, digit)) % radix;
+            --_temp[digitOfCodeI];
+            sortedOctree[(int)_temp[digitOfCodeI]] = octree[j];
+        }
+    }
+
+    void radixSort(ref List<Node> octree, uint radix)
+    {
+        uint max = octree.Max(node => node._mortonCode);
+
+        List<Node> sortedOctree = new List<Node>(octree);
+
+        uint digits = (uint)(Mathf.FloorToInt(Mathf.Log(max, radix) + 1));
+
+        for (uint digit = 0; digit < digits; ++digit)
+        {
+            countingSort(octree, ref sortedOctree, digit, radix);
+            octree = new List<Node>(sortedOctree);
+        }
+    }
+
+
+
+
+    void createOctreeGPUFullOctree(ref Bounds bounds, uint maxDepth, out Node[] octree, out GPUDebugNodeInfo[] octreeDebugInfo, ref RMComputeRender shader)
+    {
+        //int totalNodes = (int)(Mathf.Pow(8, maxDepth + 1) - 1) / 7;
+        int totalNodes = (int)Mathf.Pow(2.0f, maxDepth);
+        totalNodes *= totalNodes * totalNodes;
+        octree = new Node[totalNodes];
+        octreeDebugInfo = new GPUDebugNodeInfo[totalNodes];
+
+        ComputeShader compShader = shader.OctreeGenShader;
+
+        ComputeBuffer buffer = new ComputeBuffer(totalNodes, (sizeof(float) * 80) + sizeof(uint));
+        buffer.SetData(octree);
+
+        ComputeBuffer debugBuffer = new ComputeBuffer(totalNodes, (sizeof(float) * 14) + (sizeof(uint) * 3) + sizeof(uint) * 3 + sizeof(int));
+        debugBuffer.SetData(octreeDebugInfo);
+
+        //ComputeBuffer rootBoundsBuf = new ComputeBuffer(1, sizeof(float) * 6);
+        //Bounds[] boundsArr = { bounds };
+        //rootBoundsBuf.SetData(boundsArr);
+
+        int kernelIndex = compShader.FindKernel("CSMain");
+        compShader.SetBuffer(kernelIndex, "_octree", buffer);
+        compShader.SetBuffer(kernelIndex, "_octreeDebugInfo", debugBuffer);
+        compShader.SetInt("_maxDepth", (int)maxDepth);
+        compShader.SetVector("_rootBoundsMin", bounds.min);
+        compShader.SetVector("_rootBoundsSize", bounds.size);
+        compShader.SetMatrixArray("_invModelMats", shader._invModelMats);
+        compShader.SetVectorArray("_rm_colours", shader._colours);
+        compShader.SetVectorArray("_combineOps", shader._combineOps);
+        compShader.SetVectorArray("_primitiveGeoInfo", shader._primitiveGeoInfo);
+        compShader.SetVectorArray("_altInfo", shader._altInfo);
+        compShader.SetVectorArray("_bufferedCSGs", shader._bufferedCSGs);
+        compShader.SetVectorArray("_combineOpsCSGs", shader._combineOpsCSGs);
+
+        int nodesPerAxis = (int)Mathf.Pow(2.0f, maxDepth);
+        //compShader.Dispatch(kernelIndex, nodesPerAxis / 4, nodesPerAxis / 4, nodesPerAxis / 4);
+        compShader.Dispatch(kernelIndex, nodesPerAxis / 2, nodesPerAxis / 2, nodesPerAxis / 2);
+
+        buffer.GetData(octree);
+        debugBuffer.GetData(octreeDebugInfo);
+
+        buffer.Release();
+        debugBuffer.Release();
     }
 
 
@@ -202,7 +635,7 @@ public class RayMarcher : MonoBehaviour
 
         switch (shaderType)
         {
-            case ShaderType.Rendering:
+            case ShaderType.FragRendering:
                 shader = gameObject.AddComponent<RMRenderShader>();
                 break;
             case ShaderType.MarchingCube:
@@ -211,6 +644,9 @@ public class RayMarcher : MonoBehaviour
                 break;
             case ShaderType.Collision:
                 return;
+            case ShaderType.Rendering:
+                shader = gameObject.AddComponent<RMComputeRender>();
+                break;
             default:
                 return;
         }
@@ -272,10 +708,10 @@ public class RayMarcher : MonoBehaviour
         //EffectMaterial.SetMatrix("_TorusMat_InvModel", torusMat.inverse);
 
 
-        if (!_distTex)
-        {
-            _distTex = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.RFloat);
-        }
+        //if (!_distTex)
+        //{
+        //    _distTex = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.RFloat);
+        //}
     }
 
 
@@ -424,20 +860,24 @@ public class RayMarcherEditor : Editor
 {
     List<RayMarchShader> shaders;
     SerializedProperty _shaders;
-    SerializedProperty _sunLight;
-    SerializedProperty _distTex;
-    SerializedProperty _collisionCompute;
-    SerializedProperty _computeTex;
-    ShaderType _shaderType = ShaderType.Rendering;
-    int _selectedShaderIndex = 0;
+    SerializedProperty _sunlight;
+    SerializedProperty _renderTex;
+    SerializedProperty _renderDepthTex;
+    ShaderType _shaderType = ShaderType.FragRendering;
+    //int _selectedShaderIndex = 0;
+    //SerializedProperty _mortonTestShader;
+    //SerializedProperty _testBounds;
+    //SerializedProperty _totalNodes;
 
     private void OnEnable()
     {
         _shaders = serializedObject.FindProperty("_shaders");
-        _sunLight = serializedObject.FindProperty("_sunLight");
-        _distTex = serializedObject.FindProperty("_distTex");
-        _collisionCompute = serializedObject.FindProperty("_collisionCompute");
-        _computeTex = serializedObject.FindProperty("_computeTex");
+        _sunlight = serializedObject.FindProperty("_sunlight");
+        _renderTex = serializedObject.FindProperty("_renderTex");
+        _renderDepthTex = serializedObject.FindProperty("_renderDepthTex");
+        //_mortonTestShader = serializedObject.FindProperty("_mortonTestShader");
+        //_testBounds = serializedObject.FindProperty("_testBounds");
+        //_totalNodes = serializedObject.FindProperty("_totalNodes");
     }
 
 
@@ -450,10 +890,26 @@ public class RayMarcherEditor : Editor
 
         serializedObject.Update();
 
-        EditorGUILayout.PropertyField(_distTex);
-        EditorGUILayout.PropertyField(_sunLight);
-        EditorGUILayout.PropertyField(_collisionCompute);
-        EditorGUILayout.PropertyField(_computeTex);
+        EditorGUILayout.PropertyField(_sunlight);
+        EditorGUILayout.PropertyField(_renderTex);
+        EditorGUILayout.PropertyField(_renderDepthTex);
+        //EditorGUILayout.PropertyField(_mortonTestShader);
+        //EditorGUILayout.PropertyField(_testBounds);
+        //EditorGUILayout.LabelField("Total Nodes: " + _totalNodes.floatValue);
+
+        //if (GUILayout.Button("Octree Test"))
+        //{
+        //    rayMarcher._interiorBounds.Clear();
+        //    rayMarcher.createOctree(ref rayMarcher._testBounds, 0);
+        //}
+
+        if (GUILayout.Button("Clear Render Textures"))
+        {
+            rayMarcher.RenderTex.Release();
+            rayMarcher.RenderTex = null;
+            rayMarcher.RenderDepthTex.Release();
+            rayMarcher.RenderDepthTex = null;
+        }
 
 
         EditorGUILayout.Space(6.0f);
@@ -566,6 +1022,9 @@ public class ShaderEditorWindow : EditorWindow, ISerializationCallbackReceiver
 
     void initIfNeeded()
     {
+        if (!_rayMarcher)
+            _rayMarcher = RayMarcher.Instance;
+
         if (!_shader && _serializedShader._serialized)
         {
             //Debug.Log("Deserialized YES");
@@ -588,17 +1047,23 @@ public class ShaderEditorWindow : EditorWindow, ISerializationCallbackReceiver
 
 
         // Display the current shader's effect shader.
-        if (_shader.ShaderType == ShaderType.Rendering)
+        if (_shader.ShaderType == ShaderType.FragRendering)
         {
             label.text = "Effect Shader";
             label.tooltip = "";
             _shader.EffectShader = EditorGUILayout.ObjectField(label, _shader.EffectShader, typeof(Shader), true) as Shader;
         }
-        else
+        else if (_shader.ShaderType == ShaderType.MarchingCube)
         {
             label.text = "SDF To Mesh Shader";
             label.tooltip = "";
             (_shader as RMMarchingCubeShader).SDFtoMeshShader = EditorGUILayout.ObjectField(label, (_shader as RMMarchingCubeShader).SDFtoMeshShader, typeof(ComputeShader), true) as ComputeShader;
+        }
+        else if (_shader.ShaderType == ShaderType.Rendering)
+        {
+            label.text = "Compute Shader";
+            label.tooltip = "";
+            (_shader as RMComputeRender).Shader = EditorGUILayout.ObjectField(label, (_shader as RMComputeRender).Shader, typeof(ComputeShader), true) as ComputeShader;
         }
 
         // Display the current shader's name.
@@ -609,11 +1074,39 @@ public class ShaderEditorWindow : EditorWindow, ISerializationCallbackReceiver
         EditorGUILayout.EndHorizontal();
 
         // Settings retrieved from a scriptable object.
+        if (_shader.ShaderType == ShaderType.FragRendering)
+        {
+            label.text = "Settings";
+            label.tooltip = "";
+            _shader.Settings = EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
+        }
+
+        // Octree settings
         if (_shader.ShaderType == ShaderType.Rendering)
         {
             label.text = "Settings";
             label.tooltip = "";
             _shader.Settings = EditorGUILayout.ObjectField(label, _shader.Settings, typeof(RayMarchShaderSettings), true) as RayMarchShaderSettings;
+
+            EditorGUILayout.Space(4.0f);
+
+            label.text = "Octree Settings";
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            label.text = "Octree Method";
+            (_shader as RMComputeRender).OctreeMethod = (OctreeMethod)EditorGUILayout.EnumPopup(label, (_shader as RMComputeRender).OctreeMethod);
+
+            label.text = "Octree Generation Shader";
+            (_shader as RMComputeRender).OctreeGenShader = EditorGUILayout.ObjectField(label, (_shader as RMComputeRender).OctreeGenShader, typeof(ComputeShader), true) as ComputeShader;
+
+            EditorGUILayout.Space(2.0f);
+
+            if (GUILayout.Button("Generate Octrees"))
+            {
+                _rayMarcher.generateOctrees(_shader as RMComputeRender);
+            }
+
+            EditorGUILayout.Space(4.0f);
         }
 
         // Objects in the current shader's render list.
@@ -710,7 +1203,7 @@ public class ShaderEditorWindow : EditorWindow, ISerializationCallbackReceiver
 
         switch (_shader.ShaderType)
         {
-            case ShaderType.Rendering:
+            case ShaderType.FragRendering:
                 break;
             case ShaderType.MarchingCube:
                 //_serializedShader._sdfToMeshShader = (_shader as RMMarchingCubeShader).SDFtoMeshShader;
