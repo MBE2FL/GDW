@@ -105,6 +105,45 @@ public class RMComputeRender : RayMarchShader
         }
     }
 
+    public void updateOctreeData()
+    {
+        int primIndex = 0;
+        int csgIndex = 0;
+        int altIndex = 0;
+        RMPrimitive prim;
+        CSG csg;
+        RMObj obj;
+
+        for (int i = 0; i < _renderList.Count; ++i)
+        {
+            obj = _renderList[i];
+
+            // Primitive
+            if (obj.IsPrim)
+            {
+                prim = obj as RMPrimitive;
+
+                // Skip any primitives belonging to a csg, as they will be rendered recursively by thier respective csgs.
+                if (prim.CSGNode)
+                    continue;
+
+                renderPrimitive(prim, ref primIndex, ref altIndex);
+            }
+            // CSG
+            else
+            {
+                csg = obj as CSG;
+
+                // Skip any non-root CSGs, as they will be rendered recursively by thier parents.
+                // Skip any CSGs which don't have two nodes.
+                if (!csg.IsRoot || !csg.IsValid)
+                    continue;
+
+                renderCSG(csg, ref primIndex, ref csgIndex, ref altIndex);
+            }
+        }
+    }
+
     public void render(Matrix4x4 cameraInvViewMatrix, Vector3 camPos, Transform sunLight)
     {
         // Enable this shader's defines
@@ -348,22 +387,19 @@ public class RMComputeRender : RayMarchShader
         }
     }
 
-    public void render(CommandBuffer cmd, ref ComputeBuffer boundsBuf, ref ComputeBuffer octreeBuf, HDCamera hdCamera, RayMarcher rayMarcher, Transform sunlight)
+    public void render(CommandBuffer cmd, ref ComputeBuffer octreeBuf, HDCamera hdCamera, RayMarcher rayMarcher, Transform sunlight)
     {
-        Bounds[] bounds = new Bounds[1];
+        Bounds bounds;
         List<Node> octree;
         int kernelIndex = _computeShader.FindKernel("CSMain");
 
         foreach (RMObj obj in _renderList)
         {
-            bounds[0] = obj.OctreeBounds;
+            bounds = obj.OctreeBounds;
             octree = obj.Octree;
 
-            if (boundsBuf == null)
-            {
-                boundsBuf = new ComputeBuffer(1, sizeof(float) * 6);
-                boundsBuf.SetData(bounds);
-            }
+            cmd.SetComputeVectorParam(_computeShader, "_octreeBoundsMin", bounds.min);
+            cmd.SetComputeVectorParam(_computeShader, "_octreeBoundsMax", bounds.max);
 
             if (octreeBuf == null)
             {
@@ -377,7 +413,6 @@ public class RMComputeRender : RayMarchShader
                 octreeBuf.SetData(octree);
             }
 
-            cmd.SetComputeBufferParam(_computeShader, kernelIndex, "_octreeBounds", boundsBuf);
             cmd.SetComputeBufferParam(_computeShader, kernelIndex, "_octree", octreeBuf);
             cmd.SetComputeIntParam(_computeShader, "_octreeTotalNodes", octree.Count);
 
@@ -402,8 +437,8 @@ public class RMComputeRender : RayMarchShader
             cmd.SetComputeVectorParam(_computeShader, "_lightConstants", _settings.LightConstants);
 
 
-            int Xgroups = Mathf.CeilToInt(hdCamera.actualWidth / 26.0f);
-            int Ygroups = Mathf.CeilToInt(hdCamera.actualHeight / 26.0f);
+            int Xgroups = Mathf.CeilToInt(hdCamera.actualWidth / 22.0f);
+            int Ygroups = Mathf.CeilToInt(hdCamera.actualHeight / 22.0f);
             cmd.DispatchCompute(_computeShader, kernelIndex, Xgroups, Ygroups, 1);
         }
     }

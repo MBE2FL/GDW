@@ -15,7 +15,6 @@ class RMOctreeRenderPass : CustomPass
     float _fade = 0.0f;
     [SerializeField]
     RayMarcher _rayMarcher;
-    ComputeBuffer _boundsBuf;
     ComputeBuffer _octreeBuf;
 
 
@@ -32,7 +31,7 @@ class RMOctreeRenderPass : CustomPass
     protected override void Execute(ScriptableRenderContext renderContext, CommandBuffer cmd, HDCamera hdCamera, CullingResults cullingResult)
     {
         // Executed every frame for all the camera inside the pass volume
-        _shader.render(cmd, ref _boundsBuf, ref _octreeBuf, hdCamera, _rayMarcher, _sunlight);
+        _shader.render(cmd, ref _octreeBuf, hdCamera, _rayMarcher, _sunlight);
 
         //int kernelIndex = _shader.Shader.FindKernel("CSMain");
         //cmd.SetComputeTextureParam(_shader.Shader, kernelIndex, "_sceneCol", _rayMarcher.RenderTex, 0, RenderTextureSubElement.Color);
@@ -61,7 +60,6 @@ class RMOctreeRenderPass : CustomPass
     protected override void Cleanup()
     {
         // Cleanup code
-        _boundsBuf.Release();
         _octreeBuf.Release();
     }
 }

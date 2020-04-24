@@ -598,6 +598,9 @@ public class RayMarcher : MonoBehaviour
         //Bounds[] boundsArr = { bounds };
         //rootBoundsBuf.SetData(boundsArr);
 
+        shader.updateOctreeData();
+
+
         int kernelIndex = compShader.FindKernel("CSMain");
         compShader.SetBuffer(kernelIndex, "_octree", buffer);
         compShader.SetBuffer(kernelIndex, "_octreeDebugInfo", debugBuffer);

@@ -51,7 +51,9 @@ struct RenderDebugInfo
 float3 _CameraPos;
 float4x4 _cameraToWorldMatrix;
 float4x4 _cameraInvProj;
-StructuredBuffer<Bounds> _octreeBounds;
+//StructuredBuffer<Bounds> _octreeBounds;
+float3 _octreeBoundsMin;
+float3 _octreeBoundsMax;
 StructuredBuffer<Node> _octree;
 int _octreeTotalNodes;
 static const float _minDist = 0.001;
@@ -86,7 +88,7 @@ void adfMat(Node node, float3 pos, out float3 normal, inout float4 colour);
 void trilinearMatInterpolate(Node node, float3 pos, out float3 normal, inout float3 colour);
 
 
-[numthreads(26,26,1)]
+[numthreads(22,22,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
@@ -100,9 +102,10 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float rayIntStart;
     float rayIntEnd;
     float4 colour = _sceneCol[id.xy];
-    Bounds bounds = _octreeBounds[0];
-    bounds._min += 0.1;
-    bounds._max -= 0.1;
+    Bounds bounds;
+    bounds._min = _octreeBoundsMin + 0.1;
+    bounds._max = _octreeBoundsMax - 0.1;
+    
     
     // Check if this ray intersects with the octree's bounding box.
     if (intersect(ray, bounds, rayIntStart, rayIntEnd))
@@ -183,11 +186,11 @@ bool intersect(const Ray ray, const Bounds bounds, out float rayIntStart, out fl
 {
     float tmin = -999999.0, tmax = 999999.0;
     
-    //float3 t0 = (bounds._min - ray._origin) * ray._invDir;
-    //float3 t1 = (bounds._max - ray._origin) * ray._invDir;
+    float3 t0 = (bounds._min - ray._origin) * ray._invDir;
+    float3 t1 = (bounds._max - ray._origin) * ray._invDir;
     
-    float3 t0 = ((float3(-6.0, 5.0, 2.0) + 0.1) - ray._origin) * ray._invDir;
-    float3 t1 = ((float3(14.0, 25.0, 22.0) - 0.1) - ray._origin) * ray._invDir;
+    //float3 t0 = ((float3(-6.0, 5.0, 2.0) + 0.1) - ray._origin) * ray._invDir;
+    //float3 t1 = ((float3(14.0, 25.0, 22.0) - 0.1) - ray._origin) * ray._invDir;
     
 
     float3 tSmaller = min(t0, t1);
@@ -207,9 +210,9 @@ Node findNode(float3 pos, Bounds bounds, inout float4 colour)
     
     // Normalize the position according the bounds of the octree. Encode the normalized position as a morton code.
     //float3 normPos = (pos - bounds._min) / (bounds._max - bounds._min);
-    float3 size = float3(20.0, 20.0, 20.0);
+    float3 size = bounds._max - bounds._min;
     //float3 halfSizePerNode = size / _octreeTotalNodes * 0.5;
-    float3 normPos = (pos - float3(-6.0, 5.0, 2.0)) / size;
+    float3 normPos = (pos - bounds._min) / size;
     uint posCode = morton3D(normPos.x, normPos.y, normPos.z);
     
     int totalNodes = _octreeTotalNodes - 1;
